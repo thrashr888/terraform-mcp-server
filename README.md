@@ -1,195 +1,266 @@
 # Terraform Registry MCP Server
 
-## Overview
+A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, module metadata, and generate example configurations.
 
-The Terraform Registry MCP Server is a Model Context Protocol (MCP) server that connects AI models (via MCP) to the Terraform Registry. It allows an AI assistant to look up Terraform provider information, resource usage examples (with related resources), and recommend Terraform modules. The server uses the official MCP TypeScript SDK and communicates over standard input/output (stdio) for easy integration with AI platforms like Anthropic's Claude.
+## Tools
 
-## Features
+### 1. Provider Lookup
 
-- **Provider Reference Lookup** – Given a Terraform provider (e.g., "hashicorp/aws" or "aws"), the server retrieves information such as the latest version and available versions from the public Terraform Registry API.
-- **Resource Usage (with Related Resources)** – For a given provider resource (e.g., AWS EC2 instance resource "aws_instance"), the server fetches the resource's documentation (public endpoints only) to provide an example usage snippet and identifies related resources commonly used alongside it.
-- **Module Recommendations** – Based on a search query or keyword (optionally filtered by a provider), the server uses the Terraform Registry API to find and recommend relevant Terraform modules (prioritizing verified modules).
+Looks up Terraform provider details by name, returning the latest version and version count.
 
-All responses conform to the MCP response format, ensuring they can be directly used by AI models. Responses are structured as JSON with a content array containing text segments, per MCP standards.
-
-## Installation & Setup
-
-1. **Prerequisites**: Ensure you have Node.js 18+ and npm installed (Node 18+ is recommended for built-in fetch support).
-2. **Install Package**: Install via npm:
-
-   ```bash
-   npm install terraform-mcp-server
-   ```
-
-3. **Install Dependencies**: If building from source:
-
-   ```bash
-   npm install @modelcontextprotocol/sdk
-   ```
-
-4. **Build/Compile**: If using TypeScript, either:
-   - Compile to JavaScript: `npm run build`
-   - Run directly with ts-node: `npx ts-node index.ts`
-
-## API Endpoints (Tools)
-
-The server exposes its functionality as MCP "tools". Each tool can be invoked via a CallToolRequest with a JSON payload:
-
-### 1. Provider Reference Lookup (providerLookup)
-
-Looks up a Terraform provider on the registry and returns basic reference info.
+**Input:**
 
 ```json
 {
-  "type": "CallToolRequest",
-  "params": {
-    "tool": "providerLookup",
-    "input": {
-      "provider": "<provider name>",
-      "namespace": "<namespace (optional, default 'hashicorp')>"
-    }
-  }
+  "provider": "aws",
+  "namespace": "hashicorp"
 }
 ```
 
-Sample Response:
+**Output:**
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Provider hashicorp/aws: latest version is 5.80.0 (out of 100 versions)."
+      "text": "Provider hashicorp/aws: latest version is 5.0.0 (out of 150 versions)."
     }
   ]
 }
 ```
 
-### 2. Resource Usage (resourceUsage)
+### 2. Resource Usage
 
-Retrieves example usage of a specific Terraform resource and lists related resources.
+Gets example usage of a Terraform resource and related resources.
+
+**Input:**
 
 ```json
 {
-  "type": "CallToolRequest",
-  "params": {
-    "tool": "resourceUsage",
-    "input": {
-      "provider": "<provider name or namespace/provider>",
-      "resource": "<resource name identifier>"
-    }
-  }
+  "provider": "aws",
+  "resource": "aws_instance"
 }
 ```
 
-Sample Response:
+**Output:**
 
 ````json
 {
   "content": [
     {
       "type": "text",
-      "text": "Example usage for aws_instance:\n```\nresource \"aws_instance\" \"example\" {\n  ami           = data.aws_ami.ubuntu.id\n  instance_type = \"t3.micro\"\n  # ... other required arguments ...\n}\n```\nRelated resources: aws_vpc, aws_subnet"
+      "text": "Example usage for aws_instance:\n```terraform\n[example code]\n```\nRelated resources: aws_vpc, aws_subnet"
     }
   ]
 }
 ````
 
-### 3. Module Recommendations (moduleRecommendations)
+### 3. Module Recommendations
 
-Searches for and recommends Terraform modules based on keywords.
+Searches for and recommends Terraform modules based on a query.
+
+**Input:**
 
 ```json
 {
-  "type": "CallToolRequest",
-  "params": {
-    "tool": "moduleRecommendations",
-    "input": {
-      "query": "<search keywords>",
-      "provider": "<provider filter (optional)>"
-    }
-  }
+  "query": "vpc",
+  "provider": "aws"
 }
 ```
 
-Sample Response:
+**Output:**
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Recommended modules for \"vpc\":\n1. terraform-aws-modules/vpc/aws - AWS VPC management module.\n2. user/network/aws - AWS network module for VPC and subnets.\n3. Azure/network/azurerm - Azure network module for virtual networks."
+      "text": "Recommended modules for \"vpc\":\n1. terraform-aws-modules/vpc (aws) - AWS VPC Terraform module\n..."
     }
   ]
 }
 ```
 
-## Usage with Claude Desktop
+### 4. Data Source Lookup
 
-Add this to your `claude_desktop_config.json`:
+Retrieves available data source identifiers for a given Terraform provider.
 
-### Docker
-
-Note: all directories must be mounted to `/projects` by default.
+**Input:**
 
 ```json
 {
-  "mcpServers": {
-    "terraform-registry": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "--mount",
-        "type=bind,src=/Users/username/Desktop,dst=/projects/Desktop",
-        "--mount",
-        "type=bind,src=/path/to/other/allowed/dir,dst=/projects/other/allowed/dir,ro",
-        "--mount",
-        "type=bind,src=/path/to/file.txt,dst=/projects/path/to/file.txt",
-        "mcp/terraform-registry"
+  "provider": "aws",
+  "namespace": "hashicorp"
+}
+```
+
+**Output:**
+
+```json
+{
+  "content": [{
+    "type": "text",
+    "text": {
+      "data_sources": ["aws_ami", "aws_instance", "aws_vpc", ...]
+    }
+  }]
+}
+```
+
+### 5. Provider Schema Details
+
+Retrieves full schema details of a provider, including resource and data source schemas.
+
+**Input:**
+
+```json
+{
+  "provider": "aws",
+  "namespace": "hashicorp"
+}
+```
+
+**Output:**
+
+```json
+{
+  "content": [{
+    "type": "text",
+    "text": {
+      "provider_schema": {
+        "provider_schemas": { ... },
+        "resource_schemas": { ... },
+        "data_source_schemas": { ... }
+      }
+    }
+  }]
+}
+```
+
+### 6. Resource Argument Details
+
+Fetches details about a specific resource type's arguments.
+
+**Input:**
+
+```json
+{
+  "provider": "aws",
+  "namespace": "hashicorp",
+  "resource": "aws_instance"
+}
+```
+
+**Output:**
+
+```json
+{
+  "content": [{
+    "type": "text",
+    "text": {
+      "arguments": [
+        {
+          "name": "ami",
+          "type": "string",
+          "description": "AMI ID to use for the instance.",
+          "required": true
+        },
+        ...
       ]
     }
-  }
+  }]
 }
 ```
 
-### NPX
+### 7. Module Details
+
+Retrieves detailed metadata for a Terraform module.
+
+**Input:**
 
 ```json
 {
-  "mcpServers": {
-    "terraform-registry": {
-      "command": "npx",
-      "args": ["-y", "terraform-mcp-server"]
-    }
-  }
+  "namespace": "terraform-aws-modules",
+  "module": "vpc",
+  "provider": "aws"
 }
 ```
 
-## Docker Deployment
+**Output:**
 
-Build the Docker image:
-
-```bash
-docker build -t terraform-mcp-server .
+```json
+{
+  "content": [{
+    "type": "text",
+    "text": {
+      "versions": ["5.0.0", "4.0.0", ...],
+      "inputs": [
+        {
+          "name": "region",
+          "description": "AWS region to deploy into.",
+          "default": "us-east-1"
+        },
+        ...
+      ],
+      "outputs": [
+        {
+          "name": "vpc_id",
+          "description": "ID of the VPC created."
+        },
+        ...
+      ],
+      "dependencies": []
+    }
+  }]
+}
 ```
 
-Run the container:
+### 8. Example Configuration Generator
 
-```bash
-# Detached mode
-docker run -d --name terraform_mcp terraform-mcp-server
+Generates a minimal Terraform configuration for a given provider and resource.
 
-# Interactive mode (for debugging)
-docker run -it terraform-mcp-server
+**Input:**
+
+```json
+{
+  "provider": "aws",
+  "namespace": "hashicorp",
+  "resource": "aws_instance"
+}
 ```
 
-## Logging & Debugging
+**Output:**
 
-The server implements basic logging for troubleshooting. Each incoming request and response are logged to stderr, appearing in the console or Docker container logs without interfering with the STDOUT communication channel used by MCP.
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": {
+        "example_configuration": "resource \"aws_instance\" \"example\" {\n  ami = \"example\"\n  instance_type = \"example\"\n}\n"
+      }
+    }
+  ]
+}
+```
 
-## License
+## Running the Server
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+The server runs using stdio transport for MCP communication:
+
+```bash
+npm install
+npm start
+```
+
+## Development
+
+The server is built using TypeScript and uses the MCP SDK for server implementation. It makes HTTP requests to the Terraform Registry API to fetch data.
+
+To add new tools:
+
+1. Define the input interface
+2. Add the tool to the tools array
+3. Implement the tool handler in the switch statement
+4. Update this README with the new tool's documentation
