@@ -72,53 +72,112 @@ interface ResourceSchema {
 
 // --------------------------------------------------------
 
-const server = new Server(
-  { name: "terraform-registry-mcp", version: "0.7.0" },
-  { capabilities: { tools: {} } }
-);
-
 const tools: Tool[] = [
   {
     name: "providerLookup",
     description: "Lookup Terraform provider details by name (latest version, etc).",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
+        name: { type: "string", description: "Alternative name field (fallback if provider not specified)" }
+      }
+    }
   },
   {
     name: "resourceUsage",
     description: "Get an example usage of a Terraform resource and related resources.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
+        name: { type: "string", description: "Alternative resource name field (fallback if resource not specified)" }
+      }
+    }
   },
   {
     name: "moduleRecommendations",
     description: "Search for and recommend Terraform modules for a given query.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        query: { type: "string", description: "Search query (e.g. 'vpc')" },
+        keyword: { type: "string", description: "Alternative search keyword (fallback if query not specified)" },
+        provider: { type: "string", description: "Filter modules by provider (e.g. 'aws')" }
+      }
+    }
   },
   {
     name: "dataSourceLookup",
     description: "Retrieves the list of available data source identifiers for a given Terraform provider.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
+      },
+      required: ["provider", "namespace"]
+    }
   },
   {
     name: "providerSchemaDetails",
     description: "Retrieves the full schema details of a given provider, including resource and data source schemas.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
+      },
+      required: ["provider", "namespace"]
+    }
   },
   {
     name: "resourceArgumentDetails",
     description: "Fetches details about a specific resource type's arguments, including name, type, description, and requirements.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
+        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" }
+      },
+      required: ["provider", "namespace", "resource"]
+    }
   },
   {
     name: "moduleDetails",
     description: "Retrieves detailed metadata for a Terraform module including versions, inputs, outputs, and dependencies.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        namespace: { type: "string", description: "Module namespace (e.g. 'terraform-aws-modules')" },
+        module: { type: "string", description: "Module name (e.g. 'vpc')" },
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" }
+      },
+      required: ["namespace", "module", "provider"]
+    }
   },
   {
     name: "exampleConfigGenerator",
     description: "Generates a minimal Terraform configuration (HCL) for a given provider and resource.",
-    inputSchema: { type: "object", properties: {} }
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
+        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" }
+      },
+      required: ["provider", "namespace", "resource"]
+    }
   }
 ];
+
+const server = new Server(
+  { name: "terraform-registry-mcp", version: "0.8.0" },
+  { capabilities: { tools: { listChanged: true } } }
+);
 
 // ListToolsRequest
 server.setRequestHandler(ListToolsRequestSchema, async () => {

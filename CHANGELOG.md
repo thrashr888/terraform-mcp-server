@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 (2025-02-28)
+
+### Updates
+- Added proper inputSchema definitions for all tools
+- Updated server capabilities configuration to use listChanged flag
+
+### Improvements
+- Enhanced documentation with clear distinction between required and optional parameters
+
 ## 0.7.0 (2025-02-25)
 
 ### Updates

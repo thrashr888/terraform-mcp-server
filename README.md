@@ -12,8 +12,9 @@ Looks up Terraform provider details by name, returning the latest version and ve
 
 ```json
 {
-  "provider": "aws",
-  "namespace": "hashicorp"
+  "provider": "aws",             // Optional: Provider name
+  "namespace": "hashicorp",      // Optional: Provider namespace (defaults to "hashicorp")
+  "name": "aws"                  // Optional: Alternative field for provider name
 }
 ```
 
@@ -38,14 +39,15 @@ Gets example usage of a Terraform resource and related resources.
 
 ```json
 {
-  "provider": "aws",
-  "resource": "aws_instance"
+  "provider": "aws",             // Optional: Provider name
+  "resource": "aws_instance",    // Optional: Resource name
+  "name": "aws_instance"         // Optional: Alternative field for resource name
 }
 ```
 
 **Output:**
 
-````json
+```json
 {
   "content": [
     {
@@ -54,7 +56,7 @@ Gets example usage of a Terraform resource and related resources.
     }
   ]
 }
-````
+```
 
 ### 3. Module Recommendations
 
@@ -64,8 +66,9 @@ Searches for and recommends Terraform modules based on a query.
 
 ```json
 {
-  "query": "vpc",
-  "provider": "aws"
+  "query": "vpc",                // Optional: Search query
+  "keyword": "vpc",              // Optional: Alternative field for search query
+  "provider": "aws"              // Optional: Filter modules by provider
 }
 ```
 
@@ -90,8 +93,8 @@ Retrieves available data source identifiers for a given Terraform provider.
 
 ```json
 {
-  "provider": "aws",
-  "namespace": "hashicorp"
+  "provider": "aws",             // Required: Provider name
+  "namespace": "hashicorp"       // Required: Provider namespace
 }
 ```
 
@@ -116,8 +119,8 @@ Retrieves full schema details of a provider, including resource and data source 
 
 ```json
 {
-  "provider": "aws",
-  "namespace": "hashicorp"
+  "provider": "aws",             // Required: Provider name
+  "namespace": "hashicorp"       // Required: Provider namespace
 }
 ```
 
@@ -146,9 +149,9 @@ Fetches details about a specific resource type's arguments.
 
 ```json
 {
-  "provider": "aws",
-  "namespace": "hashicorp",
-  "resource": "aws_instance"
+  "provider": "aws",             // Required: Provider name
+  "namespace": "hashicorp",      // Required: Provider namespace
+  "resource": "aws_instance"     // Required: Resource name
 }
 ```
 
@@ -181,9 +184,9 @@ Retrieves detailed metadata for a Terraform module.
 
 ```json
 {
-  "namespace": "terraform-aws-modules",
-  "module": "vpc",
-  "provider": "aws"
+  "namespace": "terraform-aws-modules",  // Required: Module namespace
+  "module": "vpc",                       // Required: Module name
+  "provider": "aws"                      // Required: Provider name
 }
 ```
 
@@ -224,9 +227,9 @@ Generates a minimal Terraform configuration for a given provider and resource.
 
 ```json
 {
-  "provider": "aws",
-  "namespace": "hashicorp",
-  "resource": "aws_instance"
+  "provider": "aws",             // Required: Provider name
+  "namespace": "hashicorp",      // Required: Provider namespace
+  "resource": "aws_instance"     // Required: Resource name
 }
 ```
 
@@ -261,6 +264,6 @@ The server is built using TypeScript and uses the MCP SDK for server implementat
 To add new tools:
 
 1. Define the input interface
-2. Add the tool to the tools array
+2. Add the tool to the tools array with proper inputSchema
 3. Implement the tool handler in the switch statement
 4. Update this README with the new tool's documentation
