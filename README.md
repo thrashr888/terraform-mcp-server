@@ -2,6 +2,64 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, module metadata, and generate example configurations.
 
+## Installation
+
+### Installing in Cursor
+
+To install and use this MCP server in [Cursor](https://cursor.sh/):
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/thrashr888/terraform-mcp-server.git
+   cd terraform-mcp-server
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Build the package:
+   ```bash
+   npm run build
+   ```
+
+4. In Cursor, open Settings (⌘+,) and navigate to the "AI" tab.
+   
+5. Scroll down to "Model Context Protocol" section and click "Add MCP."
+   
+6. Enter the following:
+   - Name: Terraform Registry MCP
+   - Command: node /path/to/terraform-mcp-server/dist/index.js
+   
+7. Click "Add" and then "Save" to complete the installation.
+
+8. Restart Cursor to ensure the MCP server is properly loaded.
+
+### Installing in Claude Desktop
+
+To install and use this MCP server in Claude Desktop:
+
+1. Clone and set up the repository as described in the Cursor installation steps.
+
+2. Open Claude Desktop and click on your profile picture in the top-right corner.
+
+3. Select "Settings" from the dropdown menu.
+
+4. Navigate to the "Advanced" tab.
+
+5. Scroll down to "Model Context Protocol" section and click "Add MCP."
+
+6. Enter the following:
+   - Name: Terraform Registry MCP
+   - Command: node /path/to/terraform-mcp-server/dist/index.js
+   
+7. Click "Add" and then "Save" to complete the installation.
+
+8. Restart Claude Desktop to ensure the MCP server is properly loaded.
+
+Alternatively, you can use `npx -y terraform-mcp-server` as a command.
+
 ## Tools
 
 ### 1. Provider Lookup
@@ -257,6 +315,28 @@ npm install
 npm start
 ```
 
+## Testing
+
+The project includes a comprehensive test suite for all tools and server functionality:
+
+```bash
+# Install dependencies if you haven't already
+npm install
+
+# Run all tests
+npm test
+
+# Run tests with watch mode for development
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+Tests are located in the `tests/` directory and organized by component:
+- `tests/server.test.ts` - Tests for core server functionality
+- `tests/tools/*.test.ts` - Tests for individual tools
+
 ## Development
 
 The server is built using TypeScript and uses the MCP SDK for server implementation. It makes HTTP requests to the Terraform Registry API to fetch data.
@@ -267,3 +347,4 @@ To add new tools:
 2. Add the tool to the tools array with proper inputSchema
 3. Implement the tool handler in the switch statement
 4. Update this README with the new tool's documentation
+5. Add test coverage for the new tool

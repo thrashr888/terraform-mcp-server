@@ -72,6 +72,8 @@ interface ResourceSchema {
 
 // --------------------------------------------------------
 
+const VERSION = "0.9.0";
+
 const tools: Tool[] = [
   {
     name: "providerLookup",
@@ -175,7 +177,7 @@ const tools: Tool[] = [
 ];
 
 const server = new Server(
-  { name: "terraform-registry-mcp", version: "0.8.0" },
+  { name: "terraform-registry-mcp", version: VERSION },
   { capabilities: { tools: { listChanged: true } } }
 );
 
@@ -513,4 +515,4 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("MCP server is running (stdio)...");
+console.error(`terraform-registry-mcp v${VERSION} is running (stdio)...`);

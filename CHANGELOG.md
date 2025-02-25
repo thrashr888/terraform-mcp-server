@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.0 (2025-03-01)
+
+### Updates
+- Added comprehensive test suite for all tools
+- Fixed test issues and improved mocking framework
+- Removed dependency on vitest for testing
+- Updated README with Cursor and Claude Desktop installation instructions
+
+### Improvements
+- Enhanced robustness with proper error handling in tests
+- Improved mock transport handling for tests
+- Added npx command installation option
+
 ## 0.8.0 (2025-02-28)
 
 ### Updates
