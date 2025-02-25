@@ -73,7 +73,7 @@ interface ResourceSchema {
 // --------------------------------------------------------
 
 const server = new Server(
-  { name: "terraform-registry-mcp", version: "0.3.0" },
+  { name: "terraform-registry-mcp", version: "0.7.0" },
   { capabilities: { tools: {} } }
 );
 

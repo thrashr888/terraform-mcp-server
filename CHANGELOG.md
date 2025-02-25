@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 (2025-02-25)
+## 0.7.0 (2025-02-25)
 
 ### Updates
 - Updated `@modelcontextprotocol/sdk` from 0.5.0 to 1.6.0
