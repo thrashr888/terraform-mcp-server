@@ -197,7 +197,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   try {
     switch (toolName) {
       case "providerLookup": {
-        // Type input properly
+        // Fetches information about a Terraform provider from the registry
+        // - Gets the latest version and total version count
+        // - Supports both namespace/provider and provider-only formats
+        // - Defaults to hashicorp namespace if not specified
         const { provider, namespace, name } = input as ProviderLookupInput;
         let providerStr = provider || name || "";
         let namespaceStr = namespace || "hashicorp";
@@ -229,6 +232,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "resourceUsage": {
+        // Retrieves example usage documentation for a Terraform resource
+        // - Fetches the example code snippet from the provider's documentation
+        // - Identifies and lists related resources used in the example
+        // - Supports both namespace/provider and provider-only formats
         const { provider, resource, name } = input as ResourceUsageInput;
         const providerInput = provider ?? "";
         const resourceName = resource || name || "";
@@ -301,6 +308,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "moduleRecommendations": {
+        // Searches for and recommends verified Terraform modules
+        // - Searches based on keyword/query and optional provider filter
+        // - Returns top 3 verified modules matching the search criteria
+        // - Includes module descriptions and provider information
         const { query, keyword, provider } = input as ModuleRecommendationsInput;
         const searchStr = query || keyword || "";
         if (!searchStr) {
@@ -339,6 +350,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "dataSourceLookup": {
+        // Lists all available data sources for a specific provider
+        // - Fetches complete list of data sources from provider's registry
+        // - Returns data source names/identifiers
+        // - Requires both namespace and provider name
         const { provider, namespace } = input as DataSourceLookupInput;
         if (!provider || !namespace) {
           throw new Error("Both provider and namespace are required.");
@@ -368,6 +383,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "providerSchemaDetails": {
+        // Retrieves the complete schema for a Terraform provider
+        // - Gets full provider configuration including resources and data sources
+        // - Returns raw schema JSON for detailed provider inspection
+        // - Requires both namespace and provider name
         const { provider, namespace } = input as ProviderSchemaDetailsInput;
         if (!provider || !namespace) {
           throw new Error("Both provider and namespace are required.");
@@ -390,6 +409,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "resourceArgumentDetails": {
+        // Fetches detailed information about a specific resource's arguments
+        // - Gets argument names, types, descriptions, and requirements
+        // - Helps understand how to configure a specific resource
+        // - Requires provider, namespace, and resource name
         const { provider, namespace, resource } = input as ResourceArgumentDetailsInput;
         if (!provider || !namespace || !resource) {
           throw new Error("Provider, namespace, and resource are required.");
@@ -425,6 +448,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "moduleDetails": {
+        // Retrieves comprehensive details about a specific Terraform module
+        // - Gets versions, inputs, outputs, and dependencies
+        // - Provides complete module metadata for integration
+        // - Requires namespace, module name, and provider
         const { namespace, module, provider } = input as ModuleDetailsInput;
         if (!namespace || !module || !provider) {
           throw new Error("Namespace, module, and provider are required.");
@@ -458,6 +485,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       }
 
       case "exampleConfigGenerator": {
+        // Generates a minimal working example configuration for a resource
+        // - Creates HCL configuration with required attributes
+        // - Sets appropriate placeholder values based on attribute types
+        // - Helps users get started with new resources quickly
         const { provider, namespace, resource } = input as ExampleConfigGeneratorInput;
         if (!provider || !namespace || !resource) {
           throw new Error("Provider, namespace, and resource are required.");
