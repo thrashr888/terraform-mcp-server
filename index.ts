@@ -76,7 +76,7 @@ const VERSION = "0.9.0";
 
 const tools: Tool[] = [
   {
-    name: "providerLookup",
+    name: "mcp_providerLookup",
     description: "Lookup Terraform provider details by name (latest version, etc).",
     inputSchema: { 
       type: "object", 
@@ -88,7 +88,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "resourceUsage",
+    name: "mcp_resourceUsage",
     description: "Get an example usage of a Terraform resource and related resources.",
     inputSchema: { 
       type: "object", 
@@ -100,7 +100,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "moduleRecommendations",
+    name: "mcp_moduleRecommendations",
     description: "Search for and recommend Terraform modules for a given query.",
     inputSchema: { 
       type: "object", 
@@ -112,7 +112,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "dataSourceLookup",
+    name: "mcp_dataSourceLookup",
     description: "Retrieves the list of available data source identifiers for a given Terraform provider.",
     inputSchema: { 
       type: "object", 
@@ -124,7 +124,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "providerSchemaDetails",
+    name: "mcp_providerSchemaDetails",
     description: "Retrieves the full schema details of a given provider, including resource and data source schemas.",
     inputSchema: { 
       type: "object", 
@@ -136,7 +136,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "resourceArgumentDetails",
+    name: "mcp_resourceArgumentDetails",
     description: "Fetches details about a specific resource type's arguments, including name, type, description, and requirements.",
     inputSchema: { 
       type: "object", 
@@ -149,7 +149,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "moduleDetails",
+    name: "mcp_moduleDetails",
     description: "Retrieves detailed metadata for a Terraform module including versions, inputs, outputs, and dependencies.",
     inputSchema: { 
       type: "object", 
@@ -162,7 +162,7 @@ const tools: Tool[] = [
     }
   },
   {
-    name: "exampleConfigGenerator",
+    name: "mcp_exampleConfigGenerator",
     description: "Generates a minimal Terraform configuration (HCL) for a given provider and resource.",
     inputSchema: { 
       type: "object", 
@@ -196,7 +196,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 
   try {
     switch (toolName) {
-      case "providerLookup": {
+      case "mcp_providerLookup": {
         // Fetches information about a Terraform provider from the registry
         // - Gets the latest version and total version count
         // - Supports both namespace/provider and provider-only formats
@@ -231,7 +231,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         return { content: [{ type: "text", text }] };
       }
 
-      case "resourceUsage": {
+      case "mcp_resourceUsage": {
         // Retrieves example usage documentation for a Terraform resource
         // - Fetches the example code snippet from the provider's documentation
         // - Identifies and lists related resources used in the example
@@ -307,7 +307,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         return { content: [{ type: "text", text: responseText }] };
       }
 
-      case "moduleRecommendations": {
+      case "mcp_moduleRecommendations": {
         // Searches for and recommends verified Terraform modules
         // - Searches based on keyword/query and optional provider filter
         // - Returns top 3 verified modules matching the search criteria
@@ -349,7 +349,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         return { content: [{ type: "text", text: recommendationText }] };
       }
 
-      case "dataSourceLookup": {
+      case "mcp_dataSourceLookup": {
         // Lists all available data sources for a specific provider
         // - Fetches complete list of data sources from provider's registry
         // - Returns data source names/identifiers
@@ -382,7 +382,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         };
       }
 
-      case "providerSchemaDetails": {
+      case "mcp_providerSchemaDetails": {
         // Retrieves the complete schema for a Terraform provider
         // - Gets full provider configuration including resources and data sources
         // - Returns raw schema JSON for detailed provider inspection
@@ -408,7 +408,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         };
       }
 
-      case "resourceArgumentDetails": {
+      case "mcp_resourceArgumentDetails": {
         // Fetches detailed information about a specific resource's arguments
         // - Gets argument names, types, descriptions, and requirements
         // - Helps understand how to configure a specific resource
@@ -447,7 +447,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         };
       }
 
-      case "moduleDetails": {
+      case "mcp_moduleDetails": {
         // Retrieves comprehensive details about a specific Terraform module
         // - Gets versions, inputs, outputs, and dependencies
         // - Provides complete module metadata for integration
@@ -484,7 +484,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         };
       }
 
-      case "exampleConfigGenerator": {
+      case "mcp_exampleConfigGenerator": {
         // Generates a minimal working example configuration for a resource
         // - Creates HCL configuration with required attributes
         // - Sets appropriate placeholder values based on attribute types

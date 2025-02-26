@@ -26,7 +26,6 @@
         "diff": "^7.0.0",
         "glob": "^11.0.1",
         "minimatch": "^10.0.1",
-        "terraform-mcp-server": "^0.7.0",
         "zod-to-json-schema": "^3.24.3"
     },
     "devDependencies": {
