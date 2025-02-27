@@ -124,4 +124,51 @@ describe('Example Config Generator tool', () => {
     expect(config).toContain('ami');
     expect(config).toContain('instance_type');
   });
-}); 
+});
+
+const toolCases = [
+  { 
+    toolName: "providerLookup",
+    input: { provider: "aws", namespace: "hashicorp" },
+    successExpect: (result: any) => expect(result).toContain("aws")
+  },
+  { 
+    toolName: "resourceUsage",
+    input: { provider: "aws", resource: "aws_instance" },
+    successExpect: (result: any) => expect(result).toContain("aws_instance")
+  },
+  {
+    toolName: "moduleRecommendations",
+    input: { query: "vpc", provider: "aws" },
+    successExpect: (result: any) => expect(result).toContain("vpc")
+  },
+  {
+    toolName: "dataSourceLookup",
+    input: { provider: "aws", namespace: "hashicorp" },
+    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("data_sources")
+  },
+  {
+    toolName: "providerSchemaDetails",
+    input: { provider: "aws", namespace: "hashicorp" },
+    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("provider_schema")
+  },
+  {
+    toolName: "resourceArgumentDetails",
+    input: { provider: "aws", namespace: "hashicorp", resource: "aws_instance" },
+    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("arguments")
+  },
+  {
+    toolName: "moduleDetails",
+    input: { namespace: "terraform-aws-modules", module: "vpc", provider: "aws" },
+    successExpect: (result: any) => {
+      const data = JSON.parse(result);
+      expect(data).toHaveProperty("versions");
+      expect(data).toHaveProperty("inputs");
+    }
+  },
+  {
+    toolName: "exampleConfigGenerator",
+    input: { provider: "aws", namespace: "hashicorp", resource: "aws_instance" },
+    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("example_configuration")
+  }
+]; 

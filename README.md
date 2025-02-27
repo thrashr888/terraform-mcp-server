@@ -201,7 +201,7 @@ Retrieves full schema details of a provider, including resource and data source 
 
 ### 6. Resource Argument Details
 
-Fetches details about a specific resource type's arguments.
+Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.
 
 **Input:**
 
@@ -215,23 +215,29 @@ Fetches details about a specific resource type's arguments.
 
 **Output:**
 
-```json
-{
-  "content": [{
-    "type": "text",
-    "text": {
-      "arguments": [
-        {
-          "name": "ami",
-          "type": "string",
-          "description": "AMI ID to use for the instance.",
-          "required": true
-        },
-        ...
-      ]
-    }
-  }]
-}
+```
+Resource: aws_instance
+
+REQUIRED ATTRIBUTES:
+  * ami (string)
+      The AMI to use for the instance.
+
+OPTIONAL ATTRIBUTES:
+  * instance_type (string)
+      The type of instance to start. Updates to this field will trigger a stop/start of the EC2 instance.
+  * availability_zone (string) (computed)
+      The AZ where the instance will be created.
+
+BLOCKS:
+  * network_interface (min: 0, max: 0)
+      Customize network interfaces to be attached at instance boot time.
+      ATTRIBUTES:
+        - network_interface_id (string)
+          ID of the network interface to attach.
+        - device_index (number) (required)
+          Integer index of the network interface attachment.
+
+For full documentation, visit: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 ```
 
 ### 7. Module Details

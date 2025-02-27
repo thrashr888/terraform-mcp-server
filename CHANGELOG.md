@@ -1,6 +1,17 @@
 # Changelog
 
-## 0.9.0 (2025-03-01)
+## 0.9.1 (2025-02-27)
+
+### Improvements
+- Completely redesigned `resourceArgumentDetails` tool with:
+  - Enhanced schema parsing for better handling of complex resource types
+  - Improved output formatting with clear sections for required/optional attributes
+  - Support for nested block attributes and configuration
+  - Robust fallback mechanism using documentation when schema API fails
+  - Better error handling and debugging capabilities
+- Updated version from development to release status
+
+## 0.9.0 (2025-02-26)
 
 ### Updates
 - Added comprehensive test suite for all tools
@@ -13,7 +24,7 @@
 - Improved mock transport handling for tests
 - Added npx command installation option
 
-## 0.8.0 (2025-02-28)
+## 0.8.0 (2025-02-25)
 
 ### Updates
 - Added proper inputSchema definitions for all tools

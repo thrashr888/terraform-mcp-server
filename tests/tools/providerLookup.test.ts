@@ -4,7 +4,7 @@ import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls }
 // Import the necessary modules - note: we'd need to refactor the actual code to make this more testable
 // For now, we're going to simulate testing the handler with minimal dependencies
 
-describe('providerLookup tool', () => {
+describe('Provider Lookup Tool', () => {
   beforeEach(() => {
     // Reset fetch mocks before each test
     resetFetchMocks();
@@ -80,5 +80,22 @@ describe('providerLookup tool', () => {
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
+  });
+
+  test('should handle provider lookup via MCP protocol', async () => {
+    // ... existing code ...
+    const request = {
+      jsonrpc: "2.0",
+      id: "1",
+      method: "tools/call",
+      params: {
+        tool: "providerLookup",
+        input: {
+          provider: "aws",
+          namespace: "hashicorp"
+        }
+      }
+    };
+    // ... existing code ...
   });
 }); 

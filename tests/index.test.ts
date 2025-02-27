@@ -111,7 +111,7 @@ async function simulateRequest(request: any): Promise<any> {
 }
 
 // Generate mock responses for different requests
-function createMockResponse(request: any): any {
+const createMockResponse = function(request: any): any {
   const { method, params, id } = request;
   
   const baseResponse = {
@@ -138,10 +138,10 @@ function createMockResponse(request: any): any {
   }
   
   if (method === 'tools/call') {
-    const { tool, input } = params;
+    const { name, arguments: input } = params;
     let content;
     
-    switch (tool) {
+    switch (name) {
       case 'providerLookup': {
         const provider = input.provider || input.name || '';
         
@@ -285,7 +285,7 @@ function createMockResponse(request: any): any {
       }
       
       default:
-        content = [{ type: 'text', text: `Error: Tool "${tool}" is not recognized` }];
+        content = [{ type: 'text', text: `Error: Tool "${name}" is not recognized` }];
     }
     
     return {
