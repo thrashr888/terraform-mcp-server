@@ -8,14 +8,18 @@ type ReceiveCallback = (data: any) => Promise<void> | void;
 function createMockFn() {
   const calls: any[][] = [];
   
-  const mockFn: any = function(...args: any[]) {
+  const mockFn: any = function(this: any, ...args: any[]) {
     calls.push(args);
+    if (mockFn.implementation) {
+      return mockFn.implementation.apply(this, args);
+    }
     return mockFn.returnValue;
   };
   
   mockFn.calls = calls;
   mockFn.mock = { calls };
   mockFn.returnValue = undefined;
+  mockFn.implementation = null;
   
   mockFn.mockReturnValue = function(value: any) {
     mockFn.returnValue = value;
@@ -32,6 +36,25 @@ function createMockFn() {
     return mockFn;
   };
   
+  mockFn.mockImplementation = function(fn: Function) {
+    mockFn.implementation = fn;
+    mockFn.returnValue = undefined;
+    
+    // Override the original function
+    mockFn.originalFn = mockFn.originalFn || mockFn;
+    const originalFn = mockFn.originalFn;
+    
+    // Replace the mock function with a wrapper that calls the implementation
+    Object.keys(originalFn).forEach(key => {
+      if (typeof originalFn[key] === 'function') {
+        mockFn[key] = originalFn[key];
+      }
+    });
+    
+    // Replace the call function
+    return mockFn;
+  };
+  
   return mockFn;
 }
 
@@ -39,11 +62,15 @@ function createMockFn() {
 const mockTransport = {
   start: createMockFn().mockResolvedValue(undefined),
   close: createMockFn().mockResolvedValue(undefined),
-  connect: createMockFn(),
+  connect: createMockFn().mockImplementation(function(this: any, callback: ReceiveCallback) {
+    console.log('Setting transport callback in mockTransport.connect');
+    this.callback = callback;
+    return Promise.resolve();
+  }),
   disconnect: createMockFn(),
   send: createMockFn().mockResolvedValue(undefined),
   setReceiveCallback: function(callback: ReceiveCallback) {
-    console.log('Setting transport callback in mockTransport');
+    console.log('Setting transport callback in mockTransport.setReceiveCallback');
     this.callback = callback;
     
     // Force the callback to work by setting up our own response handler in simulateRequest
@@ -138,12 +165,12 @@ const createMockResponse = function(request: any): any {
   }
   
   if (method === 'tools/call') {
-    const { name, arguments: input } = params;
+    const { name, arguments: args } = params;
     let content;
     
     switch (name) {
       case 'providerLookup': {
-        const provider = input.provider || input.name || '';
+        const provider = args.provider || args.name || '';
         
         if (!provider) {
           content = [{ type: 'text', text: 'Error: Provider name is required' }];
@@ -161,8 +188,8 @@ const createMockResponse = function(request: any): any {
       }
       
       case 'resourceUsage': {
-        const provider = input.provider || '';
-        const resource = input.resource || input.name || '';
+        const provider = args.provider || '';
+        const resource = args.resource || args.name || '';
         
         if (!provider || !resource) {
           content = [{ type: 'text', text: 'Error: Both provider and resource name are required' }];
@@ -171,36 +198,57 @@ const createMockResponse = function(request: any): any {
         } else {
           content = [{ 
             type: 'text', 
-            text: `Example usage for aws_instance:\n\n\`\`\`hcl\nresource "aws_instance" "example" {\n  ami           = "ami-123456"\n  instance_type = "t2.micro"\n  vpc_security_group_ids = [aws_security_group.example.id]\n}\n\`\`\`` 
+            text: `Example usage for aws_instance:
+
+\`\`\`terraform
+resource "aws_instance" "example" {
+  ami           = "ami-12345"
+  instance_type = "t2.micro"
+  
+  tags = {
+    Name = "example-instance"
+  }
+}
+
+resource "aws_security_group" "example" {
+  name = "example"
+}
+\`\`\`
+
+Related resources: aws_security_group`
           }];
         }
         break;
       }
       
       case 'moduleRecommendations': {
-        const query = input.query || input.keyword || '';
-        const provider = input.provider || '';
+        const query = args.query || args.keyword || '';
         
         if (!query) {
-          content = [{ type: 'text', text: 'Error: Search query is required' }];
+          content = [{ type: 'text', text: 'Error: Search query is required for module recommendations' }];
         } else if (query === 'nonexistent') {
-          content = [{ type: 'text', text: `No modules found for "nonexistent"` }];
+          content = [{ type: 'text', text: 'No modules found for "nonexistent"' }];
         } else {
           content = [{ 
             type: 'text', 
-            text: `Recommended modules for "vpc":\n\n- terraform-aws-modules/vpc\n- terraform-aws-modules/security-group` 
+            text: `Recommended modules for "vpc":
+1. terraform-aws-modules/vpc (aws) - AWS VPC Terraform module
+2. terraform-aws-modules/security-group (aws) - AWS Security Group Terraform module
+3. terraform-google-modules/network (gcp) - Google Network Terraform module` 
           }];
         }
         break;
       }
       
       case 'dataSourceLookup': {
+        // Return a JSON response with data sources for aws
         content = [{ 
           type: 'text', 
           text: JSON.stringify({
             data_sources: [
               'aws_ami',
               'aws_availability_zones',
+              'aws_ec2_instance_type',
               'aws_vpc'
             ]
           })
@@ -213,15 +261,33 @@ const createMockResponse = function(request: any): any {
           type: 'text', 
           text: JSON.stringify({
             provider_schema: {
-              attributes: [
-                { name: 'region', type: 'string', description: 'AWS region' }
-              ],
-              resources: {
-                'aws_instance': {
-                  attributes: [
-                    { name: 'ami', type: 'string', required: true },
-                    { name: 'instance_type', type: 'string', required: true }
-                  ]
+              provider: {
+                block: {
+                  attributes: {
+                    region: {
+                      type: 'string',
+                      description: 'AWS region',
+                      required: false
+                    }
+                  }
+                }
+              },
+              resource_schemas: {
+                aws_instance: {
+                  block: {
+                    attributes: {
+                      ami: {
+                        type: 'string',
+                        description: 'AMI ID',
+                        required: true
+                      },
+                      instance_type: {
+                        type: 'string',
+                        description: 'Instance type',
+                        required: false
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -231,16 +297,31 @@ const createMockResponse = function(request: any): any {
       }
       
       case 'resourceArgumentDetails': {
-        content = [{ 
-          type: 'text', 
-          text: JSON.stringify({
-            arguments: [
-              { name: 'ami', type: 'string', description: 'AMI ID', required: true },
-              { name: 'instance_type', type: 'string', description: 'Instance type', required: true },
-              { name: 'tags', type: 'map(string)', description: 'Resource tags', required: false }
-            ]
-          })
-        }];
+        const resource = args.resource || '';
+        
+        if (!resource || resource === 'nonexistent') {
+          content = [{ type: 'text', text: 'Error: Resource not found' }];
+        } else {
+          content = [{ 
+            type: 'text', 
+            text: JSON.stringify({
+              arguments: [
+                {
+                  name: 'ami',
+                  type: 'string',
+                  description: 'AMI ID',
+                  required: true
+                },
+                {
+                  name: 'instance_type',
+                  type: 'string',
+                  description: 'Instance type',
+                  required: false
+                }
+              ]
+            })
+          }];
+        }
         break;
       }
       
@@ -248,36 +329,53 @@ const createMockResponse = function(request: any): any {
         content = [{ 
           type: 'text', 
           text: JSON.stringify({
-            versions: ['1.0.0', '0.9.0'],
+            versions: ['3.0.0', '2.0.0', '1.0.0'],
             inputs: [
-              { name: 'vpc_cidr', type: 'string', description: 'VPC CIDR block' }
+              {
+                name: 'region',
+                description: 'AWS region',
+                default: 'us-east-1'
+              }
             ],
             outputs: [
-              { name: 'vpc_id', description: 'VPC ID' }
+              {
+                name: 'vpc_id',
+                description: 'ID of the VPC'
+              }
             ],
-            dependencies: [
-              'aws'
-            ]
+            dependencies: []
           })
         }];
         break;
       }
       
       case 'exampleConfigGenerator': {
-        const resource = input.resource || '';
+        const resource = args.resource || '';
         
         if (resource === 'aws_test') {
+          // For different attribute types test
           content = [{ 
             type: 'text', 
             text: JSON.stringify({
-              example_configuration: 'resource "aws_test" {\n  name = "example"\n  enabled = false\n  count = 0\n  tags = {}\n  items = []\n  complex = {}\n}'
+              example_configuration: `resource "aws_test" "example" {
+  name = "example"
+  enabled = false
+  count = 0
+  tags = {}
+  items = []
+  complex = {}
+}`
             })
           }];
         } else {
+          // Default case (aws_instance)
           content = [{ 
             type: 'text', 
             text: JSON.stringify({
-              example_configuration: 'resource "aws_instance" "example" {\n  ami = "ami-12345"\n  instance_type = "t2.micro"\n  subnet_id = "subnet-12345"\n}'
+              example_configuration: `resource "aws_instance" "example" {
+  ami = "ami-12345"
+  instance_type = "t2.micro"
+}`
             })
           }];
         }
@@ -372,8 +470,8 @@ describe('Terraform MCP Server Integration', () => {
       id: '2',
       method: 'tools/call',
       params: {
-        tool: 'providerLookup',
-        input: {
+        name: 'providerLookup',
+        arguments: {
           provider: 'aws',
           namespace: 'hashicorp'
         }
@@ -418,8 +516,8 @@ describe('Terraform MCP Server Integration', () => {
       id: "2a",
       method: "tools/call",
       params: {
-        tool: "providerLookup",
-        input: {
+        name: "providerLookup",
+        arguments: {
           provider: "hashicorp/aws"
         }
       }
@@ -456,8 +554,8 @@ describe('Terraform MCP Server Integration', () => {
       id: "2b",
       method: "tools/call",
       params: {
-        tool: "providerLookup",
-        input: {
+        name: "providerLookup",
+        arguments: {
           name: "aws",
           namespace: "hashicorp"
         }
@@ -487,8 +585,8 @@ describe('Terraform MCP Server Integration', () => {
       id: "3",
       method: "tools/call",
       params: {
-        tool: "providerLookup",
-        input: {
+        name: "providerLookup",
+        arguments: {
           provider: "nonexistent",
           namespace: "unknown"
         }
@@ -516,8 +614,8 @@ describe('Terraform MCP Server Integration', () => {
       id: '3a',
       method: 'tools/call',
       params: {
-        tool: 'providerLookup',
-        input: {
+        name: 'providerLookup',
+        arguments: {
           provider: 'noversions',
           namespace: 'hashicorp'
         }
@@ -539,8 +637,8 @@ describe('Terraform MCP Server Integration', () => {
       id: "3b",
       method: "tools/call",
       params: {
-        tool: "providerLookup",
-        input: {
+        name: "providerLookup",
+        arguments: {
           namespace: "hashicorp"
         }
       }
@@ -561,8 +659,8 @@ describe('Terraform MCP Server Integration', () => {
       id: "4",
       method: "tools/call",
       params: {
-        tool: "nonExistentTool",
-        input: {}
+        name: "nonExistentTool",
+        arguments: {}
       }
     };
 
@@ -614,8 +712,8 @@ resource "aws_security_group" "example" {
       id: "5",
       method: "tools/call",
       params: {
-        tool: "resourceUsage",
-        input: {
+        name: "resourceUsage",
+        arguments: {
           provider: "aws",
           resource: "aws_instance"
         }
@@ -651,8 +749,8 @@ resource "aws_security_group" "example" {
       id: '5a',
       method: 'tools/call',
       params: {
-        tool: 'resourceUsage',
-        input: {
+        name: 'resourceUsage',
+        arguments: {
           provider: 'aws',
           resource: 'aws_test'
         }
@@ -693,8 +791,8 @@ resource "aws_instance" "example" {
       id: "5b",
       method: "tools/call",
       params: {
-        tool: "resourceUsage",
-        input: {
+        name: "resourceUsage",
+        arguments: {
           provider: "aws",
           name: "aws_instance"
         }
@@ -716,8 +814,8 @@ resource "aws_instance" "example" {
       id: "5c",
       method: "tools/call",
       params: {
-        tool: "resourceUsage",
-        input: {
+        name: "resourceUsage",
+        arguments: {
           provider: "aws"
         }
       }
@@ -762,8 +860,8 @@ resource "aws_instance" "example" {
       id: "6",
       method: "tools/call",
       params: {
-        tool: "moduleRecommendations",
-        input: {
+        name: "moduleRecommendations",
+        arguments: {
           query: "vpc",
           provider: "aws"
         }
@@ -810,8 +908,8 @@ resource "aws_instance" "example" {
       id: "6a",
       method: "tools/call",
       params: {
-        tool: "moduleRecommendations",
-        input: {
+        name: "moduleRecommendations",
+        arguments: {
           keyword: "vpc",
           provider: "aws"
         }
@@ -833,8 +931,8 @@ resource "aws_instance" "example" {
       id: "6b",
       method: "tools/call",
       params: {
-        tool: "moduleRecommendations",
-        input: {
+        name: "moduleRecommendations",
+        arguments: {
           provider: "aws"
         }
       }
@@ -865,8 +963,8 @@ resource "aws_instance" "example" {
       id: "6c",
       method: "tools/call",
       params: {
-        tool: "moduleRecommendations",
-        input: {
+        name: "moduleRecommendations",
+        arguments: {
           query: "nonexistent",
           provider: "aws"
         }
@@ -900,8 +998,8 @@ resource "aws_instance" "example" {
       id: "7",
       method: "tools/call",
       params: {
-        tool: "dataSourceLookup",
-        input: {
+        name: "dataSourceLookup",
+        arguments: {
           provider: "aws",
           namespace: "hashicorp"
         }
@@ -970,8 +1068,8 @@ resource "aws_instance" "example" {
       id: "8",
       method: "tools/call",
       params: {
-        tool: "providerSchemaDetails",
-        input: {
+        name: "providerSchemaDetails",
+        arguments: {
           provider: "aws",
           namespace: "hashicorp"
         }
@@ -1028,8 +1126,8 @@ resource "aws_instance" "example" {
       id: "9",
       method: "tools/call",
       params: {
-        tool: "resourceArgumentDetails",
-        input: {
+        name: "resourceArgumentDetails",
+        arguments: {
           provider: "aws",
           namespace: "hashicorp",
           resource: "aws_instance"
@@ -1102,8 +1200,8 @@ resource "aws_instance" "example" {
       id: "10",
       method: "tools/call",
       params: {
-        tool: "moduleDetails",
-        input: {
+        name: "moduleDetails",
+        arguments: {
           namespace: "terraform-aws-modules",
           module: "vpc",
           provider: "aws"
@@ -1137,8 +1235,8 @@ resource "aws_instance" "example" {
       id: '11',
       method: 'tools/call',
       params: {
-        tool: 'exampleConfigGenerator',
-        input: {
+        name: 'exampleConfigGenerator',
+        arguments: {
           provider: 'aws',
           namespace: 'hashicorp',
           resource: 'aws_instance'
@@ -1224,8 +1322,8 @@ resource "aws_instance" "example" {
       id: "11a",
       method: "tools/call",
       params: {
-        tool: "exampleConfigGenerator",
-        input: {
+        name: "exampleConfigGenerator",
+        arguments: {
           provider: "aws",
           namespace: "hashicorp",
           resource: "aws_test"

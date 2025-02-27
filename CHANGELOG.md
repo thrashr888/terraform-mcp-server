@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.3 (2025-03-01)
+
+### Fixes
+- Fixed implementation of the `mockImplementation` method in test mock function
+- Added proper TypeScript type annotations to resolve type errors
+- Improved mock transport callback handling in tests
+- Fixed issues with the transport callback setup in the test environment
+
+## 0.9.2 (2025-02-27)
+
+### Fixes
+- Fixed issue with MCP protocol compatibility when handling tool names and arguments
+- Improved request handling to support both old and new MCP parameter formats
+- Enhanced logging for better debugging capability
+- Fixed test suite failures related to protocol changes
+
 ## 0.9.1 (2025-02-27)
 
 ### Improvements

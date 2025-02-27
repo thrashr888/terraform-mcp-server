@@ -92,7 +92,7 @@ interface BlockType {
 
 // --------------------------------------------------------
 
-const VERSION = "0.9.1";
+const VERSION = "0.9.3";
 
 const tools: Tool[] = [
   {
@@ -238,42 +238,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   console.error(`Params keys: ${Object.keys(request.params).join(', ')}`);
   console.error(`Params content: ${JSON.stringify(request.params, null, 2)}`);
   
-  if (request.params.name) {
-    console.error(`Name property exists: ${request.params.name} (type: ${typeof request.params.name})`);
-  } else {
-    console.error("Name property is missing or undefined");
-    // Let's check if 'tool' property exists for backward compatibility
-    if ('tool' in request.params) {
-      console.error(`Tool property exists: ${(request.params as any).tool} (type: ${typeof (request.params as any).tool})`);
-    }
-  }
-  
-  if (request.params.arguments) {
-    console.error(`Arguments property exists: ${JSON.stringify(request.params.arguments)} (type: ${typeof request.params.arguments})`);
-  } else {
-    console.error("Arguments property is missing or undefined");
-    // Let's check if 'input' property exists for backward compatibility
-    if ('input' in request.params) {
-      console.error(`Input property exists: ${JSON.stringify((request.params as any).input)} (type: ${typeof (request.params as any).input})`);
-    }
-  }
-  console.error("=== END DEBUG INFO ===");
-  
   // Extract tool name and arguments, supporting both formats
+  // Newer MCP protocol uses name/arguments, older uses tool/input
   const toolName = request.params.name || (request.params as any).tool;
-  // Log the raw request for debugging
-  console.error(`Raw request: ${JSON.stringify(request)}`);
-  const input = request.params.arguments || (request.params as any).input || {};
-
-  console.error(`Received CallToolRequest for tool: ${toolName}, input: ${JSON.stringify(input)}`);
+  const arguments_ = request.params.arguments || (request.params as any).input || {};
+  
+  console.error(`Using tool name: ${toolName} (from ${request.params.name ? 'name' : 'tool'} property)`);
+  console.error(`Using arguments: ${JSON.stringify(arguments_)} (from ${request.params.arguments ? 'arguments' : 'input'} property)`);
+  
+  if (!toolName) {
+    console.error("Tool name is missing in the request");
+    return { content: [{ type: "text", text: "Error: Tool name is missing in the request" }] };
+  }
+  
+  console.error(`Received CallToolRequest for tool: ${toolName}, arguments: ${JSON.stringify(arguments_)}`);
 
   try {
     // Log the toolName to help with debugging
     console.error(`Processing tool request for: "${toolName}"`);
-    
-    if (!toolName) {
-      throw new Error("Tool name is missing in the request");
-    }
     
     switch (toolName) {
       case "providerLookup": {
@@ -281,7 +263,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Gets the latest version and total version count
         // - Supports both namespace/provider and provider-only formats
         // - Defaults to hashicorp namespace if not specified
-        const { provider, namespace, name } = input as unknown as ProviderLookupInput;
+        const { provider, namespace, name } = arguments_ as unknown as ProviderLookupInput;
         let providerStr = provider || name || "";
         let namespaceStr = namespace || "hashicorp";
 
@@ -316,7 +298,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Fetches the example code snippet from the provider's documentation
         // - Identifies and lists related resources used in the example
         // - Supports both namespace/provider and provider-only formats
-        const { provider, resource, name } = input as unknown as ResourceUsageInput;
+        const { provider, resource, name } = arguments_ as unknown as ResourceUsageInput;
         const providerInput = provider ?? "";
         const resourceName = resource || name || "";
         if (!providerInput || !resourceName) {
@@ -594,7 +576,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Searches based on keyword/query and optional provider filter
         // - Returns top 3 verified modules matching the search criteria
         // - Includes module descriptions and provider information
-        const { query, keyword, provider } = input as unknown as ModuleRecommendationsInput;
+        const { query, keyword, provider } = arguments_ as unknown as ModuleRecommendationsInput;
         const searchStr = query || keyword || "";
         if (!searchStr) {
           throw new Error("Search query is required for module recommendations.");
@@ -636,7 +618,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Fetches complete list of data sources from provider's registry
         // - Returns data source names/identifiers
         // - Requires both namespace and provider name
-        const { provider, namespace } = input as unknown as DataSourceLookupInput;
+        const { provider, namespace } = arguments_ as unknown as DataSourceLookupInput;
         if (!provider || !namespace) {
           throw new Error("Both provider and namespace are required.");
         }
@@ -815,7 +797,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Gets full provider configuration including resources and data sources
         // - Returns raw schema JSON for detailed provider inspection
         // - Requires both namespace and provider name
-        const { provider, namespace } = input as unknown as ProviderSchemaDetailsInput;
+        const { provider, namespace } = arguments_ as unknown as ProviderSchemaDetailsInput;
         if (!provider || !namespace) {
           throw new Error("Both provider and namespace are required.");
         }
@@ -841,7 +823,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Gets argument names, types, descriptions, and requirements
         // - Helps understand how to configure a specific resource
         // - Requires provider, namespace, and resource name
-        const { provider, namespace, resource } = input as unknown as ResourceArgumentDetailsInput;
+        const { provider, namespace, resource } = arguments_ as unknown as ResourceArgumentDetailsInput;
         if (!provider || !namespace || !resource) {
           throw new Error("Provider, namespace, and resource are required.");
         }
@@ -1135,7 +1117,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Gets versions, inputs, outputs, and dependencies
         // - Provides complete module metadata for integration
         // - Requires namespace, module name, and provider
-        const { namespace, module, provider } = input as unknown as ModuleDetailsInput;
+        const { namespace, module, provider } = arguments_ as unknown as ModuleDetailsInput;
         if (!namespace || !module || !provider) {
           throw new Error("Namespace, module, and provider are required.");
         }
@@ -1172,7 +1154,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         // - Creates HCL configuration with required attributes
         // - Sets appropriate placeholder values based on attribute types
         // - Helps users get started with new resources quickly
-        const { provider, namespace, resource } = input as unknown as ExampleConfigGeneratorInput;
+        const { provider, namespace, resource } = arguments_ as unknown as ExampleConfigGeneratorInput;
         if (!provider || !namespace || !resource) {
           throw new Error("Provider, namespace, and resource are required.");
         }
