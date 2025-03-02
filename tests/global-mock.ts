@@ -36,7 +36,7 @@ export function getFetchCalls(): Array<{ url: string, options?: RequestInit }> {
 
 // Mock fetch globally
 global.fetch = function mockFetch(input: RequestInfo | URL, init?: RequestInit) {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
   fetchCalls.push({ url, options: init });
   
   const mockResponse = mockResponses.shift();

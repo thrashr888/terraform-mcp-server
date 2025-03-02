@@ -1,16 +1,17 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { resetFetchMocks } from './global-mock';
+import { resetFetchMocks } from "./global-mock";
 
-// Create a simple mock for StdioServerTransport
-const mockStdioTransport = {
-  connect: () => {},
-  disconnect: () => {},
-  send: () => {},
-  setReceiveCallback: () => {}
-};
+// We define this mock but don't use it directly as our tests use a different approach
+// Keeping for reference if needed for future tests
+// const mockStdioTransport = {
+//   connect: () => {},
+//   disconnect: () => {},
+//   send: () => {},
+//   setReceiveCallback: () => {}
+// };
 
-describe('MCP Server', () => {
+describe("MCP Server", () => {
   let server: Server;
   
   beforeEach(() => {
@@ -23,11 +24,11 @@ describe('MCP Server', () => {
     );
   });
   
-  test('should initialize correctly', () => {
+  test("should initialize correctly", () => {
     expect(server).toBeDefined();
   });
   
-  test('should have request handlers registered', () => {
+  test("should have request handlers registered", () => {
     // Create simple mock handlers
     const listToolsHandler = () => ({ tools: [] });
     const callToolHandler = () => ({ content: [] });
@@ -40,13 +41,13 @@ describe('MCP Server', () => {
     expect(server).toBeDefined();
   });
   
-  test('should handle errors gracefully', async () => {
+  test("should handle errors gracefully", async () => {
     // Setup handler that throws an error
     const errorHandler = () => {
-      throw new Error('Test error');
+      throw new Error("Test error");
     };
     
     // Verify the handler throws an error as expected
-    await expect(errorHandler).toThrow('Test error');
+    await expect(errorHandler).toThrow("Test error");
   });
 }); 

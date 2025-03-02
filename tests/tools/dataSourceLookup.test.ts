@@ -1,18 +1,18 @@
 // Import the necessary modules and types
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from '../global-mock';
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
 
-describe('dataSourceLookup tool', () => {
+describe("dataSourceLookup tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return list of data sources when found', async () => {
+  test("should return list of data sources when found", async () => {
     // Mock data sources response
     const mockDataSources = {
       data_sources: [
-        { id: 'aws_ami', name: 'aws_ami' },
-        { id: 'aws_instance', name: 'aws_instance' },
-        { id: 'aws_vpc', name: 'aws_vpc' }
+        { id: "aws_ami", name: "aws_ami" },
+        { id: "aws_instance", name: "aws_instance" },
+        { id: "aws_vpc", name: "aws_vpc" }
       ]
     };
     
@@ -22,7 +22,7 @@ describe('dataSourceLookup tool', () => {
     } as Response);
 
     // Simulate the tool request handler
-    const input = { provider: 'aws', namespace: 'hashicorp' };
+    const input = { provider: "aws", namespace: "hashicorp" };
     
     // Make the request
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/data-sources`;
@@ -35,26 +35,26 @@ describe('dataSourceLookup tool', () => {
     expect(calls[0].url).toBe(url);
     
     // Verify the data
-    expect(data).toHaveProperty('data_sources');
+    expect(data).toHaveProperty("data_sources");
     expect(data.data_sources.length).toBe(3);
     
     // Process the data
     const dataSourceNames = data.data_sources.map((ds: any) => ds.name || ds.id).filter(Boolean);
     
     // Verify the output
-    expect(dataSourceNames).toContain('aws_ami');
-    expect(dataSourceNames).toContain('aws_vpc');
+    expect(dataSourceNames).toContain("aws_ami");
+    expect(dataSourceNames).toContain("aws_vpc");
   });
 
-  test('should handle errors when data sources not found', async () => {
+  test("should handle errors when data sources not found", async () => {
     mockFetchResponse({
       ok: false,
       status: 404,
-      statusText: 'Not Found'
+      statusText: "Not Found"
     } as Response);
 
     // Simulate the tool request handler
-    const input = { provider: 'nonexistent', namespace: 'hashicorp' };
+    const input = { provider: "nonexistent", namespace: "hashicorp" };
     
     // Make the request
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/data-sources`;

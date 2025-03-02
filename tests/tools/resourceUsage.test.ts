@@ -1,12 +1,12 @@
 // Import the necessary modules and types
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from '../global-mock';
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
 
-describe('resourceUsage tool', () => {
+describe("resourceUsage tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return resource usage example when found', async () => {
+  test("should return resource usage example when found", async () => {
     // Mock a successful API response with HTML content that includes example code
     const mockHtmlResponse = `
       <html>
@@ -27,11 +27,11 @@ describe('resourceUsage tool', () => {
       text: () => Promise.resolve(mockHtmlResponse)
     } as Response);
 
-    // Simulate the tool request handler
-    const input = { provider: 'aws', resource: 'aws_instance' };
+    // Define input parameters (used to construct the URL)
+    const input = { provider: "aws", resource: "aws_instance" };
     
     // Make the request to the API
-    const url = `https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/aws_instance`;
+    const url = `https://registry.terraform.io/providers/${input.provider ? "hashicorp" : ""}/${input.provider || "aws"}/latest/docs/resources/${input.resource || "aws_instance"}`;
     const resp = await fetch(url);
     const html = await resp.text();
     
@@ -54,23 +54,23 @@ describe('resourceUsage tool', () => {
     }
     
     // Verify example extraction
-    expect(usageSnippet).toContain('resource "aws_instance" "example"');
-    expect(usageSnippet).toContain('ami');
-    expect(usageSnippet).toContain('instance_type');
+    expect(usageSnippet).toContain("resource \"aws_instance\" \"example\"");
+    expect(usageSnippet).toContain("ami");
+    expect(usageSnippet).toContain("instance_type");
   });
 
-  test('should handle errors when resource not found', async () => {
+  test("should handle errors when resource not found", async () => {
     mockFetchResponse({
       ok: false,
       status: 404,
-      statusText: 'Not Found'
+      statusText: "Not Found"
     } as Response);
 
-    // Simulate the tool request handler
-    const input = { provider: 'aws', resource: 'nonexistent_resource' };
+    // Define input parameters (used to construct the URL)
+    const input = { provider: "aws", resource: "nonexistent_resource" };
     
     // Make the request to the API
-    const url = `https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nonexistent_resource`;
+    const url = `https://registry.terraform.io/providers/${input.provider ? "hashicorp" : ""}/${input.provider || "aws"}/latest/docs/resources/${input.resource || "nonexistent_resource"}`;
     const resp = await fetch(url);
     
     // Verify the response

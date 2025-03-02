@@ -1,19 +1,19 @@
 // This file contains simplified tests for the remaining tools to avoid repetition
 // The approach is similar to the more detailed tests in other files
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from '../global-mock';
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
 
-describe('Provider Schema Details tool', () => {
+describe("Provider Schema Details tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return provider schema when found', async () => {
+  test("should return provider schema when found", async () => {
     mockFetchResponse({
       ok: true,
       json: () => Promise.resolve({ provider_schema: { resources: {}, data_sources: {} } })
     } as Response);
 
-    const input = { provider: 'aws', namespace: 'hashicorp' };
+    const input = { provider: "aws", namespace: "hashicorp" };
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/schemas`;
     const response = await fetch(url);
     const data = await response.json();
@@ -21,25 +21,25 @@ describe('Provider Schema Details tool', () => {
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    expect(data).toHaveProperty('provider_schema');
+    expect(data).toHaveProperty("provider_schema");
   });
 });
 
-describe('Resource Argument Details tool', () => {
+describe("Resource Argument Details tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return resource arguments when found', async () => {
+  test("should return resource arguments when found", async () => {
     mockFetchResponse({
       ok: true,
       json: () => Promise.resolve({ block: { attributes: { 
-        ami: { type: 'string', description: 'AMI ID', required: true },
-        instance_type: { type: 'string', description: 'Instance type', required: true }
+        ami: { type: "string", description: "AMI ID", required: true },
+        instance_type: { type: "string", description: "Instance type", required: true }
       }}})
     } as Response);
 
-    const input = { provider: 'aws', namespace: 'hashicorp', resource: 'aws_instance' };
+    const input = { provider: "aws", namespace: "hashicorp", resource: "aws_instance" };
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/resources/${input.resource}`;
     const response = await fetch(url);
     const data = await response.json();
@@ -47,29 +47,29 @@ describe('Resource Argument Details tool', () => {
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    expect(data.block.attributes).toHaveProperty('ami');
+    expect(data.block.attributes).toHaveProperty("ami");
   });
 });
 
-describe('Module Details tool', () => {
+describe("Module Details tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return module details when found', async () => {
+  test("should return module details when found", async () => {
     mockFetchResponse({
       ok: true,
       json: () => Promise.resolve({ 
-        versions: ['5.0.0'], 
+        versions: ["5.0.0"], 
         root: { 
-          inputs: [{ name: 'region', description: 'AWS region' }],
-          outputs: [{ name: 'vpc_id', description: 'VPC ID' }],
+          inputs: [{ name: "region", description: "AWS region" }],
+          outputs: [{ name: "vpc_id", description: "VPC ID" }],
           dependencies: []
         }
       })
     } as Response);
 
-    const input = { namespace: 'terraform-aws-modules', module: 'vpc', provider: 'aws' };
+    const input = { namespace: "terraform-aws-modules", module: "vpc", provider: "aws" };
     const url = `https://registry.terraform.io/v1/modules/${input.namespace}/${input.module}/${input.provider}`;
     const response = await fetch(url);
     const data = await response.json();
@@ -77,26 +77,26 @@ describe('Module Details tool', () => {
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    expect(data).toHaveProperty('versions');
-    expect(data).toHaveProperty('root');
+    expect(data).toHaveProperty("versions");
+    expect(data).toHaveProperty("root");
   });
 });
 
-describe('Example Config Generator tool', () => {
+describe("Example Config Generator tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should generate example config when resource schema found', async () => {
+  test("should generate example config when resource schema found", async () => {
     mockFetchResponse({
       ok: true,
       json: () => Promise.resolve({ block: { attributes: { 
-        ami: { type: 'string', description: 'AMI ID', required: true, computed: false },
-        instance_type: { type: 'string', description: 'Instance type', required: true, computed: false }
+        ami: { type: "string", description: "AMI ID", required: true, computed: false },
+        instance_type: { type: "string", description: "Instance type", required: true, computed: false }
       }}})
     } as Response);
 
-    const input = { provider: 'aws', namespace: 'hashicorp', resource: 'aws_instance' };
+    const input = { provider: "aws", namespace: "hashicorp", resource: "aws_instance" };
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/resources/${input.resource}`;
     const response = await fetch(url);
     const schema = await response.json();
@@ -113,62 +113,26 @@ describe('Example Config Generator tool', () => {
       const typedAttr = attr as any;
       const isRequired = typedAttr.required === true && typedAttr.computed !== true;
       if (isRequired) {
-        let placeholder = `"example"`;
+        const placeholder = "\"example\"";
         config += `  ${name} = ${placeholder}\n`;
       }
     }
-    config += `}\n`;
+    config += "}\n";
     
     // Verify the generated config
-    expect(config).toContain('resource "aws_instance" "example"');
-    expect(config).toContain('ami');
-    expect(config).toContain('instance_type');
+    expect(config).toContain("resource \"aws_instance\" \"example\"");
+    expect(config).toContain("ami");
+    expect(config).toContain("instance_type");
   });
 });
 
+// Define these cases for future parametrized testing
+// Keeping this commented out until implemented
+/*
 const toolCases = [
   { 
     toolName: "providerLookup",
     input: { provider: "aws", namespace: "hashicorp" },
     successExpect: (result: any) => expect(result).toContain("aws")
   },
-  { 
-    toolName: "resourceUsage",
-    input: { provider: "aws", resource: "aws_instance" },
-    successExpect: (result: any) => expect(result).toContain("aws_instance")
-  },
-  {
-    toolName: "moduleRecommendations",
-    input: { query: "vpc", provider: "aws" },
-    successExpect: (result: any) => expect(result).toContain("vpc")
-  },
-  {
-    toolName: "dataSourceLookup",
-    input: { provider: "aws", namespace: "hashicorp" },
-    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("data_sources")
-  },
-  {
-    toolName: "providerSchemaDetails",
-    input: { provider: "aws", namespace: "hashicorp" },
-    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("provider_schema")
-  },
-  {
-    toolName: "resourceArgumentDetails",
-    input: { provider: "aws", namespace: "hashicorp", resource: "aws_instance" },
-    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("arguments")
-  },
-  {
-    toolName: "moduleDetails",
-    input: { namespace: "terraform-aws-modules", module: "vpc", provider: "aws" },
-    successExpect: (result: any) => {
-      const data = JSON.parse(result);
-      expect(data).toHaveProperty("versions");
-      expect(data).toHaveProperty("inputs");
-    }
-  },
-  {
-    toolName: "exampleConfigGenerator",
-    input: { provider: "aws", namespace: "hashicorp", resource: "aws_instance" },
-    successExpect: (result: any) => expect(JSON.parse(result)).toHaveProperty("example_configuration")
-  }
-]; 
+*/ 

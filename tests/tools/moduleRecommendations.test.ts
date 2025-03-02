@@ -1,28 +1,28 @@
 // Import the necessary modules and types
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from '../global-mock';
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
 
-describe('moduleRecommendations tool', () => {
+describe("moduleRecommendations tool", () => {
   beforeEach(() => {
     resetFetchMocks();
   });
 
-  test('should return module recommendations when found', async () => {
+  test("should return module recommendations when found", async () => {
     // Mock response data for module search
     const mockModules = {
       modules: [
         {
-          id: 'terraform-aws-modules/vpc/aws',
-          namespace: 'terraform-aws-modules',
-          name: 'vpc',
-          provider: 'aws',
-          description: 'AWS VPC Terraform module'
+          id: "terraform-aws-modules/vpc/aws",
+          namespace: "terraform-aws-modules",
+          name: "vpc",
+          provider: "aws",
+          description: "AWS VPC Terraform module"
         },
         {
-          id: 'terraform-aws-modules/eks/aws',
-          namespace: 'terraform-aws-modules',
-          name: 'eks',
-          provider: 'aws',
-          description: 'AWS EKS Terraform module'
+          id: "terraform-aws-modules/eks/aws",
+          namespace: "terraform-aws-modules",
+          name: "eks",
+          provider: "aws",
+          description: "AWS EKS Terraform module"
         }
       ]
     };
@@ -33,7 +33,7 @@ describe('moduleRecommendations tool', () => {
     } as Response);
 
     // Simulate the tool request handler
-    const input = { query: 'vpc', provider: 'aws' };
+    const input = { query: "vpc", provider: "aws" };
     
     // Construct the search URL
     const searchUrl = `https://registry.terraform.io/v1/modules/search?q=${encodeURIComponent(
@@ -50,10 +50,10 @@ describe('moduleRecommendations tool', () => {
     expect(calls[0].url).toBe(searchUrl);
     
     // Verify the response processing
-    expect(resultData).toHaveProperty('modules');
+    expect(resultData).toHaveProperty("modules");
     expect(Array.isArray(resultData.modules)).toBe(true);
     expect(resultData.modules.length).toBe(2);
-    expect(resultData.modules[0].name).toBe('vpc');
+    expect(resultData.modules[0].name).toBe("vpc");
     
     // Create the recommendation text
     let recommendationText = `Recommended modules for "${input.query}":\n`;
@@ -65,11 +65,11 @@ describe('moduleRecommendations tool', () => {
     });
     
     // Verify the output format
-    expect(recommendationText).toContain('terraform-aws-modules/vpc (aws)');
-    expect(recommendationText).toContain('terraform-aws-modules/eks (aws)');
+    expect(recommendationText).toContain("terraform-aws-modules/vpc (aws)");
+    expect(recommendationText).toContain("terraform-aws-modules/eks (aws)");
   });
 
-  test('should handle no modules found', async () => {
+  test("should handle no modules found", async () => {
     // Mock empty response
     mockFetchResponse({
       ok: true,
@@ -77,7 +77,7 @@ describe('moduleRecommendations tool', () => {
     } as Response);
 
     // Simulate the tool request handler
-    const input = { query: 'nonexistent', provider: 'aws' };
+    const input = { query: "nonexistent", provider: "aws" };
     
     // Construct the search URL
     const searchUrl = `https://registry.terraform.io/v1/modules/search?q=${encodeURIComponent(
