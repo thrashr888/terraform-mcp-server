@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.4 (2025-03-04)
+
+### Improvements
+- Enhanced testing infrastructure with improved error handling in test scripts
+- Added additional resource type alternatives for the `exampleConfigGenerator` tool
+- Updated documentation with comprehensive test script details
+- Added better error reporting and fallback mechanisms for failing tests
+
 ## 0.9.3 (2025-03-01)
 
 ### Fixes

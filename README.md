@@ -340,8 +340,35 @@ npm run test:coverage
 ```
 
 Tests are located in the `tests/` directory and organized by component:
-- `tests/server.test.ts` - Tests for core server functionality
-- `tests/tools/*.test.ts` - Tests for individual tools
+
+* `tests/server.test.ts` - Tests for core server functionality
+* `tests/tools/*.test.ts` - Tests for individual tools
+
+### Manual Testing Scripts
+
+The repository includes several bash scripts for manually testing the MCP server:
+
+1. `test.sh` - A comprehensive test script that tests all tools with colorized output
+2. `test-simple.sh` - A simplified test script that doesn't rely on external dependencies
+3. `test-tool.sh` - A flexible script for testing individual tools with custom parameters
+
+To run these scripts:
+
+```bash
+# Make scripts executable
+chmod +x *.sh
+
+# Run full test suite
+./test.sh
+
+# Run simplified test suite
+./test-simple.sh
+
+# Test a specific tool with parameters
+./test-tool.sh providerLookup "provider=aws" "namespace=hashicorp"
+```
+
+These scripts provide a quick way to verify the server is working correctly without having to set up a full client application.
 
 ## Development
 
