@@ -1,0 +1,12 @@
+# release
+- update the version in index.ts and package.json
+- update the CHANGELOG.md
+- commit, tag, and push to GitHub
+- create a new release on GitHub
+- npm and docker releases are handled automatically via GitHub Actions
+- `npm i -g terraform-mcp-server` to globally install/update the CLI
+
+# development
+- run `npm run build` to build the project
+- run `npm run test` to run the tests
+- run `node test-server.js` to run a test server
