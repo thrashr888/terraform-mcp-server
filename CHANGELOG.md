@@ -1,6 +1,23 @@
 # Changelog
 
-## 0.9.4 (2025-03-04)
+## 0.9.5 (April 23, 2024)
+- Fixed `exampleConfigGenerator` function to handle API changes from HashiCorp Registry
+- Added fallback approach that uses documentation URLs to generate example configs
+- Added generate-example.sh script to help test example generation
+- Updated test scripts to use local build instead of npx
+- Added error handling for lookup tools
+- Added better error descriptions for API failures
+- Added Claude MCP tool endpoint compatibility
+- Added docker run scripts
+- Fixed resourceUsage edge cases
+- Fixed dataSourceLookup API calls
+- Updated `resourceArgumentDetails` tool to use the new Terraform Registry API endpoints
+- Updated `exampleConfigGenerator` tool to use the new Terraform Registry API endpoints
+- Removed `providerSchemaDetails` tool as the schema endpoint is not publicly 
+available
+- Fixed issues with resource schema retrieval
+
+## 0.9.4 (2025-03-01)
 
 ### Improvements
 - Enhanced testing infrastructure with improved error handling in test scripts

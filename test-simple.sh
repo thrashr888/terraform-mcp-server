@@ -16,7 +16,7 @@ run_tool() {
   echo "=== Testing $name ==="
   echo "Request: $json"
   echo "Response:"
-  RESPONSE=$(echo "$json" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+  RESPONSE=$(echo "$json" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
   echo "$RESPONSE"
   
   # Check if there was an error
@@ -40,7 +40,7 @@ echo ""
 echo "=== Listing All Available Tools ==="
 echo "Request: $LIST_TOOLS"
 echo "Response: (Showing condensed output for readability)"
-echo "$LIST_TOOLS" | npx -y terraform-mcp-server | grep -o '"name":"[^"]*"' | sort | uniq
+echo "$LIST_TOOLS" | node dist/index.js | grep -o '"name":"[^"]*"' | sort | uniq
 echo "======================="
 
 # 2. Test each tool with an example
@@ -51,8 +51,6 @@ run_tool "Resource Usage" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params
 run_tool "Module Recommendations" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"moduleRecommendations","arguments":{"query":"vpc"}}}'
 
 run_tool "Data Source Lookup" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"dataSourceLookup","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
-
-run_tool "Provider Schema Details" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"providerSchemaDetails","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
 
 run_tool "Resource Argument Details" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"resourceArgumentDetails","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'
 

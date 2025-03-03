@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "terraform-registry": {
+      "command": "npx -y terraform-mcp-server",
+      "args": [],
+      "env": {
+        "DEBUG": "*"
+      }
+    },
+    "memory": {
+      "command": "npx -y @modelcontextprotocol/server-memory",
+      "args": []
+    },
+    "github": {
+      "command": "npx -y @modelcontextprotocol/server-github",
+      "args": []
+    },
+    "date": {
+      "command": "npx @modelcontextprotocol/inspector uvx mcp-server-time",
+      "args": []
+    }
+  }
+}

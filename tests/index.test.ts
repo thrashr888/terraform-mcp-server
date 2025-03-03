@@ -153,7 +153,6 @@ const createMockResponse = function(request: any): any {
           { name: "resourceUsage", description: "Get example usage of Terraform resources" },
           { name: "moduleRecommendations", description: "Recommend Terraform modules" },
           { name: "dataSourceLookup", description: "Lookup data sources" },
-          { name: "providerSchemaDetails", description: "Get provider schema details" },
           { name: "resourceArgumentDetails", description: "Get resource argument details" },
           { name: "moduleDetails", description: "Get module details" },
           { name: "exampleConfigGenerator", description: "Generate example configurations" }
@@ -249,46 +248,6 @@ Related resources: aws_security_group`
             "aws_ec2_instance_type",
             "aws_vpc"
           ]
-        })
-      }];
-      break;
-    }
-      
-    case "providerSchemaDetails": {
-      content = [{ 
-        type: "text", 
-        text: JSON.stringify({
-          provider_schema: {
-            provider: {
-              block: {
-                attributes: {
-                  region: {
-                    type: "string",
-                    description: "AWS region",
-                    required: false
-                  }
-                }
-              }
-            },
-            resource_schemas: {
-              aws_instance: {
-                block: {
-                  attributes: {
-                    ami: {
-                      type: "string",
-                      description: "AMI ID",
-                      required: true
-                    },
-                    instance_type: {
-                      type: "string",
-                      description: "Instance type",
-                      required: false
-                    }
-                  }
-                }
-              }
-            }
-          }
         })
       }];
       break;
@@ -1019,75 +978,6 @@ resource "aws_instance" "example" {
     const responseData = JSON.parse(response.result.content[0].text);
     expect(responseData).toHaveProperty("data_sources");
     expect(Array.isArray(responseData.data_sources)).toBe(true);
-  });
-
-  test("should return provider schema details when calling providerSchemaDetails tool", async () => {
-    // Mock the fetch response for provider schema details
-    mockFetchResponse({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({
-        provider_schemas: {
-          "hashicorp/aws": {
-            provider: {
-              version: "4.2.0",
-              block: {
-                attributes: {
-                  region: {
-                    type: "string",
-                    description: "AWS region",
-                    required: true
-                  }
-                }
-              }
-            },
-            resource_schemas: {
-              "aws_instance": {
-                version: "4.2.0",
-                block: {
-                  attributes: {
-                    ami: {
-                      type: "string",
-                      description: "AMI ID",
-                      required: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      })
-    });
-
-    // Create a request for providerSchemaDetails
-    const request = {
-      jsonrpc: "2.0",
-      id: "8",
-      method: "tools/call",
-      params: {
-        name: "providerSchemaDetails",
-        arguments: {
-          provider: "aws",
-          namespace: "hashicorp"
-        }
-      }
-    };
-
-    // Use our helper function to simulate the request
-    const response = await simulateRequest(request);
-    
-    // Verify the response
-    expect(response).not.toBeNull();
-    expect(response).toHaveProperty("id", "8");
-    expect(response).toHaveProperty("result");
-    expect(response.result).toHaveProperty("content");
-    expect(Array.isArray(response.result.content)).toBe(true);
-    expect(response.result.content[0]).toHaveProperty("type", "text");
-    
-    // Parse the JSON response and check the structure
-    const responseData = JSON.parse(response.result.content[0].text);
-    expect(responseData).toHaveProperty("provider_schema");
   });
 
   test("should return resource argument details when calling resourceArgumentDetails tool", async () => {

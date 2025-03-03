@@ -7,7 +7,7 @@ if [ $# -lt 1 ]; then
   echo "Usage: $0 toolName [param1=value1 param2=value2 ...]"
   echo ""
   echo "Available tools:"
-  echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npx -y terraform-mcp-server | grep -o '"name":"[^"]*"' | cut -d '"' -f 4 | sort
+  echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js | grep -o '"name":"[^"]*"' | cut -d '"' -f 4 | sort
   exit 1
 fi
 
@@ -47,7 +47,7 @@ echo "Arguments: $ARGS"
 echo "Request: $REQUEST"
 echo ""
 echo "Response:"
-RESPONSE=$(echo "$REQUEST" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+RESPONSE=$(echo "$REQUEST" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
 echo "$RESPONSE"
 
 # Check if there was an error

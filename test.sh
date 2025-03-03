@@ -17,7 +17,7 @@ run_tool_request() {
   echo -e "\n${BLUE}=== $title ===${NC}"
   echo -e "${GREEN}Request:${NC} $request"
   echo -e "${GREEN}Response:${NC}"
-  RESPONSE=$(echo "$request" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+  RESPONSE=$(echo "$request" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
   echo "$RESPONSE"
   
   # Check if there was an error
@@ -43,7 +43,7 @@ echo -e "\n${BLUE}=== Listing All Available Tools ===${NC}"
 TOOLS_LIST_REQUEST='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 echo -e "${GREEN}Request:${NC} $TOOLS_LIST_REQUEST"
 echo -e "${GREEN}Response:${NC}"
-echo "$TOOLS_LIST_REQUEST" | npx -y terraform-mcp-server | grep "\"result\"" | jq .
+echo "$TOOLS_LIST_REQUEST" | node dist/index.js | grep "\"result\"" | jq .
 echo -e "${BLUE}====================================${NC}\n"
 
 # 2. providerLookup - Get details about a provider
@@ -63,8 +63,7 @@ DATA_SOURCE_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"nam
 run_tool_request "Data Source Lookup: AWS" "$DATA_SOURCE_LOOKUP"
 
 # 6. providerSchemaDetails - Get schema details for a provider
-PROVIDER_SCHEMA='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"providerSchemaDetails","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
-run_tool_request "Provider Schema Details: AWS" "$PROVIDER_SCHEMA"
+# REMOVED: providerSchemaDetails section
 
 # 7. resourceArgumentDetails - Get argument details for a resource
 RESOURCE_ARGS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"resourceArgumentDetails","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'
@@ -81,7 +80,7 @@ echo -e "\n${BLUE}=== Example Config Generator Tests ===${NC}"
 EXAMPLE_CONFIG_INSTANCE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exampleConfigGenerator","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'
 echo -e "${GREEN}Request (aws_instance):${NC} $EXAMPLE_CONFIG_INSTANCE"
 echo -e "${GREEN}Response:${NC}"
-RESPONSE=$(echo "$EXAMPLE_CONFIG_INSTANCE" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+RESPONSE=$(echo "$EXAMPLE_CONFIG_INSTANCE" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
 echo "$RESPONSE"
 
 # If aws_instance failed, try with aws_vpc
@@ -90,7 +89,7 @@ if echo "$RESPONSE" | grep -q "Error"; then
   EXAMPLE_CONFIG_VPC='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exampleConfigGenerator","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_vpc"}}}'
   echo -e "${GREEN}Request (aws_vpc):${NC} $EXAMPLE_CONFIG_VPC"
   echo -e "${GREEN}Response:${NC}"
-  RESPONSE=$(echo "$EXAMPLE_CONFIG_VPC" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+  RESPONSE=$(echo "$EXAMPLE_CONFIG_VPC" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
   echo "$RESPONSE"
   
   # If aws_vpc failed too, try with google_compute_instance (different provider)
@@ -99,7 +98,7 @@ if echo "$RESPONSE" | grep -q "Error"; then
     EXAMPLE_CONFIG_GCP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exampleConfigGenerator","arguments":{"provider":"google","namespace":"hashicorp","resource":"google_compute_instance"}}}'
     echo -e "${GREEN}Request (google_compute_instance):${NC} $EXAMPLE_CONFIG_GCP"
     echo -e "${GREEN}Response:${NC}"
-    RESPONSE=$(echo "$EXAMPLE_CONFIG_GCP" | npx -y terraform-mcp-server | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+    RESPONSE=$(echo "$EXAMPLE_CONFIG_GCP" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
     echo "$RESPONSE"
     
     if echo "$RESPONSE" | grep -q "Error"; then

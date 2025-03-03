@@ -1,6 +1,6 @@
 {
     "name": "terraform-mcp-server",
-    "version": "0.9.4",
+    "version": "0.9.5",
     "description": "MCP server for Terraform Registry operations",
     "license": "MIT",
     "author": "Paul Thrasher (https://github.com/thrashr888)",

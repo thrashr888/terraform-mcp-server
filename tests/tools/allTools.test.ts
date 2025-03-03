@@ -2,29 +2,6 @@
 // The approach is similar to the more detailed tests in other files
 import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
 
-describe("Provider Schema Details tool", () => {
-  beforeEach(() => {
-    resetFetchMocks();
-  });
-
-  test("should return provider schema when found", async () => {
-    mockFetchResponse({
-      ok: true,
-      json: () => Promise.resolve({ provider_schema: { resources: {}, data_sources: {} } })
-    } as Response);
-
-    const input = { provider: "aws", namespace: "hashicorp" };
-    const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/schemas`;
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    const calls = getFetchCalls();
-    expect(calls.length).toBe(1);
-    expect(calls[0].url).toBe(url);
-    expect(data).toHaveProperty("provider_schema");
-  });
-});
-
 describe("Resource Argument Details tool", () => {
   beforeEach(() => {
     resetFetchMocks();
