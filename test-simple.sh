@@ -56,8 +56,6 @@ run_tool "Resource Argument Details" '{"jsonrpc":"2.0","id":1,"method":"tools/ca
 
 run_tool "Module Details" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"moduleDetails","arguments":{"namespace":"terraform-aws-modules","module":"vpc","provider":"aws"}}}'
 
-run_tool "Example Config Generator" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exampleConfigGenerator","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'
-
 echo ""
 echo "All tests completed!"
 

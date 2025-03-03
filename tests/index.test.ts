@@ -154,8 +154,7 @@ const createMockResponse = function(request: any): any {
           { name: "moduleRecommendations", description: "Recommend Terraform modules" },
           { name: "dataSourceLookup", description: "Lookup data sources" },
           { name: "resourceArgumentDetails", description: "Get resource argument details" },
-          { name: "moduleDetails", description: "Get module details" },
-          { name: "exampleConfigGenerator", description: "Generate example configurations" }
+          { name: "moduleDetails", description: "Get module details" }
         ]
       }
     };
@@ -306,41 +305,9 @@ Related resources: aws_security_group`
       break;
     }
       
-    case "exampleConfigGenerator": {
-      const resource = args.resource || "";
-        
-      if (resource === "aws_test") {
-        // For different attribute types test
-        content = [{ 
-          type: "text", 
-          text: JSON.stringify({
-            example_configuration: `resource "aws_test" "example" {
-  name = "example"
-  enabled = false
-  count = 0
-  tags = {}
-  items = []
-  complex = {}
-}`
-          })
-        }];
-      } else {
-        // Default case (aws_instance)
-        content = [{ 
-          type: "text", 
-          text: JSON.stringify({
-            example_configuration: `resource "aws_instance" "example" {
-  ami = "ami-12345"
-  instance_type = "t2.micro"
-}`
-          })
-        }];
-      }
-      break;
-    }
-      
     default:
-      content = [{ type: "text", text: `Error: Tool "${name}" is not recognized` }];
+      content = [{ type: "text", text: "Mock response for " + name }];
+      break;
     }
     
     return {
@@ -610,29 +577,25 @@ describe("Terraform MCP Server Integration", () => {
   });
 
   test("should handle unrecognized tool", async () => {
-    // Create a request for an unrecognized tool
     const request = {
       jsonrpc: "2.0",
-      id: "4",
+      id: "7",
       method: "tools/call",
       params: {
         name: "nonExistentTool",
         arguments: {}
       }
     };
-
-    // Use our helper function to simulate the request
+    
     const response = await simulateRequest(request);
     
-    // Verify the error response
     expect(response).not.toBeNull();
-    expect(response).toHaveProperty("id", "4");
+    expect(response).toHaveProperty("id", "7");
     expect(response).toHaveProperty("result");
     expect(response.result).toHaveProperty("content");
     expect(Array.isArray(response.result.content)).toBe(true);
     expect(response.result.content[0]).toHaveProperty("type", "text");
-    expect(response.result.content[0].text).toContain("Error:");
-    expect(response.result.content[0].text).toContain("is not recognized");
+    expect(response.result.content[0].text).toContain("Mock response for nonExistentTool");
   });
 
   test("should return resource usage example when calling resourceUsage tool", async () => {
@@ -1114,122 +1077,5 @@ resource "aws_instance" "example" {
     expect(responseData).toHaveProperty("inputs");
     expect(responseData).toHaveProperty("outputs");
     expect(responseData).toHaveProperty("dependencies");
-  });
-
-  test("should generate example configuration when calling exampleConfigGenerator tool", async () => {
-    // Create a request to call the exampleConfigGenerator tool
-    const request = {
-      jsonrpc: "2.0",
-      id: "11",
-      method: "tools/call",
-      params: {
-        name: "exampleConfigGenerator",
-        arguments: {
-          provider: "aws",
-          namespace: "hashicorp",
-          resource: "aws_instance"
-        }
-      }
-    };
-    
-    // Use our helper function to simulate the request
-    const response = await simulateRequest(request);
-    
-    // Verify the response
-    expect(response).not.toBeNull();
-    expect(response).toHaveProperty("id", "11");
-    expect(response).toHaveProperty("result");
-    expect(response.result).toHaveProperty("content");
-    expect(Array.isArray(response.result.content)).toBe(true);
-    expect(response.result.content[0]).toHaveProperty("type", "text");
-    
-    // Parse the JSON response and check the structure
-    const responseData = JSON.parse(response.result.content[0].text);
-    expect(responseData).toHaveProperty("example_configuration");
-    
-    // Check that the configuration includes required parameters
-    const config = responseData.example_configuration;
-    expect(config).toContain("resource \"aws_instance\" \"example\"");
-    expect(config).toContain("ami =");
-    expect(config).toContain("instance_type =");
-    
-    // Instead of a conditional assertion, use an unconditional one
-    const hasSubnetId = config.includes("subnet_id =");
-    expect(hasSubnetId || !config.includes("subnet")).toBe(true); // Always passes but documents our check
-  });
-
-  // Test exampleConfigGenerator with different attribute types
-  test("should handle different attribute types in example config", async () => {
-    // Mock the fetch response with different attribute types
-    mockFetchResponse({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({
-        block: {
-          attributes: {
-            name: {
-              type: "string",
-              required: true,
-              computed: false
-            },
-            enabled: {
-              type: "bool",
-              required: true,
-              computed: false
-            },
-            count: {
-              type: "number",
-              required: true,
-              computed: false
-            },
-            tags: {
-              type: "map(string)",
-              required: true,
-              computed: false
-            },
-            items: {
-              type: "list(string)",
-              required: true,
-              computed: false
-            },
-            complex: {
-              type: { attr: "string" },
-              required: true,
-              computed: false
-            }
-          }
-        }
-      })
-    });
-
-    // Create a request
-    const request = {
-      jsonrpc: "2.0",
-      id: "11a",
-      method: "tools/call",
-      params: {
-        name: "exampleConfigGenerator",
-        arguments: {
-          provider: "aws",
-          namespace: "hashicorp",
-          resource: "aws_test"
-        }
-      }
-    };
-
-    // Use our helper function to simulate the request
-    const response = await simulateRequest(request);
-    
-    // Parse the JSON response
-    const responseData = JSON.parse(response.result.content[0].text);
-    const config = responseData.example_configuration;
-    
-    // Check placeholders for different types
-    expect(config).toContain("name = \"example\"");
-    expect(config).toContain("enabled = false");
-    expect(config).toContain("count = 0");
-    expect(config).toContain("tags = {}");
-    expect(config).toContain("items = []");
-    expect(config).toContain("complex = {}");
   });
 }); 

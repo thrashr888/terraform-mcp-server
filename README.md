@@ -70,9 +70,9 @@ Looks up Terraform provider details by name, returning the latest version and ve
 
 ```json
 {
-  "provider": "aws",             // Optional: Provider name
+  "provider": "aws",             // Required: Provider name
   "namespace": "hashicorp",      // Optional: Provider namespace (defaults to "hashicorp")
-  "name": "aws"                  // Optional: Alternative field for provider name
+  "version": "latest"            // Optional: Provider version
 }
 ```
 
@@ -97,9 +97,8 @@ Gets example usage of a Terraform resource and related resources.
 
 ```json
 {
-  "provider": "aws",             // Optional: Provider name
-  "resource": "aws_instance",    // Optional: Resource name
-  "name": "aws_instance"         // Optional: Alternative field for resource name
+  "provider": "aws",             // Required: Provider name
+  "resource": "aws_instance"     // Required: Resource name
 }
 ```
 
@@ -124,8 +123,7 @@ Searches for and recommends Terraform modules based on a query.
 
 ```json
 {
-  "query": "vpc",                // Optional: Search query
-  "keyword": "vpc",              // Optional: Alternative field for search query
+  "query": "vpc",                // Required: Search query
   "provider": "aws"              // Optional: Filter modules by provider
 }
 ```
@@ -169,37 +167,7 @@ Retrieves available data source identifiers for a given Terraform provider.
 }
 ```
 
-### 5. Provider Schema Details
-
-Retrieves full schema details of a provider, including resource and data source schemas.
-
-**Input:**
-
-```json
-{
-  "provider": "aws",             // Required: Provider name
-  "namespace": "hashicorp"       // Required: Provider namespace
-}
-```
-
-**Output:**
-
-```json
-{
-  "content": [{
-    "type": "text",
-    "text": {
-      "provider_schema": {
-        "provider_schemas": { ... },
-        "resource_schemas": { ... },
-        "data_source_schemas": { ... }
-      }
-    }
-  }]
-}
-```
-
-### 6. Resource Argument Details
+### 5. Resource Argument Details
 
 Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.
 
@@ -240,7 +208,7 @@ BLOCKS:
 For full documentation, visit: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 ```
 
-### 7. Module Details
+### 6. Module Details
 
 Retrieves detailed metadata for a Terraform module.
 
@@ -280,35 +248,6 @@ Retrieves detailed metadata for a Terraform module.
       "dependencies": []
     }
   }]
-}
-```
-
-### 8. Example Configuration Generator
-
-Generates a minimal Terraform configuration for a given provider and resource.
-
-**Input:**
-
-```json
-{
-  "provider": "aws",             // Required: Provider name
-  "namespace": "hashicorp",      // Required: Provider namespace
-  "resource": "aws_instance"     // Required: Resource name
-}
-```
-
-**Output:**
-
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": {
-        "example_configuration": "resource \"aws_instance\" \"example\" {\n  ami = \"example\"\n  instance_type = \"example\"\n}\n"
-      }
-    }
-  ]
 }
 ```
 

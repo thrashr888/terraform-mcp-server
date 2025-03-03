@@ -2,7 +2,7 @@
 - update the version in index.ts and package.json
 - update the CHANGELOG.md
 - commit, tag, and push to GitHub
-- create a new release on GitHub
+- create a new release on GitHub using `gh`
 - npm and docker releases are handled automatically via GitHub Actions
 - `npm i -g terraform-mcp-server` to globally install/update the CLI
 
@@ -13,3 +13,4 @@
 - run `./test.sh` to run the tests
 - run `./test-simple.sh` to run the tests
 - locally managed MCP config is in `./.cursor/mcp.json` and `~/Library/Application Support/Claude/claude_desktop_config.json`
+- ./api-use.md has examples of how to use the API

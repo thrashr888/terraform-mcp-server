@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.6 (May 21, 2024)
+- Removed `exampleConfigGenerator` tool
+- Simplified tool interface by removing unused parameters
+- Updated tests to reflect tool changes
+- Simplified `dataSourceLookup` function to use documentation URL directly
+- Simplified `resourceArgumentDetails` function to use documentation URL directly
+- Fixed 404 errors in test-simple.sh script
+- Made tools more resilient to Terraform Registry API changes
+- Removed fallback patterns in favor of simpler, more reliable direct documentation links
+- Updated README.md to reflect removal of `exampleConfigGenerator` tool
+- Updated api-use.md to document current API usage patterns
+- Clarified required and optional parameters in documentation
+- Improved documentation formatting and examples
+
 ## 0.9.5 (April 23, 2024)
 - Fixed `exampleConfigGenerator` function to handle API changes from HashiCorp Registry
 - Added fallback approach that uses documentation URLs to generate example configs

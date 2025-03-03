@@ -18,9 +18,10 @@ declare module "@modelcontextprotocol/sdk/server/index.js" {
 }
 
 // ----------------- Interfaces for Input -----------------
-interface ProviderLookupInput {
-  provider?: string;   // e.g. "aws"
-  namespace?: string;  // e.g. "hashicorp"
+export interface ProviderLookupInput {
+  namespace?: string;
+  provider: string;
+  version?: string;
   name?: string;       // fallback key if user uses { name: "aws" } etc.
 }
 
@@ -53,12 +54,6 @@ interface ModuleDetailsInput {
   provider: string;    // e.g. "aws"
 }
 
-interface ExampleConfigGeneratorInput {
-  provider: string;    // e.g. "aws"
-  namespace: string;   // e.g. "hashicorp"
-  resource: string;    // e.g. "aws_instance"
-}
-
 // ----------------- Schema Types -----------------
 interface SchemaAttribute {
   type: string | object;
@@ -86,19 +81,20 @@ interface BlockType {
 
 // --------------------------------------------------------
 
-const VERSION = "0.9.5";
+const VERSION = "0.9.6";
 
 const tools: Tool[] = [
   {
     name: "providerLookup",
-    description: "Lookup Terraform provider details by name (latest version, etc).",
+    description: "Lookup a Terraform provider by name and optionally version.",
     inputSchema: { 
       type: "object", 
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        name: { type: "string", description: "Alternative name field (fallback if provider not specified)" }
-      }
+        version: { type: "string", description: "Provider version (e.g. '4.0.0')" }
+      },
+      required: ["provider"]
     }
   },
   {
@@ -163,19 +159,6 @@ const tools: Tool[] = [
       required: ["namespace", "module", "provider"]
     }
   },
-  {
-    name: "exampleConfigGenerator",
-    description: "Generates a minimal Terraform configuration (HCL) for a given provider and resource.",
-    inputSchema: { 
-      type: "object", 
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" }
-      },
-      required: ["provider", "namespace", "resource"]
-    }
-  }
 ];
 
 const server = new Server(
@@ -245,8 +228,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       // - Gets the latest version and total version count
       // - Supports both namespace/provider and provider-only formats
       // - Defaults to hashicorp namespace if not specified
-      const { provider, namespace, name } = arguments_ as unknown as ProviderLookupInput;
-      let providerStr = provider || name || "";
+      const { provider, namespace, version } = arguments_ as unknown as ProviderLookupInput;
+      let providerStr = provider || "";
       let namespaceStr = namespace || "hashicorp";
 
       if (providerStr.includes("/")) {
@@ -597,189 +580,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 
     case "dataSourceLookup": {
       // Lists all available data sources for a specific provider
-      // - Fetches complete list of data sources from provider's registry
-      // - Returns data source names/identifiers
+      // - Returns link to provider's data sources documentation
       // - Requires both namespace and provider name
       const { provider, namespace } = arguments_ as unknown as DataSourceLookupInput;
       if (!provider || !namespace) {
         throw new Error("Both provider and namespace are required.");
       }
 
-      console.error(`Attempting to fetch data sources for ${namespace}/${provider}`);
-        
-      // First approach: Direct data sources API endpoint
-      const url = `https://registry.terraform.io/v1/providers/${namespace}/${provider}/data-sources`;
-      console.error(`Trying data sources API URL: ${url}`);
-        
-      try {
-        // Retry logic - attempt up to 3 times with exponential backoff
-        let response = null;
-        let attempt = 0;
-        const maxAttempts = 3;
-          
-        while (attempt < maxAttempts) {
-          try {
-            attempt++;
-            console.error(`API attempt ${attempt}/${maxAttempts}`);
-            response = await fetch(url);
-              
-            if (response.ok) {
-              break;
-            } else {
-              if (attempt < maxAttempts) {
-                // Exponential backoff
-                const delay = Math.pow(2, attempt) * 500;
-                console.error(`Attempt ${attempt} failed with status ${response.status}. Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-              }
-            }
-          } catch (err) {
-            console.error(`Attempt ${attempt} failed with error: ${err}`);
-            if (attempt >= maxAttempts) throw err;
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-          
-        if (response && response.ok) {
-          const data = await response.json();
-          const dataSources = data.data_sources || [];
-          const dataSourceNames = dataSources.map((ds: any) => ds.name || ds.id).filter(Boolean);
-            
-          if (dataSourceNames.length > 0) {
-            console.error(`Successfully found ${dataSourceNames.length} data sources via API`);
-              
-            // Format response for better readability
-            let responseText = `Data sources for provider ${namespace}/${provider}:\n\n`;
-            dataSourceNames.sort().forEach((name: string) => {
-              responseText += `- ${name}\n`;
-            });
-              
-            return {
-              content: [{ type: "text", text: responseText }]
-            };
-          }
-          console.error("API returned successful response but no data sources found. Trying fallback method.");
-        } else {
-          console.error(`API response not OK: ${response?.status} ${response?.statusText}`);
-        }
-      } catch (err) {
-        console.error(`Error in primary API approach: ${err}. Trying fallback method.`);
-      }
-        
-      // Fallback approach: Try to get versions first, then latest version schema
-      console.error("Attempting fallback method using provider schema...");
-      try {
-        // Get provider versions
-        const versionsUrl = `https://registry.terraform.io/v1/providers/${namespace}/${provider}/versions`;
-        console.error(`Fetching versions from: ${versionsUrl}`);
-          
-        const versionsResp = await fetch(versionsUrl);
-        if (!versionsResp.ok) {
-          throw new Error(`Failed to fetch provider versions: ${versionsResp.status}`);
-        }
-          
-        const versionsData = await versionsResp.json();
-        if (!versionsData.versions || versionsData.versions.length === 0) {
-          throw new Error("No provider versions found");
-        }
-          
-        const latestVersion = versionsData.versions[versionsData.versions.length - 1].version;
-        console.error(`Found latest version: ${latestVersion}`);
-          
-        // Get provider schema for latest version
-        const schemaUrl = `https://registry.terraform.io/v1/providers/${namespace}/${provider}/schemas`;
-        console.error(`Fetching schema from: ${schemaUrl}`);
-          
-        const schemaResp = await fetch(schemaUrl);
-        if (!schemaResp.ok) {
-          throw new Error(`Failed to fetch provider schema: ${schemaResp.status}`);
-        }
-          
-        const schemaData = await schemaResp.json();
-          
-        // Extract data sources from schema - look for entries with "data" category
-        const dataSourceDocs = schemaData.docs.filter((doc: any) => 
-          doc.category === "data" || 
-            doc.title?.toLowerCase().startsWith("data source") ||
-            doc.path?.includes("/data-sources/")
-        );
-          
-        if (dataSourceDocs.length > 0) {
-          console.error(`Found ${dataSourceDocs.length} data sources via schema docs`);
-            
-          // Extract data source names from paths or titles
-          const dataSourceNames = dataSourceDocs.map((doc: any) => {
-            // Try to extract from path
-            if (doc.path) {
-              const pathParts = doc.path.split("/");
-              const lastPart = pathParts[pathParts.length - 1];
-              if (lastPart) return lastPart;
-            }
-              
-            // Fallback to title
-            if (doc.title) {
-              const title = doc.title.toLowerCase();
-              if (title.startsWith("data source:")) {
-                return title.replace("data source:", "").trim();
-              } else {
-                return doc.title;
-              }
-            }
-              
-            return null;
-          }).filter(Boolean);
-            
-          // Format response for better readability
-          let responseText = `Data sources for provider ${namespace}/${provider} (v${latestVersion}):\n\n`;
-          dataSourceNames.sort().forEach((name: string) => {
-            responseText += `- ${name}\n`;
-          });
-            
-          return {
-            content: [{ type: "text", text: responseText }]
-          };
-        }
-          
-        // If we still don't have data sources, try a more direct approach
-        // Use the existence of documentation structures to infer data sources
-        const docsWithHints = schemaData.docs.filter((doc: any) => 
-          doc.title?.toLowerCase().includes("data") ||
-            doc.description?.toLowerCase().includes("data source") ||
-            doc.path?.includes("data")
-        );
-          
-        if (docsWithHints.length > 0) {
-          console.error(`Found ${docsWithHints.length} potential data sources via doc hints`);
-            
-          let responseText = `Potential data sources for provider ${namespace}/${provider} (v${latestVersion}):\n\n`;
-            
-          docsWithHints.forEach((doc: any) => {
-            responseText += `- ${doc.title || doc.path || "Unknown"}\n`;
-          });
-            
-          return {
-            content: [{
-              type: "text",
-              text: responseText
-            }]
-          };
-        }
-      } catch (err) {
-        console.error(`Error in fallback approach: ${err}`);
-      }
-        
-      // If all approaches fail, provide a helpful error message
+      console.error(`Returning documentation link for ${namespace}/${provider} data sources`);
+      
+      // Direct to documentation approach - the most reliable method
+      const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/data-sources`;
+      
       return {
         content: [{
           type: "text",
-          text: `Unable to retrieve data sources for provider ${namespace}/${provider}. The provider might not be available in the registry, or the registry API might have changed.\n\nPlease refer to the official documentation at: https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs`
+          text: `Data sources for provider ${namespace}/${provider}.\n\nPlease refer to the official documentation for a complete list of data sources:\n\n${docUrl}`
         }]
       };
     }
 
     case "resourceArgumentDetails": {
       // Fetches detailed information about a specific resource's arguments
-      // - Gets argument names, types, descriptions, and requirements
+      // - Links directly to resource documentation
       // - Helps understand how to configure a specific resource
       // - Requires provider, namespace, and resource name
       const { provider, namespace, resource } = arguments_ as unknown as ResourceArgumentDetailsInput;
@@ -787,141 +610,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         throw new Error("Provider, namespace, and resource are required.");
       }
 
-      console.error(`Fetching argument details for ${namespace}/${provider}/resources/${resource}`);
-
-      try {
-        // Step 1: First get the provider version ID
-        const providersUrl = `https://registry.terraform.io/v2/provider-versions?filter%5Bname%5D=${namespace}%2F${provider}`;
-        console.error(`Fetching provider version ID from: ${providersUrl}`);
-          
-        const providersResp = await fetch(providersUrl);
-        if (!providersResp.ok) {
-          throw new Error(`Failed to fetch provider info: ${providersResp.status} ${providersResp.statusText}`);
-        }
-          
-        const providersData = await providersResp.json();
-        if (!providersData.data || providersData.data.length === 0) {
-          throw new Error(`No provider data found for ${namespace}/${provider}`);
-        }
-          
-        // Get the latest version's ID
-        const providerVersionId = providersData.data[0].id;
-        console.error(`Found provider version ID: ${providerVersionId}`);
-          
-        // Step 2: Now get the resource documentation
-        const resourceDocsUrl = `https://registry.terraform.io/v2/provider-docs?filter%5Bprovider-version%5D=${providerVersionId}&filter%5Bcategory%5D=resources&filter%5Bslug%5D=${resource}&filter%5Blanguage%5D=hcl&page%5Bsize%5D=1`;
-        console.error(`Fetching resource docs from: ${resourceDocsUrl}`);
-          
-        const resourceDocsResp = await fetch(resourceDocsUrl);
-        if (!resourceDocsResp.ok) {
-          throw new Error(`Failed to fetch resource docs: ${resourceDocsResp.status} ${resourceDocsResp.statusText}`);
-        }
-          
-        const resourceDocsData = await resourceDocsResp.json();
-        if (!resourceDocsData.data || resourceDocsData.data.length === 0) {
-          throw new Error(`No documentation found for resource ${resource}`);
-        }
-          
-        // Get the resource doc ID
-        const resourceDocId = resourceDocsData.data[0].id;
-        console.error(`Found resource doc ID: ${resourceDocId}`);
-          
-        // Step 3: Get the detailed resource documentation
-        const resourceDetailUrl = `https://registry.terraform.io/v2/provider-docs/${resourceDocId}`;
-        console.error(`Fetching resource detail from: ${resourceDetailUrl}`);
-          
-        const resourceDetailResp = await fetch(resourceDetailUrl);
-        if (!resourceDetailResp.ok) {
-          throw new Error(`Failed to fetch resource detail: ${resourceDetailResp.status} ${resourceDetailResp.statusText}`);
-        }
-          
-        const resourceDetail = await resourceDetailResp.json();
-          
-        // Extract the arguments from the documentation
-        const result: any[] = [];
-        
-        // Parse the resource document content
-        const docContent = resourceDetail.data.attributes.content;
-        
-        // Extract argument blocks - look for "## Argument Reference" or similar sections
-        let argumentsSection = "";
-        
-        // Simple parsing approach to extract the arguments section
-        const argSectionRegex = /## Argument Reference([\s\S]*?)(?:## |$)/i;
-        const argMatch = docContent.match(argSectionRegex);
-        
-        if (argMatch && argMatch[1]) {
-          argumentsSection = argMatch[1].trim();
-        }
-        
-        // Parse the individual arguments using regex - looking for patterns like:
-        // * `name` - (Required) Description text...
-        // * `another_name` - (Optional) More description...
-        const argRegex = /\* [`"]([^`"]+)[`"] - \(([^\)]+)\) ([\s\S]*?)(?=\n\* [`"]|$)/g;
-        
-        let match;
-        while ((match = argRegex.exec(argumentsSection)) !== null) {
-          const argName = match[1];
-          const requirement = match[2].toLowerCase();
-          const description = match[3].trim();
-          
-          result.push({
-            name: argName,
-            type: "string", // Default as documentation often doesn't specify types clearly
-            description: description,
-            required: requirement.includes("required"),
-            computed: requirement.includes("computed"),
-            optional: requirement.includes("optional"),
-            category: "attribute"
-          });
-        }
-        
-        // If no arguments were found, provide a helpful message
-        if (result.length === 0) {
-          const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`;
-          
-          return {
-            content: [{
-              type: "text",
-              text: `Could not parse arguments from the resource documentation. Please refer to the official documentation at: ${docUrl}`
-            }]
-          };
-        }
-        
-        console.error(`Response (resourceArgumentDetails): Found ${result.length} arguments for ${resource}`);
-        
-        // Format the response
-        return {
-          content: [
-            {
-              type: "text", 
-              text: `Arguments for resource: ${resource}\n\nFound ${result.length} arguments`
-            },
-            {
-              type: "table",
-              headings: ["Name", "Type", "Required", "Computed", "Optional", "Description"],
-              rows: result.map(arg => [
-                arg.name,
-                arg.type || "string",
-                arg.required ? "Yes" : "No",
-                arg.computed ? "Yes" : "No",
-                arg.optional ? "Yes" : "No",
-                arg.description
-              ])
-            }
-          ]
-        };
-      } catch (error) {
-        console.error("Error in resourceArgumentDetails:", error);
-        
-        // Fallback - direct the user to the documentation
-        return {
-          content: [{
-            type: "text",
-            text: `Unable to retrieve argument details for resource ${resource} in provider ${namespace}/${provider}. The API might have changed or the resource might not exist.\n\nPlease refer to the official documentation at: https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`
-          }]
-        };
-      }
+      console.error(`Returning documentation link for ${namespace}/${provider}/resources/${resource}`);
+      
+      // Direct to documentation approach - the most reliable method
+      const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`;
+      
+      return {
+        content: [{
+          type: "text",
+          text: `Resource arguments for ${resource} in provider ${namespace}/${provider}.\n\nPlease refer to the official documentation for details on this resource's arguments:\n\n${docUrl}`
+        }]
+      };
     }
 
     case "moduleDetails": {
@@ -961,89 +660,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       };
     }
 
-    case "exampleConfigGenerator": {
-      // Generates a minimal working example configuration for a resource
-      // - Creates HCL configuration with required attributes
-      // - Sets appropriate placeholder values based on attribute types
-      // - Helps users get started with new resources quickly
-      const { provider, namespace, resource } = arguments_ as unknown as ExampleConfigGeneratorInput;
-      if (!provider || !namespace || !resource) {
-        throw new Error("Provider, namespace, and resource are required.");
-      }
-
-      try {
-        // Since the provider version APIs are returning 400 errors, let's use a simpler approach
-        // based on the official documentation URLs
-
-        // First, try to get argument details using our existing tool
-        console.error(`Attempting to get resource argument details for ${namespace}/${provider}/${resource}`);
-        
-        // Create a simplified example configuration based on resource name
-        let config = `resource "${resource}" "example" {\n`;
-        
-        // Try to access the resource documentation directly (fallback approach)
-        const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`;
-        console.error(`Documentation URL: ${docUrl}`);
-        
-        // Add some common attributes based on resource type patterns
-        if (resource.includes("instance")) {
-          config += `  # Common attributes for instance resources\n`;
-          config += `  ami           = "ami-12345678" # Replace with a valid AMI ID\n`;
-          config += `  instance_type = "t2.micro"\n`;
-        } else if (resource.includes("bucket")) {
-          config += `  # Common attributes for bucket resources\n`;
-          config += `  bucket = "my-unique-bucket-name"\n`;
-        } else if (resource.includes("vpc")) {
-          config += `  # Common attributes for VPC resources\n`;
-          config += `  cidr_block = "10.0.0.0/16"\n`;
-        } else if (resource.includes("cluster")) {
-          config += `  # Common attributes for cluster resources\n`;
-          config += `  name = "example-cluster"\n`;
-        } else if (resource.includes("database")) {
-          config += `  # Common attributes for database resources\n`;
-          config += `  name = "example-database"\n`;
-        } else if (resource.includes("function")) {
-          config += `  # Common attributes for function resources\n`;
-          config += `  name = "example-function"\n`;
-        } else if (resource.includes("role")) {
-          config += `  # Common attributes for IAM role resources\n`;
-          config += `  name = "example-role"\n`;
-        } else if (resource.includes("key")) {
-          config += `  # Common attributes for key resources\n`;
-          config += `  key_name = "example-key"\n`;
-        } else if (resource.includes("group")) {
-          config += `  # Common attributes for group resources\n`;
-          config += `  name = "example-group"\n`;
-        } else {
-          config += `  # No specific attributes could be determined for this resource type\n`;
-          config += `  # Replace this comment with required attributes for your use case\n`;
-        }
-        
-        // Add a note about documentation
-        config += `\n  # This is a minimal example. For complete attributes, see:\n`;
-        config += `  # ${docUrl}\n`;
-        config += `}\n`;
-
-        console.error(`Response (exampleConfigGenerator): Generated fallback config for ${resource}`);
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({ example_configuration: config }, null, 2)
-          }]
-        };
-      } catch (error) {
-        console.error(`Error generating example configuration: ${error}`);
-        throw new Error(`Failed to generate example configuration: ${error}`);
-      }
-    }
-
     default:
-      throw new Error(`Tool "${toolName}" is not recognized.`);
+      throw new Error(`Unknown tool: ${toolName}`);
     }
-  } catch (err: any) {
-    const errMsg = err.message || String(err);
-    console.error(`Error in tool ${toolName}: ${errMsg}`);
-    return { content: [{ type: "text", text: `Error: ${errMsg}` }] };
+  } catch (error) {
+    console.error(`Error in tool handler for ${toolName}:`, error);
+    throw error;
   }
 });
 
