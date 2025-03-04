@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.7 (March 3, 2024)
+- Added comprehensive testing documentation in TESTS.md
+- Simplified resource testing to focus on core providers
+- Improved test organization and documentation
+- Added Jest test suite for resource testing
+- Updated README.md with testing information
+- Fixed test script output formatting
+- Improved error handling in resource tests
+
 ## 0.9.6 (May 21, 2024)
 - Removed `exampleConfigGenerator` tool
 - Simplified tool interface by removing unused parameters

@@ -82,7 +82,7 @@ interface BlockType {
 // --------------------------------------------------------
 
 // Current package version from package.json
-const VERSION = "0.9.6";
+const VERSION = "0.9.7";
 
 // Helper function to create standardized response format
 function createStandardResponse(
