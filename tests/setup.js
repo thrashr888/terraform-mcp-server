@@ -1,3 +1,7 @@
-// The mock implementations are now in global-mock.ts
-// This file is still used by Jest as a setup file through jest.config.js
-// Import global-mock is automatically handled during Jest setup
+// Jest setup file
+import fetchMock from "jest-fetch-mock";
+
+// Enable fetch mocks
+fetchMock.enableMocks();
+
+// Other global setup can be added here

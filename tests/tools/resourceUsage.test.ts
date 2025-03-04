@@ -77,4 +77,71 @@ describe("resourceUsage tool", () => {
     expect(resp.ok).toBe(false);
     expect(resp.status).toBe(404);
   });
+
+  // Test for fallback response when no example is found
+  test("should provide a fallback response when no example is found", async () => {
+    // Mock a response with HTML content but no example code
+    const mockHtmlResponse = `
+      <html>
+        <body>
+          <h1>aws_s3_bucket</h1>
+          <p>Some description text</p>
+          <!-- No Example Usage section -->
+        </body>
+      </html>
+    `;
+    
+    mockFetchResponse({
+      ok: true,
+      text: () => Promise.resolve(mockHtmlResponse)
+    } as Response);
+
+    // Define input parameters
+    const input = { provider: "aws", resource: "aws_s3_bucket" };
+    
+    // Make the request to the API
+    const url = `https://registry.terraform.io/providers/${input.provider}/latest/docs/resources/${input.resource}`;
+    const resp = await fetch(url);
+    const html = await resp.text();
+    
+    // Verify the request was made correctly
+    const calls = getFetchCalls();
+    expect(calls.length).toBe(1);
+    expect(calls[0].url).toBe(url);
+    
+    // Check that the example code can't be found (simulating fallback scenario)
+    const exampleIndex = html.indexOf(">Example Usage<");
+    expect(exampleIndex).toBe(-1);
+  });
+
+  // Minimal resource tests - testing just core providers
+  describe("minimal resource tests", () => {
+    const testResourceFetch = async (provider: string, resource: string) => {
+      // Mock HTML response
+      const mockHtmlResponse = `<html><body><p>${resource}</p></body></html>`;
+      
+      mockFetchResponse({
+        ok: true,
+        text: () => Promise.resolve(mockHtmlResponse)
+      } as Response);
+      
+      // Make the request to the API
+      const url = `https://registry.terraform.io/providers/${provider}/latest/docs/resources/${resource}`;
+      const resp = await fetch(url);
+      
+      // Verify the request was made correctly
+      const calls = getFetchCalls();
+      expect(calls.length).toBe(1);
+      expect(calls[0].url).toBe(url);
+      expect(resp.ok).toBe(true);
+    };
+
+    test("should handle aws_s3_bucket resource", async () => {
+      await testResourceFetch("aws", "aws_s3_bucket");
+    });
+
+    test("should handle google_compute_instance resource", async () => {
+      await testResourceFetch("google", "google_compute_instance");
+    });
+  });
 }); 

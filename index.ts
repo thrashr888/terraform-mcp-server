@@ -81,7 +81,270 @@ interface BlockType {
 
 // --------------------------------------------------------
 
+// Current package version from package.json
 const VERSION = "0.9.6";
+
+// Helper function to create standardized response format
+function createStandardResponse(
+  status: "success" | "error", 
+  content: string, 
+  metadata: Record<string, any> = {}
+) {
+  return { 
+    content: [{ 
+      type: "text", 
+      text: JSON.stringify({
+        status,
+        content,
+        metadata,
+        timestamp: new Date().toISOString(),
+        version: VERSION
+      }, null, 2)
+    }]
+  };
+}
+
+// Helper function to format code examples as markdown
+function formatAsMarkdown(code: string, language = "terraform") {
+  return `\`\`\`${language}\n${code}\n\`\`\``;
+}
+
+// Helper function to sanitize and format URLs
+function formatUrl(url: string) {
+  // Ensure URL is properly encoded and formatted
+  try {
+    // Create URL object to validate and normalize
+    const urlObj = new URL(url);
+    return urlObj.toString();
+  } catch (e) {
+    // If URL parsing fails, return the original
+    return url;
+  }
+}
+
+// Helper function to add context information to responses
+function addContextInfo(metadata: Record<string, any>, contextType: string, contextInfo: Record<string, any>) {
+  if (!metadata.context) {
+    metadata.context = {};
+  }
+  metadata.context[contextType] = contextInfo;
+  return metadata;
+}
+
+// Helper function to generate example values based on Terraform input types
+function getExampleValue(input: any): string {
+  const type = input.type || "string";
+  
+  // Simple type handling
+  if (type === "string") return `"example-value"`;
+  if (type === "number") return "123";
+  if (type === "bool") return "true";
+  
+  // Complex types
+  if (type.startsWith("map(")) return "{}";
+  if (type.startsWith("list(")) return "[]";
+  if (type.startsWith("set(")) return "[]";
+  if (type === "any") return "null";
+  
+  // Default for unknown types
+  return `"${input.name}-value"`;
+}
+
+// Helper function to generate resource descriptions
+function getResourceDescription(resourceName: string, providerName: string): string {
+  // Extract the resource type
+  const resourceType = resourceName.includes('_') ? 
+    resourceName.substring(resourceName.indexOf('_') + 1) : 
+    resourceName;
+  
+  // Common resource descriptions
+  const descriptions: Record<string, string> = {
+    // AWS common resources
+    's3_bucket': 'An S3 bucket is a container for storing objects in Amazon S3. You can use buckets to store and serve files, host static websites, or as a destination for logs.',
+    'instance': 'An EC2 instance is a virtual server in Amazon\'s Elastic Compute Cloud (EC2) for running applications on the AWS infrastructure.',
+    'vpc': 'A Virtual Private Cloud (VPC) is a virtual network dedicated to your AWS account that is logically isolated from other virtual networks in the AWS Cloud.',
+    'subnet': 'A subnet is a range of IP addresses in your VPC that can be used to isolate resources within your network.',
+    'security_group': 'A security group acts as a virtual firewall for your instance to control inbound and outbound traffic.',
+    'iam_role': 'An IAM role is an AWS Identity and Access Management entity with permissions to make AWS service requests.',
+    'lambda_function': 'AWS Lambda is a serverless compute service that runs your code in response to events and automatically manages the underlying compute resources.',
+    
+    // GCP common resources
+    'compute_instance': 'A Compute Engine instance is a virtual machine hosted on Google\'s infrastructure.',
+    
+    // Azure common resources
+    'resource_group': 'A resource group is a container that holds related resources for an Azure solution.',
+    'virtual_machine': 'An Azure virtual machine is an on-demand, scalable computing resource.',
+  };
+  
+  // Check for specific resource types
+  for (const [key, description] of Object.entries(descriptions)) {
+    if (resourceType.includes(key)) {
+      return description;
+    }
+  }
+  
+  // Default description if no specific match found
+  return `A ${resourceName} resource for the ${providerName} provider. Please refer to the provider documentation for more details about this resource type.`;
+}
+
+// Helper function to generate example template based on resource type
+function generateTemplateExample(resourceName: string, providerName: string): string {
+  // Extract the resource type to generate appropriate examples
+  const resourceType = resourceName.includes('_') ? 
+    resourceName.substring(resourceName.indexOf('_') + 1) : 
+    resourceName;
+  
+  // Common patterns for different resource types
+  const commonPatterns: Record<string, string> = {
+    // AWS common resources
+    's3_bucket': `resource "${resourceName}" "example" {
+  bucket = "my-example-bucket-name"
+  acl    = "private"
+  
+  tags = {
+    Name        = "My Example Bucket"
+    Environment = "Dev"
+  }
+}`,
+    'instance': `resource "${resourceName}" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  
+  tags = {
+    Name = "ExampleInstance"
+  }
+}`,
+    'vpc': `resource "${resourceName}" "example" {
+  cidr_block = "10.0.0.0/16"
+  
+  tags = {
+    Name = "example-vpc"
+  }
+}`,
+    'subnet': `resource "${resourceName}" "example" {
+  vpc_id            = aws_vpc.example.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-west-2a"
+  
+  tags = {
+    Name = "example-subnet"
+  }
+}`,
+    'security_group': `resource "${resourceName}" "example" {
+  name        = "example-security-group"
+  description = "Example security group"
+  vpc_id      = aws_vpc.example.id
+  
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}`,
+    'iam_role': `resource "${resourceName}" "example" {
+  name = "example-role"
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}`,
+    'lambda_function': `resource "${resourceName}" "example" {
+  function_name = "example-function"
+  role          = aws_iam_role.example.arn
+  handler       = "index.handler"
+  runtime       = "nodejs14.x"
+  
+  filename      = "function.zip"
+  
+  environment {
+    variables = {
+      ENVIRONMENT = "dev"
+    }
+  }
+}`,
+
+    // GCP common resources
+    'compute_instance': `resource "${resourceName}" "example" {
+  name         = "example-instance"
+  machine_type = "e2-medium"
+  zone         = "us-central1-a"
+  
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-10"
+    }
+  }
+  
+  network_interface {
+    network = "default"
+    access_config {
+      // Ephemeral IP
+    }
+  }
+}`,
+
+    // Azure common resources
+    'resource_group': `resource "${resourceName}" "example" {
+  name     = "example-resources"
+  location = "West Europe"
+  
+  tags = {
+    environment = "dev"
+  }
+}`,
+    'virtual_machine': `resource "${resourceName}" "example" {
+  name                  = "example-vm"
+  location              = azurerm_resource_group.example.location
+  resource_group_name   = azurerm_resource_group.example.name
+  network_interface_ids = [azurerm_network_interface.example.id]
+  vm_size               = "Standard_DS1_v2"
+  
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+}`,
+  };
+  
+  // Check for specific resource types first
+  for (const [key, template] of Object.entries(commonPatterns)) {
+    if (resourceType.includes(key)) {
+      return template;
+    }
+  }
+  
+  // Default template if no specific match found
+  return `resource "${resourceName}" "example" {
+  # Required arguments
+  # Refer to the provider documentation for required and optional arguments
+  
+  # Common pattern includes tags for most resources
+  tags = {
+    Name        = "example-resource"
+    Environment = "dev"
+    Terraform   = "true"
+  }
+}`;
+}
 
 const tools: Tool[] = [
   {
@@ -252,288 +515,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       const latestVersionObj = versions[versions.length - 1];
       const latestVersion = latestVersionObj.version || latestVersionObj;
       const totalVersions = versions.length;
-      const text = `Provider ${namespaceStr}/${providerStr}: latest version is ${latestVersion} (out of ${totalVersions} versions).`;
+      
+      // Create a more informative markdown response
+      const providerUrl = formatUrl(`https://registry.terraform.io/providers/${namespaceStr}/${providerStr}`);
+      const markdownResponse = `## Provider: ${namespaceStr}/${providerStr}\n\n` +
+        `**Latest Version**: ${latestVersion}\n\n` +
+        `**Total Versions**: ${totalVersions}\n\n` +
+        `### Usage Example\n\n` +
+        formatAsMarkdown(`terraform {
+  required_providers {
+    ${providerStr} = {
+      source = "${namespaceStr}/${providerStr}"
+      version = ">= ${latestVersion}"
+    }
+  }
+}
 
-      console.error(`Response (providerLookup): ${text}`);
-      return { content: [{ type: "text", text }] };
+provider "${providerStr}" {
+  # Configuration options
+}`) +
+        `\n\n**[View Documentation](${providerUrl})**`;
+
+      console.error(`Response (providerLookup): Found provider ${namespaceStr}/${providerStr} with ${totalVersions} versions`);
+      
+      // Add metadata with context
+      const metadata: Record<string, any> = {
+        namespace: namespaceStr,
+        provider: providerStr,
+        latestVersion,
+        totalVersions,
+        documentationUrl: providerUrl
+      };
+      
+      // Add recent versions to metadata
+      if (versions.length > 0) {
+        metadata.recentVersions = versions.slice(-5).map((v: any) => v.version || v).reverse();
+      }
+      
+      // Add compatibility information
+      addContextInfo(metadata, "compatibility", {
+        terraformCoreVersions: "Terraform 0.12 and later",
+        lastUpdated: new Date().toISOString()
+      });
+      
+      return createStandardResponse("success", markdownResponse, metadata);
     }
 
     case "resourceUsage": {
-      // Retrieves example usage documentation for a Terraform resource
-      // - Fetches the example code snippet from the provider's documentation
-      // - Identifies and lists related resources used in the example
-      // - Supports both namespace/provider and provider-only formats
-      const { provider, resource, name } = arguments_ as unknown as ResourceUsageInput;
-      const providerInput = provider ?? "";
-      const resourceName = resource || name || "";
-      if (!providerInput || !resourceName) {
-        throw new Error("Both provider and resource name are required.");
-      }
-
-      let namespace = "hashicorp";
-      let providerName = providerInput;
-      if (providerInput.includes("/")) {
-        const [ns, n] = providerInput.split("/");
-        namespace = ns;
-        providerName = n || "";
-      }
-      if (!providerName) {
-        throw new Error("Invalid provider input.");
-      }
-
-      console.error(`Fetching docs for ${namespace}/${providerName}/resources/${resourceName}`);
-        
-      // Try the direct API first (more reliable when available)
-      const apiUrl = `https://registry.terraform.io/v1/providers/${namespace}/${providerName}/versions`;
-      console.error(`Trying API URL: ${apiUrl}`);
-        
-      try {
-        const versionsResp = await fetch(apiUrl);
-        if (!versionsResp.ok) {
-          throw new Error(`Failed to fetch provider versions: ${versionsResp.status}`);
-        }
-          
-        const versionsData = await versionsResp.json();
-        const latestVersion = versionsData.versions[versionsData.versions.length - 1].version;
-        console.error(`Latest version: ${latestVersion}`);
-          
-        // Try to get documentation via API
-        const docsApiUrl = `https://registry.terraform.io/v1/providers/${namespace}/${providerName}/${latestVersion}/docs/resources/${resourceName}`;
-        console.error(`Trying docs API URL: ${docsApiUrl}`);
-          
-        const docsResp = await fetch(docsApiUrl);
-        if (docsResp.ok) {
-          const docsData = await docsResp.json();
-          if (docsData.content && docsData.content.includes("```")) {
-            // Extract code from markdown content
-            const matches = docsData.content.match(/```(?:terraform|hcl)([\s\S]*?)```/);
-            if (matches && matches[1]) {
-              const usageSnippet = matches[1].trim();
-                
-              // Extract related resources
-              const resourceRegex = /resource\s+"([^"]+)"/g;
-              const dataSourceRegex = /data\s+"([^"]+)"/g;
-              const resourceSet = new Set<string>();
-                
-              let match;
-              while ((match = resourceRegex.exec(usageSnippet)) !== null) {
-                if (match[1].toLowerCase() !== resourceName.toLowerCase()) {
-                  resourceSet.add(match[1]);
-                }
-              }
-                
-              while ((match = dataSourceRegex.exec(usageSnippet)) !== null) {
-                resourceSet.add(`data.${match[1]}`);
-              }
-                
-              const relatedResources = Array.from(resourceSet);
-                
-              let responseText = `Example usage for ${resourceName}:\n\`\`\`terraform\n${usageSnippet}\n\`\`\`\n`;
-              if (relatedResources.length > 0) {
-                responseText += `Related resources: ${relatedResources.join(", ")}`;
-              } else {
-                responseText += "Related resources: (none found)";
-              }
-                
-              console.error(`Response (resourceUsage via API): Found example with ${relatedResources.length} related resources`);
-              return { content: [{ type: "text", text: responseText }] };
-            }
-          }
-        }
-          
-        // If API method fails, fall back to HTML scraping
-        console.error("API method failed or no example found in API response, falling back to HTML scraping");
-      } catch (error: any) {
-        console.error(`API attempt failed: ${error.message}`);
-        console.error("Falling back to HTML scraping");
-      }
-        
-      // Fallback to HTML scraping method
-      const docsUrl = `https://registry.terraform.io/providers/${namespace}/${providerName}/latest/docs/resources/${resourceName}`;
-      console.error(`Trying HTML docs URL: ${docsUrl}`);
-        
-      const resp = await fetch(docsUrl);
-      if (!resp.ok) {
-        throw new Error(`Resource docs not found for ${providerName}/${resourceName} (Status: ${resp.status})`);
-      }
-      const html = await resp.text();
-
-      let usageSnippet = "";
-      let relatedResources: string[] = [];
-        
-      // More robust HTML parsing for different page structures
-      const exampleHeaders = [">Example Usage<", ">Basic Usage<", ">Basic example<", ">Example<"];
-      let exampleIndex = -1;
-        
-      for (const header of exampleHeaders) {
-        const idx = html.indexOf(header);
-        if (idx !== -1) {
-          exampleIndex = idx;
-          break;
-        }
-      }
-        
-      if (exampleIndex !== -1) {
-        console.error(`Found example section at index ${exampleIndex}`);
-          
-        // Look for various code block markers
-        const codeMarkers = ["<pre", "<code", "class=\"language-"];
-        let codeStart = -1;
-          
-        for (const marker of codeMarkers) {
-          const idx = html.indexOf(marker, exampleIndex);
-          if (idx !== -1 && (codeStart === -1 || idx < codeStart)) {
-            codeStart = idx;
-          }
-        }
-          
-        if (codeStart !== -1) {
-          console.error(`Found code block at index ${codeStart}`);
-            
-          // Find the corresponding end tag
-          const endMarkers = ["</pre>", "</code>"];
-          let codeEnd = -1;
-            
-          for (const marker of endMarkers) {
-            const idx = html.indexOf(marker, codeStart);
-            if (idx !== -1 && (codeEnd === -1 || idx < codeEnd)) {
-              codeEnd = idx;
-            }
-          }
-            
-          if (codeEnd !== -1) {
-            let codeBlock = html.substring(codeStart, codeEnd);
-            // Remove HTML tags and decode HTML entities
-            codeBlock = codeBlock.replace(/<[^>]+>/g, "");
-            codeBlock = codeBlock.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, "\"");
-            usageSnippet = codeBlock.trim();
-              
-            console.error(`Extracted code block of length ${usageSnippet.length}`);
-          }
-        }
-      }
-
-      if (usageSnippet) {
-        // Improved regex for finding Terraform resources and data sources
-        const resourceRegex = /resource\s+"([^"]+)"/g;
-        const dataSourceRegex = /data\s+"([^"]+)"/g;
-        const variableRegex = /\$\{([^.}]+)\.([^.}]+)(?:\.|\})/g;
-          
-        const found = new Set<string>();
-        let match;
-          
-        // Find explicit resource declarations
-        while ((match = resourceRegex.exec(usageSnippet)) !== null) {
-          if (match[1].toLowerCase() !== resourceName.toLowerCase()) {
-            found.add(match[1]);
-          }
-        }
-          
-        // Find data source declarations
-        while ((match = dataSourceRegex.exec(usageSnippet)) !== null) {
-          found.add(`data.${match[1]}`);
-        }
-          
-        // Find resource references
-        while ((match = variableRegex.exec(usageSnippet)) !== null) {
-          const refType = match[1];
-          if (refType !== "var" && refType !== "local" && refType !== "module") {
-            found.add(refType);
-          }
-        }
-          
-        relatedResources = Array.from(found);
-      }
-
-      if (!usageSnippet) {
-        // Try to find code blocks in other formats
-        const markdownCodeBlockRegex = /```(?:terraform|hcl)([\s\S]*?)```/g;
-        let match;
-        while ((match = markdownCodeBlockRegex.exec(html)) !== null) {
-          if (match[1] && match[1].includes(resourceName)) {
-            usageSnippet = match[1].trim();
-            break;
-          }
-        }
-      }
-
-      if (!usageSnippet) {
-        // Instead of just returning an error message, extract and return the whole page content
-        console.error(`No example usage found. Returning full documentation for resource "${resourceName}"`);
-          
-        // Extract the main content area from the HTML
-        let content = "";
-        const mainContentMarkers = [
-          "<main", 
-          "<div class=\"content\"", 
-          "<article", 
-          "<div class=\"section\""
-        ];
-          
-        let contentStart = -1;
-        for (const marker of mainContentMarkers) {
-          const idx = html.indexOf(marker);
-          if (idx !== -1) {
-            contentStart = idx;
-            break;
-          }
-        }
-          
-        if (contentStart !== -1) {
-          // Find the corresponding end tag
-          const endMarkers = ["</main>", "</article>", "</div>"];
-          let contentEnd = html.length;
-            
-          for (const marker of endMarkers) {
-            // Find the last occurrence of the marker
-            const idx = html.lastIndexOf(marker);
-            if (idx !== -1 && idx > contentStart && idx < contentEnd) {
-              contentEnd = idx + marker.length;
-            }
-          }
-            
-          // Extract and clean up the content
-          content = html.substring(contentStart, contentEnd);
-            
-          // Convert HTML to plain text
-          content = content
-            .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "\n# $1\n")
-            .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n## $1\n")
-            .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n### $1\n")
-            .replace(/<h4[^>]*>(.*?)<\/h4>/gi, "\n#### $1\n")
-            .replace(/<p[^>]*>(.*?)<\/p>/gi, "\n$1\n")
-            .replace(/<li[^>]*>(.*?)<\/li>/gi, "\n- $1")
-            .replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`")
-            .replace(/<pre[^>]*>(.*?)<\/pre>/gi, "\n```\n$1\n```\n")
-            .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "[$2]($1)")
-            .replace(/<[^>]+>/g, "") // Remove remaining HTML tags
-            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, "\"")
-            .replace(/\n{3,}/g, "\n\n"); // Replace multiple newlines with just two
-              
-          return { 
-            content: [{ 
-              type: "text", 
-              text: `Documentation for ${resourceName}:\n\n${content.trim()}\n\nFor full documentation, visit: ${docsUrl}` 
-            }] 
-          };
-        }
-          
-        // If we couldn't extract content, provide a link to the docs
-        const text = `No example usage found for resource "${resourceName}". Please check the documentation at ${docsUrl}`;
-        console.error(`Response (resourceUsage): ${text}`);
-        return { content: [{ type: "text", text }] };
-      }
-
-      let responseText = `Example usage for ${resourceName}:\n\`\`\`terraform\n${usageSnippet}\n\`\`\`\n`;
-      if (relatedResources.length > 0) {
-        responseText += `Related resources: ${relatedResources.join(", ")}`;
-      } else {
-        responseText += "Related resources: (none found)";
-      }
-      console.error(
-        `Response (resourceUsage): Found example of length ${usageSnippet.length} with ${relatedResources.length} related resources`
-      );
-      return { content: [{ type: "text", text: responseText }] };
+      return await handleResourceUsage(toolName, arguments_);
     }
 
     case "moduleRecommendations": {
@@ -562,20 +591,61 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       if (modules.length === 0) {
         const text = `No modules found for "${searchStr}".`;
         console.error(`Response (moduleRecommendations): ${text}`);
-        return { content: [{ type: "text", text }] };
+        return createStandardResponse("error", text, { query: searchStr, provider: providerFilter });
       }
-      let recommendationText = `Recommended modules for "${searchStr}":\n`;
-      modules.forEach((mod: any, index: number) => {
+      
+      // Construct a better formatted response with structured module information
+      let markdownResponse = `## Recommended modules for "${searchStr}"\n\n`;
+      
+      // Process each module and create a structured format
+      const formattedModules = modules.map((mod: any, index: number) => {
         const name = `${mod.namespace}/${mod.name}`;
         const prov = mod.provider;
         const description = mod.description || "";
-        recommendationText += `${index + 1}. ${name} (${prov}) - ${description}\n`;
+        const usageExample = `module "${mod.name}" {
+  source = "${name}/${prov}"
+  version = "${mod.version || "latest"}"
+  
+  # Required inputs go here
+}`;
+
+        // Add to markdown response
+        markdownResponse += `### ${index + 1}. ${name}/${prov}\n\n`;
+        markdownResponse += `**Description**: ${description}\n\n`;
+        markdownResponse += `**Provider**: ${prov}\n\n`;
+        markdownResponse += `**Example Usage**:\n\n`;
+        markdownResponse += formatAsMarkdown(usageExample);
+        markdownResponse += `\n\n`;
+        
+        // Also return structured data for each module
+        return {
+          name: name,
+          provider: prov,
+          description: description,
+          url: formatUrl(`https://registry.terraform.io/modules/${name}/${prov}`),
+          latestVersion: mod.version || "latest",
+        };
       });
-      recommendationText = recommendationText.trim();
+      
       console.error(
         `Response (moduleRecommendations): Found ${modules.length} modules for "${searchStr}"`
       );
-      return { content: [{ type: "text", text: recommendationText }] };
+      
+      // Add contextual information about the search
+      const metadata = {
+        query: searchStr,
+        provider: providerFilter,
+        resultCount: modules.length,
+        modules: formattedModules
+      };
+      
+      // Add contextual information about Terraform compatibility
+      addContextInfo(metadata, "compatibility", {
+        terraformCoreVersions: "Terraform 0.12 and later",
+        lastUpdated: new Date().toISOString()
+      });
+      
+      return createStandardResponse("success", markdownResponse, metadata);
     }
 
     case "dataSourceLookup": {
@@ -590,14 +660,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       console.error(`Returning documentation link for ${namespace}/${provider} data sources`);
       
       // Direct to documentation approach - the most reliable method
-      const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/data-sources`;
+      const docUrl = formatUrl(`https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/data-sources`);
       
-      return {
-        content: [{
-          type: "text",
-          text: `Data sources for provider ${namespace}/${provider}.\n\nPlease refer to the official documentation for a complete list of data sources:\n\n${docUrl}`
-        }]
+      // Create a markdown formatted response
+      const markdownResponse = `## Data Sources for Provider ${namespace}/${provider}\n\n` +
+        `Data sources allow Terraform to use information defined outside of Terraform, defined by another separate Terraform configuration, or modified by functions.\n\n` +
+        `### Usage Example\n\n` +
+        formatAsMarkdown(`data "<data_source_name>" "example" {
+  # Required arguments go here
+  # ...
+}
+
+# Reference the data source
+output "example_output" {
+  value = data.<data_source_name>.example.<attribute>
+}`) + 
+        `\n\n**[View All Data Sources Documentation](${docUrl})**`;
+      
+      // Add metadata with context
+      const metadata = {
+        provider,
+        namespace,
+        documentationUrl: docUrl
       };
+      
+      // Add compatibility information
+      addContextInfo(metadata, "compatibility", {
+        terraformCoreVersions: "Terraform 0.12 and later",
+        lastUpdated: new Date().toISOString()
+      });
+      
+      return createStandardResponse("success", markdownResponse, metadata);
     }
 
     case "resourceArgumentDetails": {
@@ -613,14 +706,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       console.error(`Returning documentation link for ${namespace}/${provider}/resources/${resource}`);
       
       // Direct to documentation approach - the most reliable method
-      const docUrl = `https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`;
+      const docUrl = formatUrl(`https://registry.terraform.io/providers/${namespace}/${provider}/latest/docs/resources/${resource}`);
       
-      return {
-        content: [{
-          type: "text",
-          text: `Resource arguments for ${resource} in provider ${namespace}/${provider}.\n\nPlease refer to the official documentation for details on this resource's arguments:\n\n${docUrl}`
-        }]
+      // Create a more structured and informative response
+      const markdownResponse = `## Resource: ${resource}\n\n` +
+        `This resource is provided by the **${namespace}/${provider}** provider.\n\n` +
+        `### Usage\n\n` +
+        `For detailed information on this resource's arguments and attributes, please refer to the official documentation:\n\n` +
+        `**[View Full Documentation](${docUrl})**\n\n` +
+        `### Example Usage Pattern\n\n` +
+        formatAsMarkdown(`resource "${resource}" "example" {
+  # Required arguments go here
+  # ...
+}`);
+      
+      // Add metadata for context
+      const metadata = {
+        resource,
+        provider,
+        namespace,
+        documentationUrl: docUrl
       };
+      
+      // Add context about Terraform compatibility
+      addContextInfo(metadata, "compatibility", {
+        terraformCoreVersions: "Terraform 0.12 and later",
+        lastUpdated: new Date().toISOString()
+      });
+      
+      return createStandardResponse("success", markdownResponse, metadata);
     }
 
     case "moduleDetails": {
@@ -646,18 +760,85 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       const outputs = root.outputs || [];
       const dependencies = root.dependencies || [];
 
+      // Create a summary markdown response that's more readable
+      let markdownResponse = `## Module: ${namespace}/${module}/${provider}\n\n`;
+      
+      // Include latest version and published date
+      markdownResponse += `**Latest Version**: ${versions[0] || "unknown"}\n\n`;
+      
+      // Add module description if available
+      if (moduleData.description) {
+        markdownResponse += `**Description**: ${moduleData.description}\n\n`;
+      }
+      
+      // Add usage example
+      const usageExample = `module "${module}" {
+  source = "${namespace}/${module}/${provider}"
+  version = "${versions[0] || "latest"}"
+  
+  # Required inputs
+${inputs
+  .filter((input: any) => input.required)
+  .map((input: any) => `  ${input.name} = ${getExampleValue(input)}`)
+  .join('\n')}
+}`;
+
+      markdownResponse += `**Example Usage**:\n\n${formatAsMarkdown(usageExample)}\n\n`;
+      
+      // Add a summary of required inputs
+      if (inputs.length > 0) {
+        markdownResponse += `### Required Inputs\n\n`;
+        const requiredInputs = inputs.filter((input: any) => input.required);
+        
+        if (requiredInputs.length > 0) {
+          requiredInputs.forEach((input: any) => {
+            markdownResponse += `- **${input.name}** (${input.type}): ${input.description || 'No description available'}\n`;
+          });
+        } else {
+          markdownResponse += `*No required inputs*\n`;
+        }
+        markdownResponse += `\n`;
+      }
+      
+      // Add a summary of key outputs
+      if (outputs.length > 0) {
+        markdownResponse += `### Key Outputs\n\n`;
+        // Limit to 5 most important outputs to avoid overwhelming information
+        const keyOutputs = outputs.slice(0, 5);
+        keyOutputs.forEach((output: any) => {
+          markdownResponse += `- **${output.name}**: ${output.description || 'No description available'}\n`;
+        });
+        if (outputs.length > 5) {
+          markdownResponse += `\n*... and ${outputs.length - 5} more outputs*\n`;
+        }
+        markdownResponse += `\n`;
+      }
+      
+      // Include documentation URL
+      const docsUrl = formatUrl(`https://registry.terraform.io/modules/${namespace}/${module}/${provider}`);
+      markdownResponse += `**[View Full Documentation](${docsUrl})**\n`;
+
       console.error(`Response (moduleDetails): Retrieved details for ${namespace}/${module}/${provider}`);
-      return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            versions,
-            inputs,
-            outputs,
-            dependencies
-          }, null, 2)
-        }]
+      
+      // Create metadata with structured information
+      const metadata = {
+        moduleId: `${namespace}/${module}/${provider}`,
+        latestVersion: versions[0] || "unknown",
+        allVersions: versions.slice(0, 5), // Show only the most recent 5 versions
+        totalVersions: versions.length,
+        inputCount: inputs.length,
+        outputCount: outputs.length,
+        dependencies,
+        documentationUrl: docsUrl
       };
+      
+      // Add compatibility information
+      addContextInfo(metadata, "compatibility", {
+        terraformCoreVersions: "Terraform 0.12 and later",
+        lastUpdated: new Date().toISOString()
+      });
+      
+      return createStandardResponse("success", markdownResponse, metadata);
     }
 
     default:
@@ -672,3 +853,223 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 const transport = new StdioServerTransport();
 await server.connect(transport);
 console.error(`terraform-registry-mcp v${VERSION} is running (stdio)...`);
+
+// Helper function to fetch documentation content from the Terraform Registry API
+async function fetchDocumentation(provider: string, resource: string): Promise<{content: string; docId: string} | null> {
+  try {
+    // First, find the document ID by querying with filters
+    const filterUrl = `https://registry.terraform.io/v2/provider-docs?filter%5Bcategory%5D=resources&filter%5Bslug%5D=${resource}&filter%5Blanguage%5D=hcl&page%5Bsize%5D=1`;
+    
+    console.log(`Fetching document ID from: ${filterUrl}`);
+    const filterResponse = await fetch(filterUrl);
+    
+    if (!filterResponse.ok) {
+      console.error(`Failed to fetch document ID: ${filterResponse.status} ${filterResponse.statusText}`);
+      return null;
+    }
+    
+    const filterData = await filterResponse.json();
+    
+    if (!filterData.data || filterData.data.length === 0) {
+      console.error(`No documentation found for resource: ${resource}`);
+      return null;
+    }
+    
+    const docId = filterData.data[0].id;
+    
+    // Now fetch the full documentation using the document ID
+    const docUrl = `https://registry.terraform.io/v2/provider-docs/${docId}`;
+    
+    console.log(`Fetching documentation content from: ${docUrl}`);
+    const docResponse = await fetch(docUrl);
+    
+    if (!docResponse.ok) {
+      console.error(`Failed to fetch documentation content: ${docResponse.status} ${docResponse.statusText}`);
+      return null;
+    }
+    
+    const docData = await docResponse.json();
+    
+    if (!docData.data || !docData.data.attributes || !docData.data.attributes.content) {
+      console.error(`Documentation content not found for resource: ${resource}`);
+      return null;
+    }
+    
+    return {
+      content: docData.data.attributes.content,
+      docId: docId
+    };
+  } catch (error) {
+    console.error(`Error fetching documentation: ${error}`);
+    return null;
+  }
+}
+
+// Helper function to extract example usage from documentation content
+function extractUsageFromApiContent(content: string): string {
+  try {
+    // Look for the Example Usage section and extract the code
+    const exampleMatch = content.match(/## Example Usage(.*?)##/s);
+    
+    if (exampleMatch && exampleMatch[1]) {
+      // Find the code block in the example usage section
+      const codeMatch = exampleMatch[1].match(/```(?:terraform|hcl)(.*?)```/s);
+      
+      if (codeMatch && codeMatch[1]) {
+        // Return the cleaned code block
+        return codeMatch[1].trim();
+      }
+    }
+    
+    return '';
+  } catch (error) {
+    console.error(`Error extracting usage from API content: ${error}`);
+    return '';
+  }
+}
+
+// Helper function to fetch data from a URL
+async function fetchData(url: string, options: RequestInit = {}): Promise<any> {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching data from ${url}: ${error}`);
+    throw error;
+  }
+}
+
+// Helper function for resourceUsage
+async function handleResourceUsage(toolName: string, parameters: any) {
+  // Extract resource parameters, handling either { provider, resource } or { name } format
+  const resourceParams: ResourceUsageInput = {
+    provider: parameters.provider,
+    resource: parameters.resource || parameters.name,
+  };
+
+  // Validate required parameters
+  if (!resourceParams.provider) {
+    throw new Error('Provider parameter is required for resourceUsage');
+  }
+  if (!resourceParams.resource) {
+    throw new Error('Resource parameter is required for resourceUsage');
+  }
+
+  // Try to get provider version info
+  let latestVersion = '';
+  try {
+    const providerUrl = `https://registry.terraform.io/v1/providers/${resourceParams.provider}`;
+    const providerData = await fetchData(providerUrl);
+    latestVersion = providerData.version;
+  } catch (error) {
+    console.error(`Error fetching provider info: ${error}`);
+  }
+
+  // URL for the documentation
+  const url = `https://registry.terraform.io/providers/${resourceParams.provider}/latest/docs/resources/${resourceParams.resource}`;
+  const headers = { Accept: 'application/json' };
+
+  try {
+    // First try to get content from the API
+    const docResult = await fetchDocumentation(resourceParams.provider, resourceParams.resource);
+    const resourceName = resourceParams.resource;
+    const providerName = resourceParams.provider;
+
+    // Create metadata for the response
+    const metadata: Record<string, any> = {
+      provider: providerName,
+      resource: resourceName,
+      latestVersion: latestVersion || 'unknown',
+      documentationUrl: url
+    };
+
+    // If we have documentation from the API
+    if (docResult && docResult.content) {
+      console.log(`Successfully retrieved documentation for ${resourceName} from API`);
+      
+      // Extract example usage from the content
+      const usageSnippet = extractUsageFromApiContent(docResult.content);
+      
+      // If we found an example usage, format it properly
+      if (usageSnippet !== '') {
+        const markdownResponse = formatAsMarkdown(`## ${resourceName} Example Usage
+
+\`\`\`hcl
+${usageSnippet}
+\`\`\`
+
+[View Full Documentation for ${resourceName}](${url})
+`);
+
+        // Enhance metadata
+        metadata.documentSource = 'api';
+        metadata.docId = docResult.docId;
+        
+        // Add compatibility information
+        addContextInfo(metadata, "compatibility", {
+          terraformCoreVersions: "Terraform 0.12 and later",
+          lastUpdated: new Date().toISOString()
+        });
+
+        return createStandardResponse("success", markdownResponse, metadata);
+      }
+      
+      // If no example but we have content, return the full markdown content
+      const markdownResponse = `## ${resourceName} Documentation
+
+${docResult.content}
+
+[View Full Documentation for ${resourceName}](${url})`;
+      
+      metadata.documentSource = 'api';
+      metadata.docId = docResult.docId;
+      metadata.hasExampleUsage = false;
+      
+      return createStandardResponse("success", markdownResponse, metadata);
+    }
+
+    // Fall back to generating a template example if API failed
+    const templateExample = generateTemplateExample(resourceName, providerName);
+    const resourceDescription = getResourceDescription(resourceName, providerName);
+    
+    const content = `## ${resourceName} - Generated Example
+
+> **Note**: No official example was found in the Terraform Registry. A generated template is provided below.
+
+### Resource Purpose
+${resourceDescription}
+
+### Basic Usage Pattern
+\`\`\`hcl
+${templateExample}
+\`\`\`
+
+### Important Notes
+- This is a generated example and may not include all required attributes
+- Always refer to the [official documentation](${url}) for complete details
+- Test in a non-production environment before using in production
+
+[View Full Documentation for ${resourceName}](${url})`;
+
+    console.error(`No content found for ${resourceName}. Providing a generated template.`);
+    
+    // Add metadata for the fallback response
+    metadata.documentSource = 'generated';
+    metadata.hasExampleUsage = false;
+    
+    // Add compatibility information
+    addContextInfo(metadata, "compatibility", {
+      terraformCoreVersions: "Terraform 0.12 and later",
+      lastUpdated: new Date().toISOString()
+    });
+
+    // Create a standard response with the fallback content
+    return createStandardResponse("success", content, metadata);
+  } catch (error) {
+    console.error(`Error in resourceUsage: ${error}`);
+    throw error;
+  }
+}

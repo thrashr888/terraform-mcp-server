@@ -60,6 +60,10 @@ To install and use this MCP server in Claude Desktop:
 
 Alternatively, you can use `npx -y terraform-mcp-server` as a command.
 
+## Testing
+
+For information about testing this project, please see the [TESTS.md](TESTS.md) file.
+
 ## Tools
 
 ### 1. Provider Lookup
