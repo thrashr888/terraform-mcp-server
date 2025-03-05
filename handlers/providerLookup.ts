@@ -1,9 +1,9 @@
-import { ProviderLookupInput, ResponseContent } from '../types/index.js';
-import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from '../utils/responseUtils.js';
-import { fetchData, getProviderDocUrl } from '../utils/apiUtils.js';
-import { handleToolError } from '../utils/responseUtils.js';
-import { DEFAULT_NAMESPACE, REGISTRY_API_V1 } from '../config.js';
-import logger from '../utils/logger.js';
+import { ProviderLookupInput, ResponseContent } from "../types/index.js";
+import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from "../utils/responseUtils.js";
+import { fetchData, getProviderDocUrl } from "../utils/apiUtils.js";
+import { handleToolError } from "../utils/responseUtils.js";
+import { DEFAULT_NAMESPACE, REGISTRY_API_V1 } from "../config.js";
+import logger from "../utils/logger.js";
 
 /**
  * Handles the providerLookup tool request
@@ -12,22 +12,22 @@ import logger from '../utils/logger.js';
  */
 export async function handleProviderLookup(params: ProviderLookupInput): Promise<ResponseContent> {
   try {
-    logger.debug('Processing providerLookup request', params);
+    logger.debug("Processing providerLookup request", params);
     
     // Extract and normalize parameters
-    let providerStr = params.provider || '';
+    let providerStr = params.provider || "";
     let namespaceStr = params.namespace || DEFAULT_NAMESPACE;
 
     // Handle provider format with namespace/provider
-    if (providerStr.includes('/')) {
-      const [ns, prov] = providerStr.split('/');
+    if (providerStr.includes("/")) {
+      const [ns, prov] = providerStr.split("/");
       namespaceStr = ns;
-      providerStr = prov || '';
+      providerStr = prov || "";
     }
     
     // Validate required parameters
     if (!providerStr) {
-      throw new Error('Provider name is required');
+      throw new Error("Provider name is required");
     }
 
     // Fetch provider data from the registry
@@ -51,7 +51,7 @@ export async function handleProviderLookup(params: ProviderLookupInput): Promise
     const markdownResponse = `## Provider: ${namespaceStr}/${providerStr}\n\n` +
       `**Latest Version**: ${latestVersion}\n\n` +
       `**Total Versions**: ${totalVersions}\n\n` +
-      `### Usage Example\n\n` +
+      "### Usage Example\n\n" +
       formatAsMarkdown(`terraform {
   required_providers {
     ${providerStr} = {
@@ -85,10 +85,10 @@ provider "${providerStr}" {
     // Add standard context information
     addStandardContext(metadata);
     
-    return createStandardResponse('success', markdownResponse, metadata);
+    return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
     // Handle errors in a standardized way
-    return handleToolError('providerLookup', error, {
+    return handleToolError("providerLookup", error, {
       inputParams: params
     });
   }

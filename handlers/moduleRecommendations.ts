@@ -1,9 +1,9 @@
-import { ModuleRecommendationsInput, ResponseContent } from '../types/index.js';
-import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from '../utils/responseUtils.js';
-import { fetchData, getModuleDocUrl } from '../utils/apiUtils.js';
-import { handleToolError } from '../utils/responseUtils.js';
-import { REGISTRY_API_V1 } from '../config.js';
-import logger from '../utils/logger.js';
+import { ModuleRecommendationsInput, ResponseContent } from "../types/index.js";
+import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from "../utils/responseUtils.js";
+import { fetchData, getModuleDocUrl } from "../utils/apiUtils.js";
+import { handleToolError } from "../utils/responseUtils.js";
+import { REGISTRY_API_V1 } from "../config.js";
+import logger from "../utils/logger.js";
 
 interface ModuleSearchResult {
   modules: Array<{
@@ -31,15 +31,15 @@ interface ModuleSearchResult {
  */
 export async function handleModuleRecommendations(params: ModuleRecommendationsInput): Promise<ResponseContent> {
   try {
-    logger.debug('Processing moduleRecommendations request', params);
+    logger.debug("Processing moduleRecommendations request", params);
     
     // Extract and validate search parameters
-    const searchStr = params.query || params.keyword || '';
+    const searchStr = params.query || params.keyword || "";
     if (!searchStr) {
-      throw new Error('Search query is required for module recommendations.');
+      throw new Error("Search query is required for module recommendations.");
     }
     
-    const providerFilter = params.provider || '';
+    const providerFilter = params.provider || "";
     
     // Build search URL with parameters
     let searchUrl = `${REGISTRY_API_V1}/modules/search?q=${encodeURIComponent(searchStr)}&limit=3&verified=true`;
@@ -67,7 +67,7 @@ export async function handleModuleRecommendations(params: ModuleRecommendationsI
     const formattedModules = modules.map((mod, index) => {
       const name = `${mod.namespace}/${mod.name}`;
       const prov = mod.provider;
-      const description = mod.description || '';
+      const description = mod.description || "";
       const usageExample = `module "${mod.name}" {
   source = "${name}/${prov}"
   version = "${mod.version || "latest"}"
@@ -79,9 +79,9 @@ export async function handleModuleRecommendations(params: ModuleRecommendationsI
       markdownResponse += `### ${index + 1}. ${name}/${prov}\n\n`;
       markdownResponse += `**Description**: ${description}\n\n`;
       markdownResponse += `**Provider**: ${prov}\n\n`;
-      markdownResponse += `**Example Usage**:\n\n`;
+      markdownResponse += "**Example Usage**:\n\n";
       markdownResponse += formatAsMarkdown(usageExample);
-      markdownResponse += `\n\n`;
+      markdownResponse += "\n\n";
       
       // Also return structured data for each module
       return {
@@ -89,7 +89,7 @@ export async function handleModuleRecommendations(params: ModuleRecommendationsI
         provider: prov,
         description: description,
         url: formatUrl(getModuleDocUrl(mod.namespace, mod.name, prov)),
-        latestVersion: mod.version || 'latest',
+        latestVersion: mod.version || "latest",
       };
     });
     
@@ -106,9 +106,9 @@ export async function handleModuleRecommendations(params: ModuleRecommendationsI
     // Add standard context information
     addStandardContext(metadata);
     
-    return createStandardResponse('success', markdownResponse, metadata);
+    return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
-    return handleToolError('moduleRecommendations', error, {
+    return handleToolError("moduleRecommendations", error, {
       inputParams: params
     });
   }

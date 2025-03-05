@@ -1,8 +1,8 @@
-import debug from 'debug';
-import { LOG_LEVELS, LOG_LEVEL, SERVER_NAME } from '../config.js';
+import debug from "debug";
+import { LOG_LEVELS, LOG_LEVEL, SERVER_NAME } from "../config.js";
 
 // Namespace for the debug loggers
-const BASE_NAMESPACE = SERVER_NAME.replace(/[^a-zA-Z0-9_-]/g, '-');
+const BASE_NAMESPACE = SERVER_NAME.replace(/[^a-zA-Z0-9_-]/g, "-");
 
 // Create loggers for different levels
 const errorLogger = debug(`${BASE_NAMESPACE}:error`);
@@ -12,16 +12,16 @@ const debugLogger = debug(`${BASE_NAMESPACE}:debug`);
 
 // By default, send error and warning logs to stderr
 errorLogger.log = (message: string, ...args: any[]) => {
-  console.error(JSON.stringify({ level: 'error', message, metadata: args[0] || {} }));
+  console.error(JSON.stringify({ level: "error", message, metadata: args[0] || {} }));
 };
 warnLogger.log = (message: string, ...args: any[]) => {
-  console.error(JSON.stringify({ level: 'warn', message, metadata: args[0] || {} }));
+  console.error(JSON.stringify({ level: "warn", message, metadata: args[0] || {} }));
 };
 infoLogger.log = (message: string, ...args: any[]) => {
-  console.error(JSON.stringify({ level: 'info', message, metadata: args[0] || {} }));
+  console.error(JSON.stringify({ level: "info", message, metadata: args[0] || {} }));
 };
 debugLogger.log = (message: string, ...args: any[]) => {
-  console.error(JSON.stringify({ level: 'debug', message, metadata: args[0] || {} }));
+  console.error(JSON.stringify({ level: "debug", message, metadata: args[0] || {} }));
 };
 
 // Initialize loggers based on configured log level
@@ -37,21 +37,21 @@ if (!process.env.DEBUG) {
 
   // Enable levels based on the configured log level
   switch (LOG_LEVEL) {
-    case LOG_LEVELS.ERROR:
-      enableDebug('error');
-      break;
-    case LOG_LEVELS.WARN:
-      enableDebug('error,warn');
-      break;
-    case LOG_LEVELS.INFO:
-      enableDebug('error,warn,info');
-      break;
-    case LOG_LEVELS.DEBUG:
-      enableDebug('error,warn,info,debug');
-      break;
-    default:
-      // Default to INFO level
-      enableDebug('error,warn,info');
+  case LOG_LEVELS.ERROR:
+    enableDebug("error");
+    break;
+  case LOG_LEVELS.WARN:
+    enableDebug("error,warn");
+    break;
+  case LOG_LEVELS.INFO:
+    enableDebug("error,warn,info");
+    break;
+  case LOG_LEVELS.DEBUG:
+    enableDebug("error,warn,info,debug");
+    break;
+  default:
+    // Default to INFO level
+    enableDebug("error,warn,info");
   }
 }
 
@@ -63,20 +63,20 @@ if (!process.env.DEBUG) {
  */
 export function log(level: string, message: string, metadata?: any): void {
   switch (level) {
-    case LOG_LEVELS.ERROR:
-      errorLogger(message, metadata);
-      break;
-    case LOG_LEVELS.WARN:
-      warnLogger(message, metadata);
-      break;
-    case LOG_LEVELS.INFO:
-      infoLogger(message, metadata);
-      break;
-    case LOG_LEVELS.DEBUG:
-      debugLogger(message, metadata);
-      break;
-    default:
-      infoLogger(message, metadata);
+  case LOG_LEVELS.ERROR:
+    errorLogger(message, metadata);
+    break;
+  case LOG_LEVELS.WARN:
+    warnLogger(message, metadata);
+    break;
+  case LOG_LEVELS.INFO:
+    infoLogger(message, metadata);
+    break;
+  case LOG_LEVELS.DEBUG:
+    debugLogger(message, metadata);
+    break;
+  default:
+    infoLogger(message, metadata);
   }
 }
 

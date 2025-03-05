@@ -3,7 +3,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  CallToolRequest,
   CallToolRequestSchema,
   ListToolsRequestSchema,
   Tool,
@@ -17,7 +16,7 @@ import {
   handleDataSourceLookup,
   handleResourceArgumentDetails,
   handleModuleDetails
-} from './handlers/index.js';
+} from "./handlers/index.js";
 
 import { 
   VERSION, 
@@ -26,9 +25,8 @@ import {
   DEFAULT_NAMESPACE,
   LOG_LEVEL,
   REQUEST_TIMEOUT_MS
-} from './config.js';
-import { ToolRequestParams } from './types/index.js';
-import logger from './utils/logger.js';
+} from "./config.js";
+import logger from "./utils/logger.js";
 import { 
   ProviderLookupInput,
   ResourceUsageInput,
@@ -36,7 +34,7 @@ import {
   DataSourceLookupInput,
   ResourceArgumentDetailsInput,
   ModuleDetailsInput
-} from './types/index.js';
+} from "./types/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
 declare module "@modelcontextprotocol/sdk/server/index.js" {
@@ -163,7 +161,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 // CallToolRequest handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  logger.debug('Handling tool call request:', request);
+  logger.debug("Handling tool call request:", request);
   
   // Extract tool name and arguments
   const toolName = request.params.name;
@@ -179,32 +177,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     
     // Route to the appropriate handler based on the tool name
     switch (toolName) {
-      case "providerLookup": {
-        const args = arguments_ as unknown as ProviderLookupInput;
-        return await handleProviderLookup(args);
-      }
-      case "resourceUsage": {
-        const args = arguments_ as unknown as ResourceUsageInput;
-        return await handleResourceUsage(args);
-      }
-      case "moduleRecommendations": {
-        const args = arguments_ as unknown as ModuleRecommendationsInput;
-        return await handleModuleRecommendations(args);
-      }
-      case "dataSourceLookup": {
-        const args = arguments_ as unknown as DataSourceLookupInput;
-        return await handleDataSourceLookup(args);
-      }
-      case "resourceArgumentDetails": {
-        const args = arguments_ as unknown as ResourceArgumentDetailsInput;
-        return await handleResourceArgumentDetails(args);
-      }
-      case "moduleDetails": {
-        const args = arguments_ as unknown as ModuleDetailsInput;
-        return await handleModuleDetails(args);
-      }
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
+    case "providerLookup": {
+      const args = arguments_ as unknown as ProviderLookupInput;
+      return await handleProviderLookup(args);
+    }
+    case "resourceUsage": {
+      const args = arguments_ as unknown as ResourceUsageInput;
+      return await handleResourceUsage(args);
+    }
+    case "moduleRecommendations": {
+      const args = arguments_ as unknown as ModuleRecommendationsInput;
+      return await handleModuleRecommendations(args);
+    }
+    case "dataSourceLookup": {
+      const args = arguments_ as unknown as DataSourceLookupInput;
+      return await handleDataSourceLookup(args);
+    }
+    case "resourceArgumentDetails": {
+      const args = arguments_ as unknown as ResourceArgumentDetailsInput;
+      return await handleResourceArgumentDetails(args);
+    }
+    case "moduleDetails": {
+      const args = arguments_ as unknown as ModuleDetailsInput;
+      return await handleModuleDetails(args);
+    }
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
     }
   } catch (error) {
     logger.error(`Error in tool handler for ${toolName}:`, error);
@@ -226,28 +224,28 @@ function logConfiguration() {
 }
 
 async function main() {
-  console.error('🚀 Starting terraform-registry MCP server...');
+  console.error("🚀 Starting terraform-registry MCP server...");
   const transport = new StdioServerTransport();
 
   // Prevent unhandled promise rejections from crashing the server
-  process.on('unhandledRejection', (reason) => {
-    console.error('💥 Unhandled Promise Rejection:', reason);
+  process.on("unhandledRejection", (reason) => {
+    console.error("💥 Unhandled Promise Rejection:", reason);
   });
 
   try {
     await server.connect(transport);
-    console.error('✅ Server connected and ready for requests');
+    console.error("✅ Server connected and ready for requests");
     
     logConfiguration();
     
-    console.error('📝 Server running on stdio transport');
+    console.error("📝 Server running on stdio transport");
   } catch (error) {
-    console.error('❌ Fatal error:', error);
+    console.error("❌ Fatal error:", error);
     process.exit(1);
   }
 }
 
 main().catch((error) => {
-  console.error('💀 Fatal error:', error);
+  console.error("💀 Fatal error:", error);
   process.exit(1);
 });

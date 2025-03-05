@@ -1,5 +1,4 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { InitializeRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const SERVER_NAME = "test-server";
@@ -54,7 +53,7 @@ class MockTransport {
         return;
       }
       if (Date.now() - startTime > timeout) {
-        throw new Error('Timeout waiting for callback');
+        throw new Error("Timeout waiting for callback");
       }
       await new Promise(resolve => setTimeout(resolve, 10));
       return check();
@@ -69,7 +68,7 @@ class MockTransport {
         return;
       }
       if (Date.now() - startTime > timeout) {
-        throw new Error('Timeout waiting for response');
+        throw new Error("Timeout waiting for response");
       }
       await new Promise(resolve => setTimeout(resolve, 10));
       return check();

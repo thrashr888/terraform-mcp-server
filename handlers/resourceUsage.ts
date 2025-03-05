@@ -1,9 +1,9 @@
-import { ResourceUsageInput, ResponseContent } from '../types/index.js';
-import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from '../utils/responseUtils.js';
-import { fetchDocumentation, getResourceDocUrl } from '../utils/apiUtils.js';
-import { handleToolError } from '../utils/responseUtils.js';
-import { extractUsageFromApiContent, getResourceDescription, generateTemplateExample } from '../utils/contentUtils.js';
-import logger from '../utils/logger.js';
+import { ResourceUsageInput, ResponseContent } from "../types/index.js";
+import { createStandardResponse, formatAsMarkdown, addStandardContext } from "../utils/responseUtils.js";
+import { fetchDocumentation, getResourceDocUrl } from "../utils/apiUtils.js";
+import { handleToolError } from "../utils/responseUtils.js";
+import { extractUsageFromApiContent, getResourceDescription, generateTemplateExample } from "../utils/contentUtils.js";
+import logger from "../utils/logger.js";
 
 /**
  * Handles the resourceUsage tool request
@@ -12,7 +12,7 @@ import logger from '../utils/logger.js';
  */
 export async function handleResourceUsage(params: ResourceUsageInput): Promise<ResponseContent> {
   try {
-    logger.debug('Processing resourceUsage request', params);
+    logger.debug("Processing resourceUsage request", params);
     
     // Extract resource parameters, handling either { provider, resource } or { name } format
     const resourceParams: ResourceUsageInput = {
@@ -22,15 +22,15 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
 
     // Validate required parameters
     if (!resourceParams.provider) {
-      throw new Error('Provider parameter is required for resourceUsage');
+      throw new Error("Provider parameter is required for resourceUsage");
     }
     if (!resourceParams.resource) {
-      throw new Error('Resource parameter is required for resourceUsage');
+      throw new Error("Resource parameter is required for resourceUsage");
     }
 
     // Try to get provider version info
     // (This is nice-to-have but we'll continue if it fails)
-    let latestVersion = '';
+    let latestVersion = "";
     try {
       const providerUrl = `https://registry.terraform.io/v1/providers/${resourceParams.provider}`;
       const response = await fetch(providerUrl);
@@ -45,13 +45,13 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     // URL for the documentation
     const resourceName = resourceParams.resource;
     const providerName = resourceParams.provider;
-    const url = getResourceDocUrl('hashicorp', providerName, resourceName);
+    const url = getResourceDocUrl("hashicorp", providerName, resourceName);
 
     // Create metadata for the response
     const metadata: Record<string, any> = {
       provider: providerName,
       resource: resourceName,
-      latestVersion: latestVersion || 'unknown',
+      latestVersion: latestVersion || "unknown",
       documentationUrl: url
     };
 
@@ -66,13 +66,13 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
       const usageSnippet = extractUsageFromApiContent(docResult.content);
       
       // If we found an example usage, format it properly
-      if (usageSnippet !== '') {
+      if (usageSnippet) {
         const markdownResponse = `## ${resourceName} Example Usage\n\n` +
           formatAsMarkdown(usageSnippet) +
           `\n\n[View Full Documentation for ${resourceName}](${url})`;
 
         // Enhance metadata
-        metadata.documentSource = 'api';
+        metadata.documentSource = "api";
         metadata.docId = docResult.docId;
         
         // Add compatibility information
@@ -86,7 +86,7 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
         `${docResult.content}\n\n` +
         `[View Full Documentation for ${resourceName}](${url})`;
       
-      metadata.documentSource = 'api';
+      metadata.documentSource = "api";
       metadata.docId = docResult.docId;
       metadata.hasExampleUsage = false;
       
@@ -94,25 +94,25 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     }
 
     // Fall back to generating a template example if API failed
-    const templateExample = generateTemplateExample(resourceName, providerName);
+    const templateExample = generateTemplateExample(resourceName);
     const resourceDescription = getResourceDescription(resourceName, providerName);
     
     const content = `## ${resourceName} - Generated Example\n\n` +
-      `> **Note**: No official example was found in the Terraform Registry. A generated template is provided below.\n\n` +
-      `### Resource Purpose\n` +
+      "> **Note**: No official example was found in the Terraform Registry. A generated template is provided below.\n\n" +
+      "### Resource Purpose\n" +
       `${resourceDescription}\n\n` +
-      `### Basic Usage Pattern\n` +
+      "### Basic Usage Pattern\n" +
       formatAsMarkdown(templateExample) + 
-      `\n\n### Important Notes\n` +
-      `- This is a generated example and may not include all required attributes\n` +
+      "\n\n### Important Notes\n" +
+      "- This is a generated example and may not include all required attributes\n" +
       `- Always refer to the [official documentation](${url}) for complete details\n` +
-      `- Test in a non-production environment before using in production\n\n` +
+      "- Test in a non-production environment before using in production\n\n" +
       `[View Full Documentation for ${resourceName}](${url})`;
 
     logger.info(`No content found for ${resourceName}. Providing a generated template.`);
     
     // Add metadata for the fallback response
-    metadata.documentSource = 'generated';
+    metadata.documentSource = "generated";
     metadata.hasExampleUsage = false;
     
     // Add compatibility information
@@ -121,7 +121,7 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     // Create a standard response with the fallback content
     return createStandardResponse("success", content, metadata);
   } catch (error) {
-    return handleToolError('resourceUsage', error, {
+    return handleToolError("resourceUsage", error, {
       inputParams: params
     });
   }

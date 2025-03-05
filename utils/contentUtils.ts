@@ -7,7 +7,7 @@ export function getExampleValue(input: any): string {
   const type = input.type || "string";
   
   // Simple type handling
-  if (type === "string") return `"example-value"`;
+  if (type === "string") return "\"example-value\"";
   if (type === "number") return "123";
   if (type === "bool") return "true";
   
@@ -29,27 +29,27 @@ export function getExampleValue(input: any): string {
  */
 export function getResourceDescription(resourceName: string, providerName: string): string {
   // Extract the resource type
-  const resourceType = resourceName.includes('_') ? 
-    resourceName.substring(resourceName.indexOf('_') + 1) : 
+  const resourceType = resourceName.includes("_") ? 
+    resourceName.substring(resourceName.indexOf("_") + 1) : 
     resourceName;
   
   // Common resource descriptions
   const descriptions: Record<string, string> = {
     // AWS common resources
-    's3_bucket': 'An S3 bucket is a container for storing objects in Amazon S3. You can use buckets to store and serve files, host static websites, or as a destination for logs.',
-    'instance': 'An EC2 instance is a virtual server in Amazon\'s Elastic Compute Cloud (EC2) for running applications on the AWS infrastructure.',
-    'vpc': 'A Virtual Private Cloud (VPC) is a virtual network dedicated to your AWS account that is logically isolated from other virtual networks in the AWS Cloud.',
-    'subnet': 'A subnet is a range of IP addresses in your VPC that can be used to isolate resources within your network.',
-    'security_group': 'A security group acts as a virtual firewall for your instance to control inbound and outbound traffic.',
-    'iam_role': 'An IAM role is an AWS Identity and Access Management entity with permissions to make AWS service requests.',
-    'lambda_function': 'AWS Lambda is a serverless compute service that runs your code in response to events and automatically manages the underlying compute resources.',
+    "s3_bucket": "An S3 bucket is a container for storing objects in Amazon S3. You can use buckets to store and serve files, host static websites, or as a destination for logs.",
+    "instance": "An EC2 instance is a virtual server in Amazon's Elastic Compute Cloud (EC2) for running applications on the AWS infrastructure.",
+    "vpc": "A Virtual Private Cloud (VPC) is a virtual network dedicated to your AWS account that is logically isolated from other virtual networks in the AWS Cloud.",
+    "subnet": "A subnet is a range of IP addresses in your VPC that can be used to isolate resources within your network.",
+    "security_group": "A security group acts as a virtual firewall for your instance to control inbound and outbound traffic.",
+    "iam_role": "An IAM role is an AWS Identity and Access Management entity with permissions to make AWS service requests.",
+    "lambda_function": "AWS Lambda is a serverless compute service that runs your code in response to events and automatically manages the underlying compute resources.",
     
     // GCP common resources
-    'compute_instance': 'A Compute Engine instance is a virtual machine hosted on Google\'s infrastructure.',
+    "compute_instance": "A Compute Engine instance is a virtual machine hosted on Google's infrastructure.",
     
     // Azure common resources
-    'resource_group': 'A resource group is a container that holds related resources for an Azure solution.',
-    'virtual_machine': 'An Azure virtual machine is an on-demand, scalable computing resource.',
+    "resource_group": "A resource group is a container that holds related resources for an Azure solution.",
+    "virtual_machine": "An Azure virtual machine is an on-demand, scalable computing resource.",
   };
   
   // Check for specific resource types
@@ -66,19 +66,29 @@ export function getResourceDescription(resourceName: string, providerName: strin
 /**
  * Helper function to generate example template based on resource type
  * @param resourceName Full resource name
- * @param providerName Provider name 
+ * @param resourceType Resource type (optional)
+ * @param example Example code (optional)
  * @returns Example Terraform configuration
  */
-export function generateTemplateExample(resourceName: string, providerName: string): string {
+export function generateTemplateExample(
+  resourceName: string,
+  resourceType?: string,
+  example?: string
+): string {
+  // If we have a specific example, use it
+  if (example) {
+    return example;
+  }
+
   // Extract the resource type to generate appropriate examples
-  const resourceType = resourceName.includes('_') ? 
-    resourceName.substring(resourceName.indexOf('_') + 1) : 
-    resourceName;
+  const resourceTypeToUse = resourceType || (resourceName.includes("_") ? 
+    resourceName.substring(resourceName.indexOf("_") + 1) : 
+    resourceName);
   
   // Common patterns for different resource types
   const commonPatterns: Record<string, string> = {
     // AWS common resources
-    's3_bucket': `resource "${resourceName}" "example" {
+    "s3_bucket": `resource "${resourceName}" "example" {
   bucket = "my-example-bucket-name"
   acl    = "private"
   
@@ -87,7 +97,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     Environment = "Dev"
   }
 }`,
-    'instance': `resource "${resourceName}" "example" {
+    "instance": `resource "${resourceName}" "example" {
   ami           = "ami-0c55b159cbfafe1f0"
   instance_type = "t2.micro"
   
@@ -95,14 +105,14 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     Name = "ExampleInstance"
   }
 }`,
-    'vpc': `resource "${resourceName}" "example" {
+    "vpc": `resource "${resourceName}" "example" {
   cidr_block = "10.0.0.0/16"
   
   tags = {
     Name = "example-vpc"
   }
 }`,
-    'subnet': `resource "${resourceName}" "example" {
+    "subnet": `resource "${resourceName}" "example" {
   vpc_id            = aws_vpc.example.id
   cidr_block        = "10.0.1.0/24"
   availability_zone = "us-west-2a"
@@ -111,7 +121,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     Name = "example-subnet"
   }
 }`,
-    'security_group': `resource "${resourceName}" "example" {
+    "security_group": `resource "${resourceName}" "example" {
   name        = "example-security-group"
   description = "Example security group"
   vpc_id      = aws_vpc.example.id
@@ -130,7 +140,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     cidr_blocks = ["0.0.0.0/0"]
   }
 }`,
-    'iam_role': `resource "${resourceName}" "example" {
+    "iam_role": `resource "${resourceName}" "example" {
   name = "example-role"
   
   assume_role_policy = jsonencode({
@@ -146,7 +156,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     ]
   })
 }`,
-    'lambda_function': `resource "${resourceName}" "example" {
+    "lambda_function": `resource "${resourceName}" "example" {
   function_name = "example-function"
   role          = aws_iam_role.example.arn
   handler       = "index.handler"
@@ -162,7 +172,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
 }`,
 
     // GCP common resources
-    'compute_instance': `resource "${resourceName}" "example" {
+    "compute_instance": `resource "${resourceName}" "example" {
   name         = "example-instance"
   machine_type = "e2-medium"
   zone         = "us-central1-a"
@@ -182,7 +192,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
 }`,
 
     // Azure common resources
-    'resource_group': `resource "${resourceName}" "example" {
+    "resource_group": `resource "${resourceName}" "example" {
   name     = "example-resources"
   location = "West Europe"
   
@@ -190,7 +200,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
     environment = "dev"
   }
 }`,
-    'virtual_machine': `resource "${resourceName}" "example" {
+    "virtual_machine": `resource "${resourceName}" "example" {
   name                  = "example-vm"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
@@ -208,7 +218,7 @@ export function generateTemplateExample(resourceName: string, providerName: stri
   
   // Check for specific resource types first
   for (const [key, template] of Object.entries(commonPatterns)) {
-    if (resourceType.includes(key)) {
+    if (resourceTypeToUse.includes(key)) {
       return template;
     }
   }
@@ -230,26 +240,12 @@ export function generateTemplateExample(resourceName: string, providerName: stri
 /**
  * Helper function to extract example usage from documentation content
  * @param content Documentation content 
- * @returns Extracted code example or empty string
+ * @returns Extracted code example or null
  */
-export function extractUsageFromApiContent(content: string): string {
-  try {
-    // Look for the Example Usage section and extract the code
-    const exampleMatch = content.match(/## Example Usage(.*?)##/s);
-    
-    if (exampleMatch && exampleMatch[1]) {
-      // Find the code block in the example usage section
-      const codeMatch = exampleMatch[1].match(/```(?:terraform|hcl)(.*?)```/s);
-      
-      if (codeMatch && codeMatch[1]) {
-        // Return the cleaned code block
-        return codeMatch[1].trim();
-      }
-    }
-    
-    return '';
-  } catch (error) {
-    console.error(`Error extracting usage from API content: ${error}`);
-    return '';
+export function extractUsageFromApiContent(content: string): string | null {
+  const exampleMatch = content.match(/```(?:hcl|terraform)([\s\S]*?)```/);
+  if (exampleMatch) {
+    return exampleMatch[1].trim();
   }
+  return null;
 }

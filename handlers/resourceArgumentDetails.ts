@@ -1,8 +1,8 @@
-import { ResourceArgumentDetailsInput, ResponseContent } from '../types/index.js';
-import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from '../utils/responseUtils.js';
-import { handleToolError } from '../utils/responseUtils.js';
-import { getResourceDocUrl } from '../utils/apiUtils.js';
-import logger from '../utils/logger.js';
+import { ResourceArgumentDetailsInput, ResponseContent } from "../types/index.js";
+import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from "../utils/responseUtils.js";
+import { handleToolError } from "../utils/responseUtils.js";
+import { getResourceDocUrl } from "../utils/apiUtils.js";
+import logger from "../utils/logger.js";
 
 /**
  * Handles the resourceArgumentDetails tool request
@@ -11,12 +11,12 @@ import logger from '../utils/logger.js';
  */
 export async function handleResourceArgumentDetails(params: ResourceArgumentDetailsInput): Promise<ResponseContent> {
   try {
-    logger.debug('Processing resourceArgumentDetails request', params);
+    logger.debug("Processing resourceArgumentDetails request", params);
     
     // Extract and validate required parameters
     const { provider, namespace, resource } = params;
     if (!provider || !namespace || !resource) {
-      throw new Error('Provider, namespace, and resource are required.');
+      throw new Error("Provider, namespace, and resource are required.");
     }
 
     logger.info(`Returning documentation link for ${namespace}/${provider}/resources/${resource}`);
@@ -27,10 +27,10 @@ export async function handleResourceArgumentDetails(params: ResourceArgumentDeta
     // Create a more structured and informative response
     const markdownResponse = `## Resource: ${resource}\n\n` +
       `This resource is provided by the **${namespace}/${provider}** provider.\n\n` +
-      `### Usage\n\n` +
-      `For detailed information on this resource's arguments and attributes, please refer to the official documentation:\n\n` +
+      "### Usage\n\n" +
+      "For detailed information on this resource's arguments and attributes, please refer to the official documentation:\n\n" +
       `**[View Full Documentation](${docUrl})**\n\n` +
-      `### Example Usage Pattern\n\n` +
+      "### Example Usage Pattern\n\n" +
       formatAsMarkdown(`resource "${resource}" "example" {
   # Required arguments go here
   # ...
@@ -49,7 +49,7 @@ export async function handleResourceArgumentDetails(params: ResourceArgumentDeta
     
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
-    return handleToolError('resourceArgumentDetails', error, {
+    return handleToolError("resourceArgumentDetails", error, {
       inputParams: params
     });
   }

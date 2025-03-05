@@ -1,8 +1,8 @@
-import { DataSourceLookupInput, ResponseContent } from '../types/index.js';
-import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from '../utils/responseUtils.js';
-import { handleToolError } from '../utils/responseUtils.js';
-import { REGISTRY_API_BASE } from '../config.js';
-import logger from '../utils/logger.js';
+import { DataSourceLookupInput, ResponseContent } from "../types/index.js";
+import { createStandardResponse, formatAsMarkdown, formatUrl, addStandardContext } from "../utils/responseUtils.js";
+import { handleToolError } from "../utils/responseUtils.js";
+import { REGISTRY_API_BASE } from "../config.js";
+import logger from "../utils/logger.js";
 
 /**
  * Handles the dataSourceLookup tool request
@@ -11,14 +11,14 @@ import logger from '../utils/logger.js';
  */
 export async function handleDataSourceLookup(params: DataSourceLookupInput): Promise<ResponseContent> {
   try {
-    logger.debug('Processing dataSourceLookup request', params);
+    logger.debug("Processing dataSourceLookup request", params);
     
     // Extract parameters
     const { provider, namespace } = params;
     
     // Validate required parameters
     if (!provider || !namespace) {
-      throw new Error('Both provider and namespace are required.');
+      throw new Error("Both provider and namespace are required.");
     }
 
     logger.info(`Returning documentation link for ${namespace}/${provider} data sources`);
@@ -28,8 +28,8 @@ export async function handleDataSourceLookup(params: DataSourceLookupInput): Pro
     
     // Create a markdown formatted response
     const markdownResponse = `## Data Sources for Provider ${namespace}/${provider}\n\n` +
-      `Data sources allow Terraform to use information defined outside of Terraform, defined by another separate Terraform configuration, or modified by functions.\n\n` +
-      `### Usage Example\n\n` +
+      "Data sources allow Terraform to use information defined outside of Terraform, defined by another separate Terraform configuration, or modified by functions.\n\n" +
+      "### Usage Example\n\n" +
       formatAsMarkdown(`data "<data_source_name>" "example" {
   # Required arguments go here
   # ...
@@ -53,7 +53,7 @@ output "example_output" {
     
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
-    return handleToolError('dataSourceLookup', error, {
+    return handleToolError("dataSourceLookup", error, {
       inputParams: params
     });
   }

@@ -1,5 +1,5 @@
-import { VERSION, RESPONSE_STATUS, DEFAULT_TERRAFORM_COMPATIBILITY } from '../config.js';
-import logger from './logger.js';
+import { VERSION, DEFAULT_TERRAFORM_COMPATIBILITY } from "../config.js";
+import logger from "./logger.js";
 
 /**
  * Helper function to create standardized response format
@@ -42,17 +42,16 @@ export function formatAsMarkdown(code: string, language = "terraform"): string {
 }
 
 /**
- * Helper function to sanitize and format URLs
+ * Helper function to format URLs
  * @param url URL to format
  * @returns Properly formatted URL
  */
 export function formatUrl(url: string): string {
   try {
-    // Create URL object to validate and normalize
-    const urlObj = new URL(url);
-    return urlObj.toString();
-  } catch (e) {
-    // If URL parsing fails, return the original
+    const parsedUrl = new globalThis.URL(url);
+    return parsedUrl.toString();
+  } catch {
+    logger.error(`Invalid URL: ${url}`);
     return url;
   }
 }
@@ -105,7 +104,7 @@ export function handleToolError(
   
   const metadata = {
     tool: toolName,
-    errorType: error instanceof Error ? error.constructor.name : 'UnknownError',
+    errorType: error instanceof Error ? error.constructor.name : "UnknownError",
     ...extraMetadata
   };
   

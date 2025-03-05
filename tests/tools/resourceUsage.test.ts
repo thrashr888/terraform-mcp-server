@@ -134,14 +134,19 @@ describe("resourceUsage tool", () => {
       expect(calls.length).toBe(1);
       expect(calls[0].url).toBe(url);
       expect(resp.ok).toBe(true);
+      return resp;
     };
 
     test("should handle aws_s3_bucket resource", async () => {
-      await testResourceFetch("aws", "aws_s3_bucket");
+      const response = await testResourceFetch("aws", "aws_s3_bucket");
+      expect(response.ok).toBe(true);
+      expect(response.url).toContain("aws_s3_bucket");
     });
 
     test("should handle google_compute_instance resource", async () => {
-      await testResourceFetch("google", "google_compute_instance");
+      const response = await testResourceFetch("google", "google_compute_instance");
+      expect(response.ok).toBe(true);
+      expect(response.url).toContain("google_compute_instance");
     });
   });
 }); 
