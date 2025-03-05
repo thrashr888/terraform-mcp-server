@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.8 (March 5, 2024)
+- Fixed initialization response format to match MCP protocol specification
+- Updated test suite to properly validate server response format
+- Improved server initialization handler to include correct protocol version
+- Enhanced test coverage for server initialization
+
 ## 0.9.7 (March 3, 2024)
 - Added comprehensive testing documentation in TESTS.md
 - Simplified resource testing to focus on core providers
