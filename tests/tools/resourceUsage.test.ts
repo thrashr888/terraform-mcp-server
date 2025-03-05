@@ -117,24 +117,27 @@ describe("resourceUsage tool", () => {
   // Minimal resource tests - testing just core providers
   describe("minimal resource tests", () => {
     const testResourceFetch = async (provider: string, resource: string) => {
+      // Construct the URL
+      const url = `https://registry.terraform.io/providers/${provider}/latest/docs/resources/${resource}`;
+      
       // Mock HTML response
       const mockHtmlResponse = `<html><body><p>${resource}</p></body></html>`;
       
       mockFetchResponse({
         ok: true,
-        text: () => Promise.resolve(mockHtmlResponse)
+        text: () => Promise.resolve(mockHtmlResponse),
+        url: url // Add the URL to the mock response
       } as Response);
       
       // Make the request to the API
-      const url = `https://registry.terraform.io/providers/${provider}/latest/docs/resources/${resource}`;
-      const resp = await fetch(url);
+      const response = await fetch(url);
       
       // Verify the request was made correctly
       const calls = getFetchCalls();
       expect(calls.length).toBe(1);
       expect(calls[0].url).toBe(url);
-      expect(resp.ok).toBe(true);
-      return resp;
+      expect(response.ok).toBe(true);
+      return response;
     };
 
     test("should handle aws_s3_bucket resource", async () => {
