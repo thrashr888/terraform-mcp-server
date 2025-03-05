@@ -264,6 +264,31 @@ npm install
 npm start
 ```
 
+### Configuration with Environment Variables
+
+The server can be configured using environment variables:
+
+| Environment Variable | Description | Default Value |
+|---------------------|-------------|---------------|
+| `TERRAFORM_REGISTRY_URL` | Base URL for Terraform Registry API | https://registry.terraform.io |
+| `DEFAULT_PROVIDER_NAMESPACE` | Default namespace for providers | hashicorp |
+| `LOG_LEVEL` | Logging level (error, warn, info, debug) | info |
+| `REQUEST_TIMEOUT_MS` | Timeout for API requests in milliseconds | 10000 |
+| `RATE_LIMIT_ENABLED` | Enable rate limiting for API requests | false |
+| `RATE_LIMIT_REQUESTS` | Number of requests allowed in time window | 60 |
+| `RATE_LIMIT_WINDOW_MS` | Time window for rate limiting in milliseconds | 60000 |
+
+Example usage with environment variables:
+
+```bash
+# Set environment variables
+export LOG_LEVEL="debug"
+export REQUEST_TIMEOUT_MS="15000"
+
+# Run the server
+node dist/index.js
+```
+
 ## Testing
 
 The project includes a comprehensive test suite for all tools and server functionality:

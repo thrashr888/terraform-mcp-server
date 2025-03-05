@@ -1,8 +1,29 @@
 {
   "mcpServers": {
     "terraform-registry": {
-      "command": "npx -y terraform-mcp-server",
-      "args": [],
+      "command": "/Users/thrashr888/.nvm/versions/node/v22.9.0/bin/node",
+      "args": ["/Users/thrashr888/Documents/GitHub/terraform-mcp-server/dist/index.js"],
+      "env": {
+        "DEBUG": "*"
+      }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "everything": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ]
+    },
+    "echo": {
+      "command": "/Users/thrashr888/.nvm/versions/node/v22.9.0/bin/node",
+      "args": ["/Users/thrashr888/Documents/GitHub/terraform-mcp-server/dist/mcp-echo.js"],
       "env": {
         "DEBUG": "*"
       }
@@ -13,10 +34,6 @@
     },
     "github": {
       "command": "npx -y @modelcontextprotocol/server-github",
-      "args": []
-    },
-    "date": {
-      "command": "npx @modelcontextprotocol/inspector uvx mcp-server-time",
       "args": []
     }
   }
