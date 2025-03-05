@@ -1,6 +1,6 @@
 # Terraform Registry MCP Server
 
-A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, module metadata, and generate example configurations.
+A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, and module metadata.
 
 ## Installation
 
@@ -8,57 +8,43 @@ A Model Context Protocol (MCP) server that provides tools for interacting with t
 
 To install and use this MCP server in [Cursor](https://cursor.sh/):
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/thrashr888/terraform-mcp-server.git
-   cd terraform-mcp-server
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Build the package:
-   ```bash
-   npm run build
-   ```
-
-4. In Cursor, open Settings (⌘+,) and navigate to the "AI" tab.
+1. In Cursor, open Settings (⌘+,) and navigate to the "MCP" tab.
    
-5. Scroll down to "Model Context Protocol" section and click "Add MCP."
+2. Click "+ Add new MCP server."
    
-6. Enter the following:
-   - Name: Terraform Registry MCP
-   - Command: node /path/to/terraform-mcp-server/dist/index.js
+3. Enter the following:
+   - Name: terraform-registry
+   - Type: command
+   - Command: npx -y terraform-mcp-server
    
-7. Click "Add" and then "Save" to complete the installation.
+4. Click "Add" then scroll to the server and click "Disabled" to enable the server.
 
-8. Restart Cursor to ensure the MCP server is properly loaded.
+5. Restart Cursor, if needed, to ensure the MCP server is properly loaded.
+
+![terraform-registry MCP settings for Cursor](https://github.com/user-attachments/assets/6809dd48-d0fe-4318-b7f6-94ca7970b73a)
 
 ### Installing in Claude Desktop
 
 To install and use this MCP server in Claude Desktop:
 
-1. Clone and set up the repository as described in the Cursor installation steps.
+1. In Claude Desktop, open Settings (⌘+,) and navigate to the "Developer" tab.
 
-2. Open Claude Desktop and click on your profile picture in the top-right corner.
+2. Click "Edit Config" at the bottom of the window.
 
-3. Select "Settings" from the dropdown menu.
+3. Edit the file (`~/Library/Application Support/Claude/claude_desktop_config.json`) to add the following code, then Save the file.
 
-4. Navigate to the "Advanced" tab.
+```json
+{
+  "mcpServers": {
+    "terraform-registry": {
+      "command": "npx",
+      "args": ["-y", "terraform-mcp-server"]
+    }
+  }
+}
+```
 
-5. Scroll down to "Model Context Protocol" section and click "Add MCP."
-
-6. Enter the following:
-   - Name: Terraform Registry MCP
-   - Command: node /path/to/terraform-mcp-server/dist/index.js
-   
-7. Click "Add" and then "Save" to complete the installation.
-
-8. Restart Claude Desktop to ensure the MCP server is properly loaded.
-
-Alternatively, you can use `npx -y terraform-mcp-server` as a command.
+4. Restart Claude Desktop to ensure the MCP server is properly loaded.
 
 ## Testing
 
@@ -291,61 +277,4 @@ node dist/index.js
 
 ## Testing
 
-The project includes a comprehensive test suite for all tools and server functionality:
-
-```bash
-# Install dependencies if you haven't already
-npm install
-
-# Run all tests
-npm test
-
-# Run tests with watch mode for development
-npm run test:watch
-
-# Run tests with coverage report
-npm run test:coverage
-```
-
-Tests are located in the `tests/` directory and organized by component:
-
-* `tests/server.test.ts` - Tests for core server functionality
-* `tests/tools/*.test.ts` - Tests for individual tools
-
-### Manual Testing Scripts
-
-The repository includes several bash scripts for manually testing the MCP server:
-
-1. `test.sh` - A comprehensive test script that tests all tools with colorized output
-2. `test-simple.sh` - A simplified test script that doesn't rely on external dependencies
-3. `test-tool.sh` - A flexible script for testing individual tools with custom parameters
-
-To run these scripts:
-
-```bash
-# Make scripts executable
-chmod +x *.sh
-
-# Run full test suite
-./test.sh
-
-# Run simplified test suite
-./test-simple.sh
-
-# Test a specific tool with parameters
-./test-tool.sh providerLookup "provider=aws" "namespace=hashicorp"
-```
-
-These scripts provide a quick way to verify the server is working correctly without having to set up a full client application.
-
-## Development
-
-The server is built using TypeScript and uses the MCP SDK for server implementation. It makes HTTP requests to the Terraform Registry API to fetch data.
-
-To add new tools:
-
-1. Define the input interface
-2. Add the tool to the tools array with proper inputSchema
-3. Implement the tool handler in the switch statement
-4. Update this README with the new tool's documentation
-5. Add test coverage for the new tool
+See the [TESTS.md](TESTS.md) file for information about testing this project.

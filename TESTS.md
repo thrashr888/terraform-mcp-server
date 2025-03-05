@@ -11,7 +11,6 @@ The project includes several test scripts for different purposes:
 | `test.sh` | Main test script that tests all tools with formatted output |
 | `test-simple.sh` | Simplified test script that doesn't require jq |
 | `test-resources.sh` | Minimal resource testing script focused on ResourceUsage handler |
-| `test-tool.sh` | Tests a specific tool interactively |
 | `test-server.js` | Starts a test server for manual testing |
 
 ## Running Jest Tests
@@ -88,25 +87,3 @@ Usage:
 ```bash
 ./test-simple.sh
 ```
-
-### test-tool.sh
-
-This script allows you to test a specific tool interactively.
-
-Usage:
-```bash
-./test-tool.sh <tool-name>
-```
-
-Example:
-```bash
-./test-tool.sh providerLookup
-```
-
-## Troubleshooting
-
-If tests fail, check:
-1. That the server builds correctly with `npm run build`
-2. Network connectivity to the Terraform Registry API
-3. Any console error messages in the output
-4. If using Jest tests, ensure dependencies are installed with `npm install` 
