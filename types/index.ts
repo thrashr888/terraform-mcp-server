@@ -183,3 +183,16 @@ export interface ToolRequestParams {
   arguments?: any;
   input?: any;
 }
+
+export interface FunctionDetailsInput {
+  provider: string;
+  namespace?: string;
+  function: string;
+}
+
+export interface ProviderGuidesInput {
+  provider: string;
+  namespace?: string;
+  guide?: string;    // Specific guide to fetch
+  search?: string;   // Search term to filter guides
+}

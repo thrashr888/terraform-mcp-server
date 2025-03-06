@@ -70,12 +70,14 @@ Looks up Terraform provider details by name, returning the latest version and ve
 
 ```json
 {
-  "content": [
-    {
-      "type": "text",
-      "text": "Provider hashicorp/aws: latest version is 5.0.0 (out of 150 versions)."
-    }
-  ]
+  "status": "success",
+  "content": "Provider hashicorp/aws: latest version is 5.31.0 (out of 150 versions).",
+  "metadata": {
+    "provider": "aws",
+    "namespace": "hashicorp",
+    "version": "5.31.0",
+    "versionCount": 150
+  }
 }
 ```
 
@@ -96,12 +98,13 @@ Gets example usage of a Terraform resource and related resources.
 
 ```json
 {
-  "content": [
-    {
-      "type": "text",
-      "text": "Example usage for aws_instance:\n```terraform\n[example code]\n```\nRelated resources: aws_vpc, aws_subnet"
-    }
-  ]
+  "status": "success",
+  "content": "# Resource: aws_instance\n\n## Example Usage\n\n```hcl\nresource \"aws_instance\" \"web\" {\n  ami           = \"ami-a1b2c3d4\"\n  instance_type = \"t3.micro\"\n\n  tags = {\n    Name = \"HelloWorld\"\n  }\n}\n```\n\n## Related Resources\n- aws_vpc\n- aws_subnet\n- aws_security_group",
+  "metadata": {
+    "provider": "aws",
+    "resource": "aws_instance",
+    "relatedResources": ["aws_vpc", "aws_subnet", "aws_security_group"]
+  }
 }
 ```
 
@@ -114,7 +117,7 @@ Searches for and recommends Terraform modules based on a query.
 ```json
 {
   "query": "vpc",                // Required: Search query
-  "provider": "aws"              // Optional: Filter modules by provider
+  "provider": "aws"             // Optional: Filter modules by provider
 }
 ```
 
@@ -122,12 +125,14 @@ Searches for and recommends Terraform modules based on a query.
 
 ```json
 {
-  "content": [
-    {
-      "type": "text",
-      "text": "Recommended modules for \"vpc\":\n1. terraform-aws-modules/vpc (aws) - AWS VPC Terraform module\n..."
-    }
-  ]
+  "status": "success",
+  "content": "# Recommended Modules for \"vpc\"\n\n1. terraform-aws-modules/vpc/aws (★3.2k)\n   AWS VPC Terraform module\n   Latest: v5.5.0\n\n2. terraform-aws-modules/vpc-peering/aws (★280)\n   VPC Peering module for AWS\n   Latest: v3.3.0\n\n3. cloudposse/vpc/aws (★180)\n   Terraform Module to Provision a VPC with Internet Gateway\n   Latest: v2.1.0",
+  "metadata": {
+    "query": "vpc",
+    "provider": "aws",
+    "totalResults": 3,
+    "searchScore": 0.95
+  }
 }
 ```
 
@@ -238,6 +243,71 @@ Retrieves detailed metadata for a Terraform module.
       "dependencies": []
     }
   }]
+}
+```
+
+### 7. Function Details
+
+Gets details about a Terraform provider function.
+
+**Input:**
+
+```json
+{
+  "provider": "aws",             // Required: Provider name
+  "function": "cidrhost",        // Required: Function name
+  "namespace": "hashicorp"       // Optional: Provider namespace (defaults to "hashicorp")
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "# Function: cidrhost\n\nThis function is provided by the **hashicorp/aws** provider.\n\n## Description\ncidrhost calculates a full host IP address for a given host number within a given IP network address prefix.\n\n## Signature\n```text\ncidrhost(prefix, hostnum)\n```\n\n## Example Usage\n```hcl\nresource \"aws_instance\" \"web\" {\n  private_ip = cidrhost(aws_vpc.main.cidr_block, 5)\n}\n```\n\n## Arguments\n* prefix (string) - CIDR range in prefix notation (e.g. 10.0.0.0/16)\n* hostnum (number) - Whole number that can be represented as a binary integer with no more than the number of digits remaining in the address after the prefix.",
+  "metadata": {
+    "provider": "aws",
+    "namespace": "hashicorp",
+    "function": {
+      "name": "cidrhost",
+      "hasExample": true,
+      "hasSignature": true,
+      "hasArguments": true
+    }
+  }
+}
+```
+
+### 8. Provider Guides
+
+List and view provider-specific guides, including version upgrades and feature guides.
+
+**Input:**
+
+```json
+{
+  "provider": "aws",             // Required: Provider name
+  "search": "upgrade",           // Optional: Search term to filter guides
+  "guide": "version-5-upgrade"   // Optional: Specific guide to fetch
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "# hashicorp/aws Provider Guides\n\nSearch results for: \"upgrade\"\n\n## Available Guides\n\n- [Terraform AWS Provider Version 2 Upgrade Guide]\n- [Terraform AWS Provider Version 3 Upgrade Guide]\n- [Terraform AWS Provider Version 4 Upgrade Guide]\n- [Terraform AWS Provider Version 5 Upgrade Guide]\n\n## Version Upgrade Guides\n\n- [Terraform AWS Provider Version 2 Upgrade Guide]\n- [Terraform AWS Provider Version 3 Upgrade Guide]\n- [Terraform AWS Provider Version 4 Upgrade Guide]\n- [Terraform AWS Provider Version 5 Upgrade Guide]",
+  "metadata": {
+    "provider": "aws",
+    "namespace": "hashicorp",
+    "summary": {
+      "total": 4,
+      "upgradeGuides": 4,
+      "featureGuides": 0
+    }
+  }
 }
 ```
 

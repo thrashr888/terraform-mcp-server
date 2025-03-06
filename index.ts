@@ -15,7 +15,9 @@ import {
   handleModuleRecommendations,
   handleDataSourceLookup,
   handleResourceArgumentDetails,
-  handleModuleDetails
+  handleModuleDetails,
+  handleFunctionDetails,
+  handleProviderGuides
 } from "./handlers/index.js";
 
 import { 
@@ -29,7 +31,9 @@ import {
   ModuleRecommendationsInput,
   DataSourceLookupInput,
   ModuleDetailsInput,
-  ResourceDocumentationInput
+  ResourceDocumentationInput,
+  FunctionDetailsInput,
+  ProviderGuidesInput
 } from "./types/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
@@ -49,9 +53,8 @@ const tools: Tool[] = [
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        version: { type: "string", description: "Provider version (e.g. '4.0.0')" }
-      },
-      required: ["provider"]
+        version: { type: "string", description: "Provider version (defaults to latest)" }
+      }
     }
   },
   {
@@ -115,6 +118,33 @@ const tools: Tool[] = [
         provider: { type: "string", description: "Provider name (e.g. 'aws')" }
       },
       required: ["namespace", "module", "provider"]
+    }
+  },
+  {
+    name: "functionDetails",
+    description: "Get details about a Terraform provider function.",
+    inputSchema: {
+      type: "object",
+      required: ["provider", "function"],
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
+        function: { type: "string", description: "Function name (e.g. 'arn_parse')" }
+      }
+    }
+  },
+  {
+    name: "providerGuides",
+    description: "List and view provider-specific guides, including version upgrades and feature guides.",
+    inputSchema: {
+      type: "object",
+      required: ["provider"],
+      properties: {
+        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
+        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
+        guide: { type: "string", description: "Specific guide to fetch (by slug or title)" },
+        search: { type: "string", description: "Search term to filter guides" }
+      }
     }
   }
 ];
@@ -223,6 +253,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const validArgs = validateArgs<ModuleDetailsInput>(args, ["namespace", "module", "provider"]);
       if (!validArgs) throw new Error("Missing required arguments");
       response = await handleModuleDetails(validArgs);
+      break;
+    }
+    case "functionDetails": {
+      const validArgs = validateArgs<FunctionDetailsInput>(args, ["provider", "function"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleFunctionDetails(validArgs);
+      break;
+    }
+    case "providerGuides": {
+      const validArgs = validateArgs<ProviderGuidesInput>(args, ["provider"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleProviderGuides(validArgs);
       break;
     }
     default:
