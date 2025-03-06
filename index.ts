@@ -17,7 +17,9 @@ import {
   handleResourceArgumentDetails,
   handleModuleDetails,
   handleFunctionDetails,
-  handleProviderGuides
+  handleProviderGuides,
+  handlePolicySearch,
+  handlePolicyDetails
 } from "./handlers/index.js";
 
 import { 
@@ -33,7 +35,9 @@ import {
   ModuleDetailsInput,
   ResourceDocumentationInput,
   FunctionDetailsInput,
-  ProviderGuidesInput
+  ProviderGuidesInput,
+  PolicySearchInput,
+  PolicyDetailsInput
 } from "./types/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
@@ -55,7 +59,8 @@ const tools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
         version: { type: "string", description: "Provider version (defaults to latest)" }
       }
-    }
+    },
+    handler: handleProviderLookup
   },
   {
     name: "resourceUsage",
@@ -67,7 +72,8 @@ const tools: Tool[] = [
         resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
         name: { type: "string", description: "Alternative resource name field (fallback if resource not specified)" }
       }
-    }
+    },
+    handler: handleResourceUsage
   },
   {
     name: "moduleRecommendations",
@@ -79,7 +85,8 @@ const tools: Tool[] = [
         keyword: { type: "string", description: "Alternative search keyword (fallback if query not specified)" },
         provider: { type: "string", description: "Filter modules by provider (e.g. 'aws')" }
       }
-    }
+    },
+    handler: handleModuleRecommendations
   },
   {
     name: "dataSourceLookup",
@@ -91,7 +98,8 @@ const tools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
       },
       required: ["provider", "namespace"]
-    }
+    },
+    handler: handleDataSourceLookup
   },
   {
     name: "resourceArgumentDetails",
@@ -105,7 +113,8 @@ const tools: Tool[] = [
         version: { type: "string", description: "Provider version (defaults to latest)" }
       },
       required: ["provider", "namespace", "resource"]
-    }
+    },
+    handler: handleResourceArgumentDetails
   },
   {
     name: "moduleDetails",
@@ -118,7 +127,8 @@ const tools: Tool[] = [
         provider: { type: "string", description: "Provider name (e.g. 'aws')" }
       },
       required: ["namespace", "module", "provider"]
-    }
+    },
+    handler: handleModuleDetails
   },
   {
     name: "functionDetails",
@@ -131,7 +141,8 @@ const tools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
         function: { type: "string", description: "Function name (e.g. 'arn_parse')" }
       }
-    }
+    },
+    handler: handleFunctionDetails
   },
   {
     name: "providerGuides",
@@ -145,7 +156,33 @@ const tools: Tool[] = [
         guide: { type: "string", description: "Specific guide to fetch (by slug or title)" },
         search: { type: "string", description: "Search term to filter guides" }
       }
-    }
+    },
+    handler: handleProviderGuides
+  },
+  {
+    name: "policySearch",
+    description: "Search for policy libraries in the Terraform Registry.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query for finding policy libraries" },
+        provider: { type: "string", description: "Filter policies by provider (e.g. 'aws')" }
+      }
+    },
+    handler: handlePolicySearch
+  },
+  {
+    name: "policyDetails",
+    description: "Get detailed information about a specific policy library including its latest version.",
+    inputSchema: {
+      type: "object",
+      required: ["namespace", "name"],
+      properties: {
+        namespace: { type: "string", description: "Policy library namespace (e.g. 'Great-Stone')" },
+        name: { type: "string", description: "Policy library name (e.g. 'vault-aws-secret-type')" }
+      }
+    },
+    handler: handlePolicyDetails
   }
 ];
 
@@ -265,6 +302,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const validArgs = validateArgs<ProviderGuidesInput>(args, ["provider"]);
       if (!validArgs) throw new Error("Missing required arguments");
       response = await handleProviderGuides(validArgs);
+      break;
+    }
+    case "policySearch": {
+      const validArgs = validateArgs<PolicySearchInput>(args, ["query"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handlePolicySearch(validArgs);
+      break;
+    }
+    case "policyDetails": {
+      const validArgs = validateArgs<PolicyDetailsInput>(args, ["namespace", "name"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handlePolicyDetails(validArgs);
       break;
     }
     default:

@@ -41,6 +41,7 @@
         "@types/jest": "^29.5.14",
         "@types/minimatch": "^5.1.2",
         "@types/node": "^22.13.8",
+        "@types/node-fetch": "^2.6.12",
         "@typescript-eslint/eslint-plugin": "^8.25.0",
         "@typescript-eslint/parser": "^8.25.0",
         "eslint": "^9.21.0",

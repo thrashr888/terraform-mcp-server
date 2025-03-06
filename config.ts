@@ -37,3 +37,12 @@ export const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS ||
 
 // Request timeouts in milliseconds
 export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "10000", 10);
+
+// Algolia search configuration for Terraform Registry
+export const ALGOLIA_CONFIG = {
+  APPLICATION_ID: "YY0FFNI7MF",
+  API_KEY: "0f94cddf85f28139b5a64c065a261696",
+  MODULES_INDEX: "tf-registry:prod:modules",
+  PROVIDERS_INDEX: "tf-registry:prod:providers",
+  POLICIES_INDEX: "tf-registry:prod:policy-libraries"
+};

@@ -311,6 +311,70 @@ List and view provider-specific guides, including version upgrades and feature g
 }
 ```
 
+### 9. Policy Search
+
+Search for policy libraries in the Terraform Registry.
+
+**Input:**
+
+```json
+{
+  "query": "aws security",       // Required: Search query for finding policy libraries
+  "provider": "aws"             // Optional: Filter policies by provider
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Policy Library Results for \"aws security\"\n\n### 1. hashicorp/CIS-Policy-Set-for-AWS-VPC-Terraform\n\n**Description**: AWS VPC CIS Policy Set for Terraform\n**Provider**: aws\n**Downloads**: 17,869\n**Latest Version**: 1.0.3\n**Published**: 2/11/2024\n\n### 2. hashicorp/CIS-Policy-Set-for-AWS-S3-Terraform\n\n**Description**: AWS S3 CIS Policy Set for Terraform\n**Provider**: aws\n**Downloads**: 119,861\n**Latest Version**: 1.0.3\n**Published**: 2/11/2024",
+  "metadata": {
+    "results": [
+      {
+        "id": "118",
+        "name": "CIS-Policy-Set-for-AWS-VPC-Terraform",
+        "namespace": "hashicorp",
+        "providers": [{"name": "aws"}],
+        "downloads": 17869,
+        "latest_version": "1.0.3"
+      }
+    ]
+  }
+}
+```
+
+### 10. Policy Details
+
+Get detailed information about a specific policy library including its latest version.
+
+**Input:**
+
+```json
+{
+  "namespace": "Great-Stone",    // Required: Policy library namespace
+  "name": "vault-aws-secret-type" // Required: Policy library name
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "# Policy: Great-Stone/vault-aws-secret-type\n\n**Title**: AWS Secrets Role Type Check\n**Owner**: Great-Stone\n**Downloads**: 0\n**Latest Version**: 1.0.0\n**Published**: 9/4/2024\n**Categories**: Utility\n**Providers**: vault\n\n## Documentation\n\n### Sentinel Example\n\n```hcl\nimport \"tfplan/v2\" as tfplan\n\nallow_types = [\"assumed_role\", \"iam_user\", \"federation_token\"]\n\naws_secret_roles = filter tfplan.resource_changes as _, rc {\n    rc.type is \"vault_aws_secret_backend_role\" and\n    rc.mode is \"managed\" and\n    (rc.change.actions contains \"create\" or rc.change.actions contains \"update\")\n}\n\nviolations = 0\nfor aws_secret_roles as _, role {\n    if role.change.after.credential_type not in allow_types {\n        print(\"Error specifying AWS Secret Role type\")\n        violations = violations + 1\n    }\n}\n\nmain = rule {\n    violations is 0\n}\n```\n\n### Terraform Sample\n\n```hcl\nresource \"vault_aws_secret_backend_role\" \"role\" {\n  credential_type = \"iam_user\"\n  policy_document = jsonencode({\n    Version = \"2012-10-17\"\n    Statement = [\n      {\n        Effect = \"Allow\"\n        Action = [\"*\"]\n        Resource = [\"*\"]\n      }\n    ]\n  })\n}\n```",
+  "metadata": {
+    "namespace": "Great-Stone",
+    "name": "vault-aws-secret-type",
+    "latest_version": "1.0.0",
+    "downloads": 0,
+    "verified": false,
+    "providers": ["vault"]
+  }
+}
+```
+
 ## Running the Server
 
 The server runs using stdio transport for MCP communication:

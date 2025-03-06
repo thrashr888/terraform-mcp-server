@@ -1,5 +1,5 @@
 import { ProviderGuidesInput, ResponseContent } from "../types/index.js";
-import { createStandardResponse, formatAsMarkdown, addStandardContext } from "../utils/responseUtils.js";
+import { createStandardResponse, addStandardContext } from "../utils/responseUtils.js";
 import { handleToolError } from "../utils/responseUtils.js";
 import { REGISTRY_API_BASE } from "../config.js";
 import logger from "../utils/logger.js";

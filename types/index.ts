@@ -196,3 +196,99 @@ export interface ProviderGuidesInput {
   guide?: string;    // Specific guide to fetch
   search?: string;   // Search term to filter guides
 }
+
+export interface PolicySearchInput {
+  query?: string;
+  provider?: string;
+}
+
+export interface PolicySearchResult {
+  id: string;
+  namespace: string;
+  name: string;
+  "provider-name": string;
+  description?: string;
+  downloads: number;
+  "latest-version": string;
+  example?: string;
+  objectID: string;
+}
+
+export interface PolicyDetailsInput {
+  namespace: string;   // e.g. "Great-Stone"
+  name: string;       // e.g. "vault-aws-secret-type"
+}
+
+export interface PolicyDetails {
+  id: string;
+  attributes: {
+    downloads: number;
+    "full-name": string;
+    ingress: string;
+    name: string;
+    namespace: string;
+    "owner-name": string;
+    source: string;
+    title: string;
+    verified: boolean;
+  };
+  relationships: {
+    categories: {
+      data: Array<{
+        type: string;
+        id: string;
+      }>;
+    };
+    "latest-version": {
+      data: {
+        type: string;
+        id: string;
+      };
+    };
+    providers: {
+      data: Array<{
+        type: string;
+        id: string;
+      }>;
+    };
+    versions: {
+      data: Array<{
+        type: string;
+        id: string;
+      }>;
+    };
+  };
+}
+
+export interface PolicyVersionDetails {
+  id: string;
+  attributes: {
+    description: string;
+    downloads: number;
+    "published-at": string;
+    readme: string;
+    source: string;
+    tag: string;
+    version: string;
+  };
+  relationships: {
+    policies: {
+      data: Array<{
+        type: string;
+        id: string;
+      }>;
+    };
+    "policy-library": {
+      data: {
+        type: string;
+        id: string;
+      };
+    };
+    "policy-modules": {
+      data: Array<{
+        type: string;
+        id: string;
+      }>;
+    };
+  };
+}
