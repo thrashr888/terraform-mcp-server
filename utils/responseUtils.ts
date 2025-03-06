@@ -1,5 +1,6 @@
-import { VERSION, DEFAULT_TERRAFORM_COMPATIBILITY } from "../config.js";
+import { DEFAULT_TERRAFORM_COMPATIBILITY } from "../config.js";
 import logger from "./logger.js";
+import { ResponseContent } from "../types/index.js";
 
 /**
  * Helper function to create standardized response format
@@ -12,21 +13,15 @@ export function createStandardResponse(
   status: "success" | "error", 
   content: string, 
   metadata: Record<string, any> = {}
-): { content: Array<{type: string, text: string}> } {
-  const response = {
-    status,
-    content,
-    metadata: {
-      ...metadata,
-      timestamp: new Date().toISOString(),
-      version: VERSION
-    }
-  };
-
+): ResponseContent {
   return { 
     content: [{ 
       type: "text", 
-      text: JSON.stringify(response)
+      text: JSON.stringify({
+        status,
+        content,
+        metadata
+      })
     }]
   };
 }
@@ -88,25 +83,24 @@ export function addStandardContext(metadata: Record<string, any>): Record<string
 }
 
 /**
- * Centralized error handler for all tools
- * @param toolName Name of the tool that encountered an error
+ * Handles tool errors in a standardized way
+ * @param toolName Name of the tool that encountered the error
  * @param error The error object
- * @param extraMetadata Additional metadata to include in the error response
+ * @param context Additional context about the error
  * @returns Standardized error response
  */
-export function handleToolError(
-  toolName: string, 
-  error: Error | unknown, 
-  extraMetadata: Record<string, any> = {}
-): { content: Array<{type: string, text: string}> } {
+export function handleToolError(toolName: string, error: unknown, context?: Record<string, unknown>): ResponseContent {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  logger.error(`Error in ${toolName}:`, { error, toolName });
-  
-  const metadata = {
-    tool: toolName,
-    errorType: error instanceof Error ? error.constructor.name : "UnknownError",
-    ...extraMetadata
+  logger.error(`Error in ${toolName}:`, { error: errorMessage, context });
+
+  return {
+    content: [{
+      type: "text",
+      text: JSON.stringify({
+        status: "error",
+        error: errorMessage,
+        context
+      })
+    }]
   };
-  
-  return createStandardResponse("error", errorMessage, metadata);
 }

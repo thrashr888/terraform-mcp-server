@@ -339,14 +339,8 @@ describe("Terraform MCP Server Integration", () => {
       { capabilities: { tools: { listChanged: true } } }
     );
     
-    console.log("Connecting server to mock transport...");
     // Connect the server to our mock transport
     await server.connect(mockTransport as any);
-    
-    // Debug check - see if the callback was set during connect
-    if (!mockTransport.callback) {
-      console.warn("Server did not set transport callback in beforeEach - this is unexpected!");
-    }
     
     // Set up mock responses for fetch calls in the tests
     mockFetchResponse({

@@ -21,10 +21,6 @@ import {
 import { 
   VERSION, 
   SERVER_NAME, 
-  REGISTRY_API_BASE, 
-  DEFAULT_NAMESPACE,
-  LOG_LEVEL,
-  REQUEST_TIMEOUT_MS
 } from "./config.js";
 import logger from "./utils/logger.js";
 import { 
@@ -32,8 +28,8 @@ import {
   ResourceUsageInput,
   ModuleRecommendationsInput,
   DataSourceLookupInput,
-  ResourceArgumentDetailsInput,
-  ModuleDetailsInput
+  ModuleDetailsInput,
+  ResourceDocumentationInput
 } from "./types/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
@@ -96,13 +92,14 @@ const tools: Tool[] = [
   },
   {
     name: "resourceArgumentDetails",
-    description: "Fetches details about a specific resource type's arguments, including name, type, description, and requirements.",
+    description: "Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.",
     inputSchema: { 
       type: "object", 
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" }
+        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
+        version: { type: "string", description: "Provider version (defaults to latest)" }
       },
       required: ["provider", "namespace", "resource"]
     }
@@ -119,7 +116,7 @@ const tools: Tool[] = [
       },
       required: ["namespace", "module", "provider"]
     }
-  },
+  }
 ];
 
 // Initialize the server
@@ -159,70 +156,95 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools };
 });
 
-// CallToolRequest handler
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  logger.debug("Handling tool call request:", request);
+// Validate and convert arguments
+function validateArgs<T>(args: Record<string, unknown> | undefined, requiredFields: string[]): T | undefined {
+  if (!args) return undefined;
   
-  // Extract tool name and arguments
-  const toolName = request.params.name;
-  const arguments_ = request.params.arguments || {};
-  
-  if (!toolName) {
-    logger.error("Tool name is missing in the request");
-    return { content: [{ type: "text", text: "Error: Tool name is missing in the request" }] };
+  for (const field of requiredFields) {
+    if (!(field in args)) {
+      throw new Error(`Missing required field: ${field}`);
+    }
   }
   
+  return args as T;
+}
+
+// Handle tool requests
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name: toolName, arguments: args } = request.params;
+
+  if (!toolName) {
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          status: "error",
+          error: "Tool name is required"
+        })
+      }]
+    };
+  }
+
   try {
-    logger.info(`Processing tool request for: "${toolName}"`);
-    
-    // Route to the appropriate handler based on the tool name
+    let response;
+
     switch (toolName) {
-    case "providerLookup": {
-      const args = arguments_ as unknown as ProviderLookupInput;
-      return await handleProviderLookup(args);
+    case "resourceArgumentDetails": {
+      const validArgs = validateArgs<ResourceDocumentationInput>(args, ["namespace", "provider", "resource"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleResourceArgumentDetails(validArgs);
+      break;
     }
     case "resourceUsage": {
-      const args = arguments_ as unknown as ResourceUsageInput;
-      return await handleResourceUsage(args);
+      const validArgs = validateArgs<ResourceUsageInput>(args, ["provider", "resource"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleResourceUsage(validArgs);
+      break;
+    }
+    case "providerLookup": {
+      const validArgs = validateArgs<ProviderLookupInput>(args, ["provider"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleProviderLookup(validArgs);
+      break;
     }
     case "moduleRecommendations": {
-      const args = arguments_ as unknown as ModuleRecommendationsInput;
-      return await handleModuleRecommendations(args);
+      const validArgs = validateArgs<ModuleRecommendationsInput>(args, ["query"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleModuleRecommendations(validArgs);
+      break;
     }
     case "dataSourceLookup": {
-      const args = arguments_ as unknown as DataSourceLookupInput;
-      return await handleDataSourceLookup(args);
-    }
-    case "resourceArgumentDetails": {
-      const args = arguments_ as unknown as ResourceArgumentDetailsInput;
-      return await handleResourceArgumentDetails(args);
+      const validArgs = validateArgs<DataSourceLookupInput>(args, ["provider", "namespace"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleDataSourceLookup(validArgs);
+      break;
     }
     case "moduleDetails": {
-      const args = arguments_ as unknown as ModuleDetailsInput;
-      return await handleModuleDetails(args);
+      const validArgs = validateArgs<ModuleDetailsInput>(args, ["namespace", "module", "provider"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleModuleDetails(validArgs);
+      break;
     }
     default:
       throw new Error(`Unknown tool: ${toolName}`);
     }
+
+    return response;
   } catch (error) {
-    logger.error(`Error in tool handler for ${toolName}:`, error);
-    throw error;
+    logger.error("Error handling tool request:", error);
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          status: "error",
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }]
+    };
   }
 });
 
-/**
- * Logs the current configuration values for debugging
- */
-function logConfiguration() {
-  const config = {
-    registryApiBase: REGISTRY_API_BASE,
-    defaultNamespace: DEFAULT_NAMESPACE,
-    logLevel: LOG_LEVEL,
-    requestTimeoutMs: REQUEST_TIMEOUT_MS
-  };
-  logger.info(`Configuration loaded for ${SERVER_NAME} v${VERSION}`, config);
-}
-
+// Start the server
 async function main() {
   console.error("🚀 Starting terraform-registry MCP server...");
   const transport = new StdioServerTransport();
@@ -235,8 +257,6 @@ async function main() {
   try {
     await server.connect(transport);
     console.error("✅ Server connected and ready for requests");
-    
-    logConfiguration();
     
     console.error("📝 Server running on stdio transport");
   } catch (error) {

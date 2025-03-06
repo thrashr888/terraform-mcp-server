@@ -13,6 +13,25 @@ export interface ResourceUsageInput {
   name?: string;       // fallback
 }
 
+export interface ResourceUsageResponse {
+  description: string;
+  subcategory: string;
+  examples: Array<{
+    name: string;
+    description: string;
+    code: string;
+  }>;
+  notes: Array<string>;
+  import_instructions: string;
+  related_docs: Array<{
+    title: string;
+    url: string;
+  }>;
+  version: string;
+  latestVersion: string;
+  documentationUrl: string;
+}
+
 export interface ModuleRecommendationsInput {
   query?: string;      // e.g. "vpc"
   keyword?: string;    // fallback
@@ -34,6 +53,93 @@ export interface ModuleDetailsInput {
   namespace: string;   // e.g. "terraform-aws-modules"
   module: string;      // e.g. "vpc"
   provider: string;    // e.g. "aws"
+}
+
+export interface ResourceDocumentationInput {
+  namespace: string;
+  provider: string;
+  resource: string;
+  version?: string;  // Optional version, defaults to "latest"
+}
+
+export interface ProviderVersion {
+  id: string;
+  attributes: {
+    version: string;
+    protocols: string[];
+    "published-at": string;
+  };
+}
+
+export interface ResourceDoc {
+  id: string;
+  attributes: {
+    title: string;
+    slug: string;
+    category: string;
+    subcategory: string;
+    description: string;
+    language: string;
+    content: string;
+  };
+}
+
+export interface ResourceDocumentationResponse {
+  // Basic information
+  content: string;
+  docId: string;
+  version: string;
+  latestVersion: string;
+  documentationUrl: string;
+  description: string;
+  subcategory: string;
+
+  // Examples
+  examples: Array<{
+    name: string;
+    description: string;
+    code: string;
+  }>;
+
+  // Arguments
+  arguments: {
+    required: Array<{
+      name: string;
+      type: string;
+      description: string;
+    }>;
+    optional: Array<{
+      name: string;
+      type: string;
+      description: string;
+    }>;
+  };
+
+  // Attributes
+  attributes: Array<{
+    name: string;
+    type: string;
+    description: string;
+    computed: boolean;
+  }>;
+
+  // Nested blocks
+  nestedBlocks: Array<{
+    name: string;
+    description: string;
+    arguments: Array<{
+      name: string;
+      type: string;
+      description: string;
+      required: boolean;
+    }>;
+  }>;
+
+  // Import
+  importInstructions?: {
+    syntax: string;
+    examples: string[];
+  };
 }
 
 // Schema types

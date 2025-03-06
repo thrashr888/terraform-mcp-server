@@ -7,6 +7,7 @@
 
 # development
 - run `npm run build` to build the project
+- the server needs manually restarted after building
 - run `npm run test` to run the tests
 - run `npm run test-server` to run a test server
 - run `./test.sh` to run the tests
