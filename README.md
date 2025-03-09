@@ -375,6 +375,57 @@ Get detailed information about a specific policy library including its latest ve
 }
 ```
 
+### 11. Explorer Query
+
+Query the Terraform Cloud Explorer API to analyze data across workspaces, providers, modules, and Terraform versions in an organization.
+
+**Input:**
+
+```json
+{
+  "organization": "my-org",      // Required: The name of the organization to query
+  "type": "workspaces",          // Required: The type of view to query (workspaces, tf_versions, providers, modules)
+  "sort": "-updated-at",         // Optional: Field to sort by (prefix with - for descending)
+  "filter": [                    // Optional: Filters to apply
+    {
+      "field": "terraform-version",
+      "operator": "==",
+      "value": ["1.5.0"]
+    }
+  ],
+  "fields": ["name", "resource-count"], // Optional: Specific fields to return
+  "page_number": 1,              // Optional: Page number for pagination
+  "page_size": 20                // Optional: Page size for pagination
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Explorer Query Results (2 total)\n\n| name | resource-count |\n| --- | --- |\n| production-vpc | 42 |\n| staging-vpc | 28 |",
+  "data": {
+    "results": [
+      {
+        "name": "production-vpc",
+        "resource-count": 42
+      },
+      {
+        "name": "staging-vpc",
+        "resource-count": 28
+      }
+    ],
+    "total": 2,
+    "context": {
+      "organization": "my-org",
+      "type": "workspaces",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
 ## Running the Server
 
 The server runs using stdio transport for MCP communication:
@@ -397,6 +448,7 @@ The server can be configured using environment variables:
 | `RATE_LIMIT_ENABLED` | Enable rate limiting for API requests | false |
 | `RATE_LIMIT_REQUESTS` | Number of requests allowed in time window | 60 |
 | `RATE_LIMIT_WINDOW_MS` | Time window for rate limiting in milliseconds | 60000 |
+| `TFC_TOKEN` | Terraform Cloud API token for private registry access | |
 
 Example usage with environment variables:
 
@@ -404,6 +456,7 @@ Example usage with environment variables:
 # Set environment variables
 export LOG_LEVEL="debug"
 export REQUEST_TIMEOUT_MS="15000"
+export TFC_TOKEN="your-terraform-cloud-token"
 
 # Run the server
 node dist/index.js

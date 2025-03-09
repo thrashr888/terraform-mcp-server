@@ -28,7 +28,8 @@ import {
   handlePolicyDetails,
   handleListOrganizations,
   handlePrivateModuleSearch,
-  handlePrivateModuleDetails
+  handlePrivateModuleDetails,
+  handleExplorerQuery
 } from "./handlers/index.js";
 
 import { 
@@ -38,13 +39,13 @@ import {
 } from "./config.js";
 
 import logger from "./utils/logger.js";
-import { 
+import {
   ProviderLookupInput,
   ResourceUsageInput,
   ModuleRecommendationsInput,
   DataSourceLookupInput,
-  ModuleDetailsInput,
   ResourceDocumentationInput,
+  ModuleDetailsInput,
   FunctionDetailsInput,
   ProviderGuidesInput,
   PolicySearchInput,
@@ -52,6 +53,8 @@ import {
   PrivateModuleSearchParams,
   PrivateModuleDetailsParams
 } from "./types/index.js";
+
+import { ExplorerQueryParams } from "./handlers/explorer.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
 declare module "@modelcontextprotocol/sdk/server/index.js" {
@@ -241,6 +244,56 @@ const tfcTools: Tool[] = [
       }
     },
     handler: handlePrivateModuleDetails
+  },
+  {
+    name: "explorerQuery",
+    description: "Query the Terraform Cloud Explorer API to analyze data across workspaces in an organization",
+    inputSchema: {
+      type: "object",
+      required: ["organization", "type"],
+      properties: {
+        organization: {
+          type: "string",
+          description: "The name of the organization to query"
+        },
+        type: {
+          type: "string",
+          enum: ["workspaces", "tf_versions", "providers", "modules"],
+          description: "The type of view to query"
+        },
+        sort: {
+          type: "string",
+          description: "Optional field to sort by (prefix with - for descending)"
+        },
+        filter: {
+          type: "array",
+          items: {
+            type: "object",
+            required: ["field", "operator", "value"],
+            properties: {
+              field: { type: "string" },
+              operator: { type: "string" },
+              value: { type: "array", items: { type: "string" } }
+            }
+          },
+          description: "Optional filters to apply"
+        },
+        fields: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional specific fields to return"
+        },
+        page_number: {
+          type: "number",
+          description: "Optional page number"
+        },
+        page_size: {
+          type: "number",
+          description: "Optional page size"
+        }
+      }
+    },
+    handler: handleExplorerQuery
   }
 ];
 
@@ -393,6 +446,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const validArgs = validateArgs<PrivateModuleDetailsParams>(args, ["organization", "namespace", "name", "provider"]);
       if (!validArgs) throw new Error("Missing required arguments");
       response = await handlePrivateModuleDetails(validArgs);
+      break;
+    }
+    case "explorerQuery": {
+      const validArgs = validateArgs<ExplorerQueryParams>(args, ["organization", "type"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handleExplorerQuery(validArgs);
       break;
     }
     default:
