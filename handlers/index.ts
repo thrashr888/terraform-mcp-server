@@ -9,3 +9,6 @@ export * from "./functionDetails.js";
 export * from "./providerGuides.js";
 export * from "./policySearch.js";
 export * from "./policyDetails.js";
+export * from "./listOrganizations.js";
+export * from "./privateModuleSearch.js";
+export * from "./privateModuleDetails.js";

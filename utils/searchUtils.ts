@@ -44,30 +44,26 @@ export interface AlgoliaSearchResult {
  * @returns Search results from Algolia
  */
 export async function searchAlgolia(config: AlgoliaConfig, query: string, provider?: string): Promise<AlgoliaSearchResult> {
-  const url = `https://${config.applicationId}-dsn.algolia.net/1/indexes/${config.indexName}/query`;
-  
-  const searchParams = {
-    params: new URLSearchParams({
-      query,
-      page: "0",
-      hitsPerPage: "50",
-      facets: "*",
-      ...(provider ? { facetFilters: JSON.stringify([`provider-name:${provider}`]) } : {})
-    }).toString()
-  };
-
-  console.log("Algolia search params:", JSON.stringify(searchParams, null, 2));
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "x-algolia-api-key": config.apiKey,
-      "x-algolia-application-id": config.applicationId
-    },
-    body: JSON.stringify(searchParams)
+  const searchParams = new URLSearchParams({
+    query,
+    "x-algolia-application-id": config.applicationId,
+    "x-algolia-api-key": config.apiKey,
   });
+
+  if (provider) {
+    searchParams.append("facetFilters", `[["provider-name:${provider}"]]`);
+  }
+
+  const response = await fetch(
+    `https://${config.applicationId}-dsn.algolia.net/1/indexes/${config.indexName}?${searchParams.toString()}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Algolia-Application-Id": config.applicationId,
+        "X-Algolia-API-Key": config.apiKey,
+      },
+    }
+  );
 
   if (!response.ok) {
     console.error("Algolia search failed:", await response.text());
@@ -76,7 +72,7 @@ export async function searchAlgolia(config: AlgoliaConfig, query: string, provid
 
   const result = await response.json();
   console.log("Algolia search result:", JSON.stringify(result, null, 2));
-  return result;
+  return result as AlgoliaSearchResult;
 }
 
 /**

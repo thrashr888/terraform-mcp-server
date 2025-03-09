@@ -2,16 +2,21 @@
     "compilerOptions": {
       "outDir": "./dist",
       "rootDir": ".",
-      "moduleResolution": "NodeNext",
-      "module": "NodeNext",
-      "target": "ES2022",
+      "moduleResolution": "node",
+      "module": "ES2020",
+      "target": "ES2020",
       "strict": true,
       "esModuleInterop": true,
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "lib": ["ES2020", "DOM", "DOM.Iterable"]
     },
     "include": [
       "./*.ts"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist"
     ]
   }

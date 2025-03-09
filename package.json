@@ -28,10 +28,12 @@
     },
     "dependencies": {
         "@modelcontextprotocol/sdk": "1.6.1",
+        "abort-controller": "^3.0.0",
         "debug": "^4.4.0",
         "diff": "^7.0.0",
         "glob": "^11.0.1",
         "minimatch": "^10.0.1",
+        "node-fetch": "^3.3.2",
         "zod-to-json-schema": "^3.24.3"
     },
     "devDependencies": {
@@ -40,7 +42,7 @@
         "@types/diff": "^7.0.1",
         "@types/jest": "^29.5.14",
         "@types/minimatch": "^5.1.2",
-        "@types/node": "^22.13.8",
+        "@types/node": "^22.13.9",
         "@types/node-fetch": "^2.6.12",
         "@typescript-eslint/eslint-plugin": "^8.25.0",
         "@typescript-eslint/parser": "^8.25.0",

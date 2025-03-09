@@ -292,3 +292,68 @@ export interface PolicyVersionDetails {
     };
   };
 }
+
+export type ListOrganizationsParams = Record<never, never>;
+
+export interface PrivateModuleSearchParams {
+  organization: string;
+  query?: string;
+  provider?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface PrivateModuleDetailsParams {
+  organization: string;
+  namespace: string;
+  name: string;
+  provider: string;
+  version?: string;
+}
+
+export interface ModuleVersion {
+  attributes: {
+    version: string;
+    status: string;
+    "created-at": string;
+    "updated-at": string;
+  };
+  root?: {
+    inputs?: Array<{
+      name: string;
+      type: string;
+      description: string;
+      required: boolean;
+    }>;
+    outputs?: Array<{
+      name: string;
+      description: string;
+    }>;
+  };
+}
+
+export interface PrivateModule {
+  id: string;
+  attributes: {
+    name: string;
+    provider: string;
+    status: string;
+    "registry-name": string;
+    "created-at": string;
+    "updated-at": string;
+    "version-statuses": Array<{
+      version: string;
+      status: string;
+    }>;
+  };
+}
+
+export interface NoCodeModule {
+  attributes: {
+    name: string;
+    "variable-options": Array<{
+      name: string;
+      type: string;
+    }>;
+  };
+}

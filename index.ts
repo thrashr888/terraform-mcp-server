@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+// Polyfill fetch for Node.js versions < 18
+import fetch from "node-fetch";
+if (!globalThis.fetch) {
+  globalThis.fetch = fetch as unknown as typeof globalThis.fetch;
+}
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -19,13 +25,18 @@ import {
   handleFunctionDetails,
   handleProviderGuides,
   handlePolicySearch,
-  handlePolicyDetails
+  handlePolicyDetails,
+  handleListOrganizations,
+  handlePrivateModuleSearch,
+  handlePrivateModuleDetails
 } from "./handlers/index.js";
 
 import { 
   VERSION, 
-  SERVER_NAME, 
+  SERVER_NAME,
+  TFC_TOKEN
 } from "./config.js";
+
 import logger from "./utils/logger.js";
 import { 
   ProviderLookupInput,
@@ -37,7 +48,9 @@ import {
   FunctionDetailsInput,
   ProviderGuidesInput,
   PolicySearchInput,
-  PolicyDetailsInput
+  PolicyDetailsInput,
+  PrivateModuleSearchParams,
+  PrivateModuleDetailsParams
 } from "./types/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
@@ -47,8 +60,8 @@ declare module "@modelcontextprotocol/sdk/server/index.js" {
   }
 }
 
-// Define the tools available in the server
-const tools: Tool[] = [
+// Define the base tools available in the server
+const baseTools: Tool[] = [
   {
     name: "providerLookup",
     description: "Lookup a Terraform provider by name and optionally version.",
@@ -186,6 +199,56 @@ const tools: Tool[] = [
   }
 ];
 
+// Define the TFC-specific tools that require authentication
+const tfcTools: Tool[] = [
+  {
+    name: "listOrganizations",
+    description: "List all organizations the authenticated user has access to in Terraform Cloud.",
+    inputSchema: { 
+      type: "object",
+      properties: {}
+    },
+    handler: handleListOrganizations
+  },
+  {
+    name: "privateModuleSearch",
+    description: "Search for private modules in a Terraform Cloud organization.",
+    inputSchema: { 
+      type: "object",
+      required: ["organization"],
+      properties: {
+        organization: { type: "string", description: "The organization name to search in" },
+        query: { type: "string", description: "Search term" },
+        provider: { type: "string", description: "Filter by provider" },
+        page: { type: "number", description: "Page number (default: 1)" },
+        per_page: { type: "number", description: "Results per page (default: 20)" }
+      }
+    },
+    handler: handlePrivateModuleSearch
+  },
+  {
+    name: "privateModuleDetails",
+    description: "Get detailed information about a private module including inputs, outputs, and no-code configuration.",
+    inputSchema: { 
+      type: "object",
+      required: ["organization", "namespace", "name", "provider"],
+      properties: {
+        organization: { type: "string", description: "The organization name" },
+        namespace: { type: "string", description: "The module namespace, likely same as organization name" },
+        name: { type: "string", description: "The module name" },
+        provider: { type: "string", description: "The provider name" },
+        version: { type: "string", description: "Optional specific version to fetch" }
+      }
+    },
+    handler: handlePrivateModuleDetails
+  }
+];
+
+// Combine tools based on TFC_TOKEN availability
+const tools: Tool[] = TFC_TOKEN 
+  ? [...baseTools, ...tfcTools]
+  : baseTools;
+
 // Initialize the server
 const server = new Server(
   {
@@ -314,6 +377,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const validArgs = validateArgs<PolicyDetailsInput>(args, ["namespace", "name"]);
       if (!validArgs) throw new Error("Missing required arguments");
       response = await handlePolicyDetails(validArgs);
+      break;
+    }
+    case "listOrganizations": {
+      response = await handleListOrganizations();
+      break;
+    }
+    case "privateModuleSearch": {
+      const validArgs = validateArgs<PrivateModuleSearchParams>(args, ["organization"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handlePrivateModuleSearch(validArgs);
+      break;
+    }
+    case "privateModuleDetails": {
+      const validArgs = validateArgs<PrivateModuleDetailsParams>(args, ["organization", "namespace", "name", "provider"]);
+      if (!validArgs) throw new Error("Missing required arguments");
+      response = await handlePrivateModuleDetails(validArgs);
       break;
     }
     default:

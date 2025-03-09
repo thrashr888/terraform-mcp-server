@@ -9,6 +9,10 @@ export const REGISTRY_API_BASE = process.env.TERRAFORM_REGISTRY_URL || "https://
 export const REGISTRY_API_V1 = `${REGISTRY_API_BASE}/v1`;
 export const REGISTRY_API_V2 = `${REGISTRY_API_BASE}/v2`;
 
+// Terraform Cloud API configuration
+export const TF_CLOUD_API_BASE = "https://app.terraform.io/api/v2";
+export const TFC_TOKEN = process.env.TFC_TOKEN;
+
 // Default namespace for providers when not specified
 export const DEFAULT_NAMESPACE = process.env.DEFAULT_PROVIDER_NAMESPACE || "hashicorp";
 
