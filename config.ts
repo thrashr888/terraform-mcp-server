@@ -1,7 +1,7 @@
 // Configuration constants for the Terraform MCP Server
 
 // Static version - updated during release process
-export const VERSION = "0.9.8";
+export const VERSION = "0.10.0";
 export const SERVER_NAME = "terraform-registry-mcp";
 
 // Terraform Registry API URLs

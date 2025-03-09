@@ -29,7 +29,17 @@ import {
   handleListOrganizations,
   handlePrivateModuleSearch,
   handlePrivateModuleDetails,
-  handleExplorerQuery
+  handleExplorerQuery,
+  handleListWorkspaces,
+  handleShowWorkspace,
+  handleLockWorkspace,
+  handleUnlockWorkspace,
+  handleListRuns,
+  handleShowRun,
+  handleCreateRun,
+  handleApplyRun,
+  handleCancelRun,
+  handleListWorkspaceResources
 } from "./handlers/index.js";
 
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
@@ -51,6 +61,9 @@ import {
 } from "./types/index.js";
 
 import { ExplorerQueryParams } from "./handlers/explorer.js";
+import { WorkspacesQueryParams, WorkspaceActionParams } from "./handlers/workspaces.js";
+import { RunsQueryParams, RunCreateParams, RunActionParams } from "./handlers/runs.js";
+import { WorkspaceResourcesQueryParams } from "./handlers/workspaceResources.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
 declare module "@modelcontextprotocol/sdk/server/index.js" {
@@ -293,6 +306,243 @@ const tfcTools: Tool[] = [
       }
     },
     handler: handleExplorerQuery
+  },
+  {
+    name: "listWorkspaces",
+    description: "List workspaces in a Terraform Cloud organization",
+    inputSchema: {
+      type: "object",
+      required: ["organization"],
+      properties: {
+        organization: {
+          type: "string",
+          description: "The name of the organization"
+        },
+        page_number: {
+          type: "number",
+          description: "Optional page number"
+        },
+        page_size: {
+          type: "number",
+          description: "Optional page size"
+        },
+        include: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional related resources to include"
+        }
+      }
+    },
+    handler: handleListWorkspaces
+  },
+  {
+    name: "showWorkspace",
+    description: "Show details of a specific workspace in a Terraform Cloud organization",
+    inputSchema: {
+      type: "object",
+      required: ["organization", "name"],
+      properties: {
+        organization: {
+          type: "string",
+          description: "The name of the organization"
+        },
+        name: {
+          type: "string",
+          description: "The name of the workspace"
+        },
+        include: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional related resources to include"
+        }
+      }
+    },
+    handler: handleShowWorkspace
+  },
+  {
+    name: "lockWorkspace",
+    description: "Lock a workspace to prevent runs",
+    inputSchema: {
+      type: "object",
+      required: ["workspace_id"],
+      properties: {
+        workspace_id: {
+          type: "string",
+          description: "The ID of the workspace to lock"
+        },
+        reason: {
+          type: "string",
+          description: "Optional reason for locking"
+        }
+      }
+    },
+    handler: handleLockWorkspace
+  },
+  {
+    name: "unlockWorkspace",
+    description: "Unlock a workspace to allow runs",
+    inputSchema: {
+      type: "object",
+      required: ["workspace_id"],
+      properties: {
+        workspace_id: {
+          type: "string",
+          description: "The ID of the workspace to unlock"
+        }
+      }
+    },
+    handler: handleUnlockWorkspace
+  },
+  {
+    name: "listRuns",
+    description: "List runs for a workspace",
+    inputSchema: {
+      type: "object",
+      required: ["workspace_id"],
+      properties: {
+        workspace_id: {
+          type: "string",
+          description: "The ID of the workspace"
+        },
+        page_number: {
+          type: "number",
+          description: "Optional page number"
+        },
+        page_size: {
+          type: "number",
+          description: "Optional page size"
+        },
+        include: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional related resources to include"
+        }
+      }
+    },
+    handler: handleListRuns
+  },
+  {
+    name: "showRun",
+    description: "Show details of a specific run",
+    inputSchema: {
+      type: "object",
+      required: ["run_id"],
+      properties: {
+        run_id: {
+          type: "string",
+          description: "The ID of the run"
+        }
+      }
+    },
+    handler: handleShowRun
+  },
+  {
+    name: "createRun",
+    description: "Create a new run for a workspace",
+    inputSchema: {
+      type: "object",
+      required: ["workspace_id"],
+      properties: {
+        workspace_id: {
+          type: "string",
+          description: "The ID of the workspace"
+        },
+        is_destroy: {
+          type: "boolean",
+          description: "Optional destroy flag"
+        },
+        message: {
+          type: "string",
+          description: "Optional message"
+        },
+        auto_apply: {
+          type: "boolean",
+          description: "Optional auto-apply setting"
+        },
+        refresh: {
+          type: "boolean",
+          description: "Optional refresh flag"
+        },
+        refresh_only: {
+          type: "boolean",
+          description: "Optional refresh-only flag"
+        },
+        plan_only: {
+          type: "boolean",
+          description: "Optional plan-only flag"
+        },
+        terraform_version: {
+          type: "string",
+          description: "Optional Terraform version"
+        }
+      }
+    },
+    handler: handleCreateRun
+  },
+  {
+    name: "applyRun",
+    description: "Apply a run that's been planned",
+    inputSchema: {
+      type: "object",
+      required: ["run_id"],
+      properties: {
+        run_id: {
+          type: "string",
+          description: "The ID of the run to apply"
+        },
+        comment: {
+          type: "string",
+          description: "Optional comment"
+        }
+      }
+    },
+    handler: handleApplyRun
+  },
+  {
+    name: "cancelRun",
+    description: "Cancel a run that's in progress",
+    inputSchema: {
+      type: "object",
+      required: ["run_id"],
+      properties: {
+        run_id: {
+          type: "string",
+          description: "The ID of the run to cancel"
+        },
+        comment: {
+          type: "string",
+          description: "Optional comment"
+        }
+      }
+    },
+    handler: handleCancelRun
+  },
+  {
+    name: "listWorkspaceResources",
+    description: "List resources in a workspace",
+    inputSchema: {
+      type: "object",
+      required: ["workspace_id"],
+      properties: {
+        workspace_id: {
+          type: "string",
+          description: "The ID of the workspace"
+        },
+        page_number: {
+          type: "number",
+          description: "Optional page number"
+        },
+        page_size: {
+          type: "number",
+          description: "Optional page size"
+        },
+        filter: {
+          type: "string",
+          description: "Optional filter string"
+        }
+      }
+    },
+    handler: handleListWorkspaceResources
   }
 ];
 
@@ -456,6 +706,73 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const validArgs = validateArgs<ExplorerQueryParams>(args, ["organization", "type"]);
         if (!validArgs) throw new Error("Missing required arguments");
         response = await handleExplorerQuery(validArgs);
+        break;
+      }
+      case "listWorkspaces": {
+        const validArgs = validateArgs<WorkspacesQueryParams>(args, ["organization"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleListWorkspaces(validArgs);
+        break;
+      }
+      case "showWorkspace": {
+        const validArgs = validateArgs<Record<string, any>>(args, ["organization", "name"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+
+        // Convert from the API parameter names to the internal parameter names
+        const params = {
+          organization_name: validArgs.organization,
+          name: validArgs.name
+        };
+
+        response = await handleShowWorkspace(params);
+        break;
+      }
+      case "lockWorkspace": {
+        const validArgs = validateArgs<WorkspaceActionParams>(args, ["workspace_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleLockWorkspace(validArgs);
+        break;
+      }
+      case "unlockWorkspace": {
+        const validArgs = validateArgs<WorkspaceActionParams>(args, ["workspace_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleUnlockWorkspace(validArgs);
+        break;
+      }
+      case "listRuns": {
+        const validArgs = validateArgs<RunsQueryParams>(args, ["workspace_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleListRuns(validArgs);
+        break;
+      }
+      case "showRun": {
+        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleShowRun(validArgs);
+        break;
+      }
+      case "createRun": {
+        const validArgs = validateArgs<RunCreateParams>(args, ["workspace_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleCreateRun(validArgs);
+        break;
+      }
+      case "applyRun": {
+        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleApplyRun(validArgs);
+        break;
+      }
+      case "cancelRun": {
+        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleCancelRun(validArgs);
+        break;
+      }
+      case "listWorkspaceResources": {
+        const validArgs = validateArgs<WorkspaceResourcesQueryParams>(args, ["workspace_id"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleListWorkspaceResources(validArgs);
         break;
       }
       default:

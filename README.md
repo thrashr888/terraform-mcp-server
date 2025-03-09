@@ -426,6 +426,386 @@ Query the Terraform Cloud Explorer API to analyze data across workspaces, provid
 }
 ```
 
+### 12. Workspaces
+
+A set of tools for managing Terraform Cloud workspaces.
+
+#### 12.1 List Workspaces
+
+List workspaces in a Terraform Cloud organization.
+
+**Input:**
+
+```json
+{
+  "organization": "my-org",      // Required: The name of the organization
+  "page_number": 1,              // Optional: Page number for pagination
+  "page_size": 20,               // Optional: Page size for pagination
+  "include": ["organization"]    // Optional: Related resources to include
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Workspaces in Organization: my-org\n\n| name | id | terraform-version | updated-at |\n| --- | --- | --- | --- |\n| production | ws-123 | 1.5.0 | 2024-03-01T12:00:00Z |\n| staging | ws-456 | 1.4.6 | 2024-02-28T10:30:00Z |",
+  "data": {
+    "workspaces": [
+      {
+        "id": "ws-123",
+        "name": "production",
+        "terraform-version": "1.5.0",
+        "updated-at": "2024-03-01T12:00:00Z"
+      },
+      {
+        "id": "ws-456",
+        "name": "staging",
+        "terraform-version": "1.4.6",
+        "updated-at": "2024-02-28T10:30:00Z"
+      }
+    ],
+    "total": 2,
+    "context": {
+      "organization": "my-org",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
+#### 12.2 Show Workspace
+
+Show details of a specific workspace in a Terraform Cloud organization.
+
+**Input:**
+
+```json
+{
+  "organization": "my-org",      // Required: The name of the organization
+  "name": "production",          // Required: The name of the workspace
+  "include": ["organization"]    // Optional: Related resources to include
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Workspace: production\n\n**ID**: ws-123\n**Terraform Version**: 1.5.0\n**Auto Apply**: No\n**Working Directory**: /\n**Updated At**: 2024-03-01T12:00:00Z\n\n### Description\n\nProduction environment workspace",
+  "data": {
+    "workspace": {
+      "id": "ws-123",
+      "name": "production",
+      "description": "Production environment workspace",
+      "terraform-version": "1.5.0",
+      "auto-apply": false,
+      "working-directory": "",
+      "updated-at": "2024-03-01T12:00:00Z"
+    },
+    "context": {
+      "organization": "my-org",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
+#### 12.3 Lock Workspace
+
+Lock a workspace to prevent runs.
+
+**Input:**
+
+```json
+{
+  "workspace_id": "ws-123",      // Required: The ID of the workspace to lock
+  "reason": "Maintenance"        // Optional: Reason for locking
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Workspace Locked\n\nWorkspace with ID `ws-123` has been locked.\n\n**Reason**: Maintenance",
+  "data": {
+    "workspace_id": "ws-123",
+    "locked": true,
+    "reason": "Maintenance",
+    "timestamp": "2024-03-09T00:15:00.000Z"
+  }
+}
+```
+
+#### 12.4 Unlock Workspace
+
+Unlock a workspace to allow runs.
+
+**Input:**
+
+```json
+{
+  "workspace_id": "ws-123"       // Required: The ID of the workspace to unlock
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Workspace Unlocked\n\nWorkspace with ID `ws-123` has been unlocked.",
+  "data": {
+    "workspace_id": "ws-123",
+    "locked": false,
+    "timestamp": "2024-03-09T00:15:00.000Z"
+  }
+}
+```
+
+### 13. Runs
+
+A set of tools for managing Terraform Cloud runs.
+
+#### 13.1 List Runs
+
+List runs for a workspace.
+
+**Input:**
+
+```json
+{
+  "workspace_id": "ws-123",      // Required: The ID of the workspace
+  "page_number": 1,              // Optional: Page number for pagination
+  "page_size": 20,               // Optional: Page size for pagination
+  "include": ["plan", "apply"]   // Optional: Related resources to include
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Runs for Workspace: ws-123\n\n| id | status | created-at | message |\n| --- | --- | --- | --- |\n| run-123 | applied | 2024-03-01T12:00:00Z | Weekly update |\n| run-456 | planned | 2024-02-28T10:30:00Z | Infrastructure changes |",
+  "data": {
+    "runs": [
+      {
+        "id": "run-123",
+        "status": "applied",
+        "created-at": "2024-03-01T12:00:00Z",
+        "message": "Weekly update"
+      },
+      {
+        "id": "run-456",
+        "status": "planned",
+        "created-at": "2024-02-28T10:30:00Z",
+        "message": "Infrastructure changes"
+      }
+    ],
+    "total": 2,
+    "context": {
+      "workspace_id": "ws-123",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
+#### 13.2 Show Run
+
+Show details of a specific run.
+
+**Input:**
+
+```json
+{
+  "run_id": "run-123"            // Required: The ID of the run
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Run Details\n\n**ID**: run-123\n**Status**: applied\n**Created At**: 2024-03-01T12:00:00Z\n**Message**: Weekly update\n**Is Destroy**: No\n**Auto Apply**: Yes\n**Source**: tfe-api\n\n### Timeline\n\n- **Plan Queued At**: 2024-03-01T11:55:00Z\n- **Plan Started At**: 2024-03-01T11:56:00Z\n- **Plan Finished At**: 2024-03-01T11:58:00Z\n- **Apply Started At**: 2024-03-01T11:59:00Z\n- **Apply Finished At**: 2024-03-01T12:00:00Z",
+  "data": {
+    "run": {
+      "id": "run-123",
+      "status": "applied",
+      "created-at": "2024-03-01T12:00:00Z",
+      "message": "Weekly update",
+      "is-destroy": false,
+      "auto-apply": true,
+      "source": "tfe-api",
+      "status-timestamps": {
+        "plan-queued-at": "2024-03-01T11:55:00Z",
+        "plan-started-at": "2024-03-01T11:56:00Z",
+        "plan-finished-at": "2024-03-01T11:58:00Z",
+        "apply-started-at": "2024-03-01T11:59:00Z",
+        "apply-finished-at": "2024-03-01T12:00:00Z"
+      }
+    },
+    "context": {
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
+#### 13.3 Create Run
+
+Create a new run for a workspace.
+
+**Input:**
+
+```json
+{
+  "workspace_id": "ws-123",      // Required: The ID of the workspace
+  "is_destroy": false,           // Optional: Destroy flag
+  "message": "New infrastructure", // Optional: Message
+  "auto_apply": false,           // Optional: Auto-apply setting
+  "refresh": true,               // Optional: Refresh flag
+  "refresh_only": false,         // Optional: Refresh-only flag
+  "plan_only": false,            // Optional: Plan-only flag
+  "terraform_version": "1.5.0"   // Optional: Terraform version
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Run Created\n\n**ID**: run-789\n**Status**: pending\n**Created At**: 2024-03-09T00:15:00.000Z\n**Message**: New infrastructure\n**Is Destroy**: No\n**Auto Apply**: No",
+  "data": {
+    "run": {
+      "id": "run-789",
+      "status": "pending",
+      "created-at": "2024-03-09T00:15:00.000Z",
+      "message": "New infrastructure",
+      "is-destroy": false,
+      "auto-apply": false
+    },
+    "context": {
+      "workspace_id": "ws-123",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
+#### 13.4 Apply Run
+
+Apply a run that's been planned.
+
+**Input:**
+
+```json
+{
+  "run_id": "run-123",           // Required: The ID of the run to apply
+  "comment": "Looks good"        // Optional: Comment
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Run Applied\n\nRun with ID `run-123` has been applied.\n\n**Comment**: Looks good",
+  "data": {
+    "run_id": "run-123",
+    "applied": true,
+    "comment": "Looks good",
+    "timestamp": "2024-03-09T00:15:00.000Z"
+  }
+}
+```
+
+#### 13.5 Cancel Run
+
+Cancel a run that's in progress.
+
+**Input:**
+
+```json
+{
+  "run_id": "run-123",           // Required: The ID of the run to cancel
+  "comment": "Incorrect configuration" // Optional: Comment
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Run Cancelled\n\nRun with ID `run-123` has been cancelled.\n\n**Comment**: Incorrect configuration",
+  "data": {
+    "run_id": "run-123",
+    "cancelled": true,
+    "comment": "Incorrect configuration",
+    "timestamp": "2024-03-09T00:15:00.000Z"
+  }
+}
+```
+
+### 14. Workspace Resources
+
+A set of tools for viewing resources in Terraform Cloud workspaces.
+
+#### 14.1 List Workspace Resources
+
+List resources in a workspace.
+
+**Input:**
+
+```json
+{
+  "workspace_id": "ws-123",      // Required: The ID of the workspace
+  "page_number": 1,              // Optional: Page number for pagination
+  "page_size": 20,               // Optional: Page size for pagination
+  "filter": "aws_instance"       // Optional: Filter string
+}
+```
+
+**Output:**
+
+```json
+{
+  "status": "success",
+  "content": "## Resources in Workspace: ws-123\n\n| name | type | provider | module |\n| --- | --- | --- | --- |\n| web | aws_instance | aws | - |\n| db | aws_db_instance | aws | - |\n\n### Summary\n\n- **Total Resources**: 2\n- **Resource Types**: 2\n- **Providers**: aws",
+  "data": {
+    "resources": [
+      {
+        "id": "res-123",
+        "name": "web",
+        "type": "aws_instance",
+        "provider": "aws"
+      },
+      {
+        "id": "res-456",
+        "name": "db",
+        "type": "aws_db_instance",
+        "provider": "aws"
+      }
+    ],
+    "total": 2,
+    "context": {
+      "workspace_id": "ws-123",
+      "filter": "aws_instance",
+      "timestamp": "2024-03-09T00:15:00.000Z"
+    }
+  }
+}
+```
+
 ## Running the Server
 
 The server runs using stdio transport for MCP communication:

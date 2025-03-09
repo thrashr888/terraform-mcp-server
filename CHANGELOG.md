@@ -1,12 +1,30 @@
 # Changelog
 
-## 0.9.8 (March 5, 2024)
+## 0.10.0 (2025-03-09)
+
+### Added
+- Added support for Terraform Cloud API operations
+  - Workspaces: list, show, lock, unlock
+  - Runs: list, show, create, apply, cancel
+  - Organizations: list, show
+  - Workspace Resources: list, show
+
+### Fixed
+- Updated handlers to use the correct types for API responses
+- Fixed linting issues across the codebase
+- Removed unused Organization interface from hcpApiUtils.ts
+
+### Changed
+- Consolidated organization handlers by moving functionality from `listOrganizations.ts` to `organizations.ts`
+- Simplified API response handling in workspace and run handlers
+
+## 0.9.8 (2025-03-05)
 - Fixed initialization response format to match MCP protocol specification
 - Updated test suite to properly validate server response format
 - Improved server initialization handler to include correct protocol version
 - Enhanced test coverage for server initialization
 
-## 0.9.7 (March 3, 2024)
+## 0.9.7 (2025-03-03)
 - Added comprehensive testing documentation in TESTS.md
 - Simplified resource testing to focus on core providers
 - Improved test organization and documentation
@@ -15,7 +33,7 @@
 - Fixed test script output formatting
 - Improved error handling in resource tests
 
-## 0.9.6 (May 21, 2024)
+## 0.9.6 (2025-03-02)
 - Removed `exampleConfigGenerator` tool
 - Simplified tool interface by removing unused parameters
 - Updated tests to reflect tool changes
@@ -29,7 +47,7 @@
 - Clarified required and optional parameters in documentation
 - Improved documentation formatting and examples
 
-## 0.9.5 (April 23, 2024)
+## 0.9.5 (2025-03-02)
 - Fixed `exampleConfigGenerator` function to handle API changes from HashiCorp Registry
 - Added fallback approach that uses documentation URLs to generate example configs
 - Added generate-example.sh script to help test example generation
@@ -46,7 +64,7 @@
 available
 - Fixed issues with resource schema retrieval
 
-## 0.9.4 (2025-03-01)
+## 0.9.4 (2025-03-02)
 
 ### Improvements
 - Enhanced testing infrastructure with improved error handling in test scripts
@@ -54,7 +72,7 @@ available
 - Updated documentation with comprehensive test script details
 - Added better error reporting and fallback mechanisms for failing tests
 
-## 0.9.3 (2025-03-01)
+## 0.9.3 (2025-02-27)
 
 ### Fixes
 - Fixed implementation of the `mockImplementation` method in test mock function
@@ -62,7 +80,7 @@ available
 - Improved mock transport callback handling in tests
 - Fixed issues with the transport callback setup in the test environment
 
-## 0.9.2 (2025-02-27)
+## 0.9.2
 
 ### Fixes
 - Fixed issue with MCP protocol compatibility when handling tool names and arguments
@@ -70,7 +88,7 @@ available
 - Enhanced logging for better debugging capability
 - Fixed test suite failures related to protocol changes
 
-## 0.9.1 (2025-02-27)
+## 0.9.1 (2025-02-25)
 
 ### Improvements
 - Completely redesigned `resourceArgumentDetails` tool with:
@@ -81,7 +99,7 @@ available
   - Better error handling and debugging capabilities
 - Updated version from development to release status
 
-## 0.9.0 (2025-02-26)
+## 0.9.0 (2025-02-24)
 
 ### Updates
 - Added comprehensive test suite for all tools
@@ -94,7 +112,7 @@ available
 - Improved mock transport handling for tests
 - Added npx command installation option
 
-## 0.8.0 (2025-02-25)
+## 0.8.0 (2025-02-24)
 
 ### Updates
 - Added proper inputSchema definitions for all tools
@@ -103,7 +121,7 @@ available
 ### Improvements
 - Enhanced documentation with clear distinction between required and optional parameters
 
-## 0.7.0 (2025-02-25)
+## 0.7.0
 
 ### Updates
 - Updated `@modelcontextprotocol/sdk` from 0.5.0 to 1.6.0
@@ -114,6 +132,6 @@ available
 ### Fixes
 - Fixed compatibility issues with latest MCP protocol
 
-## 0.2.0 (2025-02-24)
+## 0.2.0 (2025-02-23)
 
 - Initial public release 

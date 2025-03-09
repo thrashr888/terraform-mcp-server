@@ -29,36 +29,6 @@ interface TFCloudResponse<T> {
   };
 }
 
-interface Organization {
-  id: string;
-  type: string;
-  attributes: {
-    "external-id": string;
-    name: string;
-    email: string;
-    "session-timeout": number;
-    "session-remember": number;
-    "collaborator-auth-policy": string;
-    "cost-estimation-enabled": boolean;
-    "created-at": string;
-    "owners-team-saml-role-id": string | null;
-    "saml-enabled": boolean;
-    "two-factor-conformant": boolean;
-  };
-  relationships: {
-    "authentication-token"?: {
-      links: {
-        related: string;
-      };
-    };
-    "oauth-tokens"?: {
-      links: {
-        related: string;
-      };
-    };
-  };
-}
-
 interface PrivateModule {
   id: string;
   type: string;
@@ -125,12 +95,6 @@ export async function fetchWithAuth<T>(
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-export async function listOrganizations(token: string): Promise<Organization[]> {
-  const url = `${TF_CLOUD_API_BASE}/organizations`;
-  const response = await fetchWithAuth<Organization[]>(url, token);
-  return Array.isArray(response.data) ? response.data : [response.data];
 }
 
 export async function searchPrivateModules(
