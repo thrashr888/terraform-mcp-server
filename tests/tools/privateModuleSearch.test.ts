@@ -40,12 +40,12 @@ describe("Private Module Search Tool", () => {
       json: () => Promise.resolve(mockResponse)
     } as Response);
 
-    const input = { 
+    const input = {
       organization: "test-org",
       query: "test",
-      provider: "aws" 
+      provider: "aws"
     };
-    
+
     const url = `https://app.terraform.io/api/v2/organizations/${input.organization}/registry-modules`;
     const res = await fetch(url, {
       headers: {
@@ -54,12 +54,12 @@ describe("Private Module Search Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
     expect(calls[0].options?.headers).toHaveProperty("Authorization");
-    
+
     expect(data.data).toHaveLength(1);
     expect(data.data[0].attributes.name).toBe("test-module");
   });
@@ -68,14 +68,16 @@ describe("Private Module Search Tool", () => {
     mockFetchRejection(new Error("Modules not found"));
 
     const input = { organization: "nonexistent-org" };
-    
+
     const url = `https://app.terraform.io/api/v2/organizations/${input.organization}/registry-modules`;
-    await expect(fetch(url, {
-      headers: {
-        Authorization: `Bearer ${TFC_TOKEN}`,
-        "Content-Type": "application/vnd.api+json"
-      }
-    })).rejects.toThrow("Modules not found");
+    await expect(
+      fetch(url, {
+        headers: {
+          Authorization: `Bearer ${TFC_TOKEN}`,
+          "Content-Type": "application/vnd.api+json"
+        }
+      })
+    ).rejects.toThrow("Modules not found");
   });
 
   test("should handle pagination parameters", async () => {
@@ -95,12 +97,12 @@ describe("Private Module Search Tool", () => {
       json: () => Promise.resolve(mockResponse)
     } as Response);
 
-    const input = { 
+    const input = {
       organization: "test-org",
       page: 2,
       per_page: 10
     };
-    
+
     const url = `https://app.terraform.io/api/v2/organizations/${input.organization}/registry-modules?page[number]=2&page[size]=10`;
     const res = await fetch(url, {
       headers: {
@@ -109,10 +111,10 @@ describe("Private Module Search Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
     expect(data.meta.pagination["current-page"]).toBe(2);
   });
-}); 
+});

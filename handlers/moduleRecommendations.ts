@@ -18,13 +18,13 @@ export async function handleModuleRecommendations(request: ModuleRecommendations
     };
 
     const results = await searchAlgolia(config, query, request.provider);
-    
+
     if (!results.hits || results.hits.length === 0) {
       return createStandardResponse("error", `No modules found for query "${query}"`);
     }
 
     const formattedResults = formatModuleResults(results.hits);
-    
+
     // Create markdown content
     let content = `## Module Recommendations for "${query}"\n\n`;
     formattedResults.forEach((mod, i) => {

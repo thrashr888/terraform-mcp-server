@@ -11,25 +11,29 @@ describe("functionDetails tool", () => {
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: [{
-          id: "67890",
-          attributes: {
-            title: "arn_parse"
-          }
-        }]
-      })
+      json: () =>
+        Promise.resolve({
+          data: [
+            {
+              id: "67890",
+              attributes: {
+                title: "arn_parse"
+              }
+            }
+          ]
+        })
     });
 
     // Mock the function documentation content response
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: {
-          attributes: {
-            title: "arn_parse",
-            content: `---
+      json: () =>
+        Promise.resolve({
+          data: {
+            attributes: {
+              title: "arn_parse",
+              content: `---
 subcategory: ""
 layout: "aws"
 page_title: "AWS: arn_parse"
@@ -64,9 +68,9 @@ output "example" {
 ## Arguments
 
 1. \`arn\` (String) ARN (Amazon Resource Name) to parse.`
+            }
           }
-        }
-      })
+        })
     });
 
     const response = await handleFunctionDetails({
@@ -110,4 +114,4 @@ output "example" {
     expect(parsedContent.status).toBe("error");
     expect(parsedContent.error).toContain("required");
   });
-}); 
+});

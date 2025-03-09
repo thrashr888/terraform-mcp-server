@@ -17,21 +17,21 @@ export async function fetchData<T>(url: string, options: RequestInit = {}): Prom
 
   try {
     logger.debug(`Fetching data from: ${url}`);
-    
+
     try {
       // Merge options with signal from AbortController
       const fetchOptions = {
         ...options,
         signal: controller.signal
       };
-      
+
       const response = await fetch(url, fetchOptions);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
-      
-      return await response.json() as T;
+
+      return (await response.json()) as T;
     } finally {
       // Clear the timeout regardless of success or failure
       clearTimeout(timeoutId);
@@ -42,7 +42,7 @@ export async function fetchData<T>(url: string, options: RequestInit = {}): Prom
       logger.error(`Request to ${url} timed out after ${REQUEST_TIMEOUT_MS}ms`);
       throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`);
     }
-    
+
     logger.error(`Error fetching data from ${url}:`, error);
     throw error;
   }
@@ -55,51 +55,51 @@ export async function fetchData<T>(url: string, options: RequestInit = {}): Prom
  * @returns Documentation content and ID or null if not found
  */
 export async function fetchDocumentation(
-  provider: string, 
+  provider: string,
   resource: string
-): Promise<{content: string; docId: string} | null> {
+): Promise<{ content: string; docId: string } | null> {
   const controller = new globalThis.AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  
+
   try {
     // First, find the document ID by querying with filters
     const filterUrl = `${REGISTRY_API_V2}/provider-docs?filter%5Bcategory%5D=resources&filter%5Bslug%5D=${resource}&filter%5Blanguage%5D=hcl&page%5Bsize%5D=1`;
-    
+
     logger.debug(`Fetching document ID from: ${filterUrl}`);
     const filterResponse = await fetch(filterUrl, { signal: controller.signal });
-    
+
     if (!filterResponse.ok) {
       logger.error(`Failed to fetch document ID: ${filterResponse.status} ${filterResponse.statusText}`);
       return null;
     }
-    
+
     const filterData = await filterResponse.json();
-    
+
     if (!filterData.data || filterData.data.length === 0) {
       logger.warn(`No documentation found for resource: ${resource}`);
       return null;
     }
-    
+
     const docId = filterData.data[0].id;
-    
+
     // Now fetch the full documentation using the document ID
     const docUrl = `${REGISTRY_API_V2}/provider-docs/${docId}`;
-    
+
     logger.debug(`Fetching documentation content from: ${docUrl}`);
     const docResponse = await fetch(docUrl, { signal: controller.signal });
-    
+
     if (!docResponse.ok) {
       logger.error(`Failed to fetch documentation content: ${docResponse.status} ${docResponse.statusText}`);
       return null;
     }
-    
+
     const docData = await docResponse.json();
-    
+
     if (!docData.data || !docData.data.attributes || !docData.data.attributes.content) {
       logger.warn(`Documentation content not found for resource: ${resource}`);
       return null;
     }
-    
+
     return {
       content: docData.data.attributes.content,
       docId: docId
@@ -155,10 +155,7 @@ export function getModuleDocUrl(namespace: string, module: string, provider: str
  * @param provider Provider name
  * @returns Array of provider versions
  */
-export async function fetchProviderVersions(
-  namespace: string,
-  provider: string
-): Promise<ProviderVersion[]> {
+export async function fetchProviderVersions(namespace: string, provider: string): Promise<ProviderVersion[]> {
   const url = `${REGISTRY_API_V2}/providers/${namespace}/${provider}?include=provider-versions`;
   const response = await fetchData<any>(url);
   return response.included || [];
@@ -179,7 +176,7 @@ export async function getVersionId(
   }
 
   const latestVersion = versions[versions.length - 1].attributes.version;
-  
+
   if (targetVersion === "latest") {
     return {
       versionId: versions[versions.length - 1].id,
@@ -188,7 +185,7 @@ export async function getVersionId(
     };
   }
 
-  const matchingVersion = versions.find(v => v.attributes.version === targetVersion);
+  const matchingVersion = versions.find((v) => v.attributes.version === targetVersion);
   if (!matchingVersion) {
     throw new Error(`Version ${targetVersion} not found. Latest version is ${latestVersion}`);
   }
@@ -208,20 +205,20 @@ function extractArguments(content: string) {
     required: [] as any[],
     optional: [] as any[]
   };
-  
+
   // Find the arguments section
   const argsMatch = content.match(/## Argument Reference\s*\n([\s\S]*?)(?=\n##|$)/);
   if (argsMatch) {
     const argsContent = argsMatch[1];
     const argMatches = argsContent.matchAll(/\*\s*`([^`]+)`\s*-\s*(?:\(([^)]+)\))?\s*(Required)?\s*(.*?)(?=\n\*|$)/g);
-    
+
     for (const match of argMatches) {
       const arg = {
         name: match[1],
         type: match[2] || "string",
         description: match[4].trim()
       };
-      
+
       if (match[3] === "Required") {
         args.required.push(arg);
       } else {
@@ -229,7 +226,7 @@ function extractArguments(content: string) {
       }
     }
   }
-  
+
   return args;
 }
 
@@ -238,13 +235,13 @@ function extractArguments(content: string) {
  */
 function extractAttributes(content: string) {
   const attributes = [] as any[];
-  
+
   // Find the attributes section
   const attrsMatch = content.match(/## Attribute Reference\s*\n([\s\S]*?)(?=\n##|$)/);
   if (attrsMatch) {
     const attrsContent = attrsMatch[1];
     const attrMatches = attrsContent.matchAll(/\*\s*`([^`]+)`\s*-\s*(?:\(([^)]+)\))?\s*(.*?)(?=\n\*|$)/g);
-    
+
     for (const match of attrMatches) {
       attributes.push({
         name: match[1],
@@ -254,7 +251,7 @@ function extractAttributes(content: string) {
       });
     }
   }
-  
+
   return attributes;
 }
 
@@ -263,17 +260,17 @@ function extractAttributes(content: string) {
  */
 function extractNestedBlocks(content: string) {
   const blocks = [] as any[];
-  
+
   // Find nested block sections
   const blockMatches = content.matchAll(/### ([^\n]+) Configuration\s*\n([\s\S]*?)(?=\n###|$)/g);
-  
+
   for (const match of blockMatches) {
     const blockName = match[1].toLowerCase();
     const blockContent = match[2];
-    
+
     const args = [] as any[];
     const argMatches = blockContent.matchAll(/\*\s*`([^`]+)`\s*-\s*(?:\(([^)]+)\))?\s*(Required)?\s*(.*?)(?=\n\*|$)/g);
-    
+
     for (const argMatch of argMatches) {
       args.push({
         name: argMatch[1],
@@ -282,14 +279,14 @@ function extractNestedBlocks(content: string) {
         required: argMatch[3] === "Required"
       });
     }
-    
+
     blocks.push({
       name: blockName,
       description: blockContent.split("\n")[0].trim(),
       arguments: args
     });
   }
-  
+
   return blocks;
 }
 
@@ -302,10 +299,10 @@ function extractImportInstructions(content: string) {
     const importContent = importMatch[1];
     const syntaxMatch = importContent.match(/```\s*([^\n]+)\s*```/);
     const examples = importContent.match(/(?<=```\n)[^`]+(?=\n```)/g) || [];
-    
+
     return {
       syntax: syntaxMatch ? syntaxMatch[1] : "",
-      examples: examples.map(e => e.trim())
+      examples: examples.map((e) => e.trim())
     };
   }
   return undefined;
@@ -316,16 +313,16 @@ function extractImportInstructions(content: string) {
  */
 function extractExamples(content: string) {
   const examples = [] as any[];
-  
+
   // Find example sections
   const exampleMatches = content.matchAll(/### ([^\n]+)\s*\n([\s\S]*?)(?=\n###|$)/g);
-  
+
   for (const match of exampleMatches) {
     const name = match[1];
     const exampleContent = match[2];
     const description = exampleContent.split("```")[0].trim();
     const codeMatch = exampleContent.match(/```(?:hcl|terraform)\s*([\s\S]*?)```/);
-    
+
     if (codeMatch) {
       examples.push({
         name,
@@ -334,7 +331,7 @@ function extractExamples(content: string) {
       });
     }
   }
-  
+
   return examples;
 }
 

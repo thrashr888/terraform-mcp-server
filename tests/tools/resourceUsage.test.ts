@@ -21,7 +21,7 @@ describe("resourceUsage tool", () => {
         </body>
       </html>
     `;
-    
+
     mockFetchResponse({
       ok: true,
       text: () => Promise.resolve(mockHtmlResponse)
@@ -29,17 +29,17 @@ describe("resourceUsage tool", () => {
 
     // Define input parameters (used to construct the URL)
     const input = { provider: "aws", resource: "aws_instance" };
-    
+
     // Make the request to the API
     const url = `https://registry.terraform.io/providers/${input.provider ? "hashicorp" : ""}/${input.provider || "aws"}/latest/docs/resources/${input.resource || "aws_instance"}`;
     const resp = await fetch(url);
     const html = await resp.text();
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    
+
     // Extract the example code
     let usageSnippet = "";
     const exampleIndex = html.indexOf(">Example Usage<");
@@ -52,9 +52,9 @@ describe("resourceUsage tool", () => {
         usageSnippet = codeBlock.trim();
       }
     }
-    
+
     // Verify example extraction
-    expect(usageSnippet).toContain("resource \"aws_instance\" \"example\"");
+    expect(usageSnippet).toContain('resource "aws_instance" "example"');
     expect(usageSnippet).toContain("ami");
     expect(usageSnippet).toContain("instance_type");
   });
@@ -68,11 +68,11 @@ describe("resourceUsage tool", () => {
 
     // Define input parameters (used to construct the URL)
     const input = { provider: "aws", resource: "nonexistent_resource" };
-    
+
     // Make the request to the API
     const url = `https://registry.terraform.io/providers/${input.provider ? "hashicorp" : ""}/${input.provider || "aws"}/latest/docs/resources/${input.resource || "nonexistent_resource"}`;
     const resp = await fetch(url);
-    
+
     // Verify the response
     expect(resp.ok).toBe(false);
     expect(resp.status).toBe(404);
@@ -90,7 +90,7 @@ describe("resourceUsage tool", () => {
         </body>
       </html>
     `;
-    
+
     mockFetchResponse({
       ok: true,
       text: () => Promise.resolve(mockHtmlResponse)
@@ -98,17 +98,17 @@ describe("resourceUsage tool", () => {
 
     // Define input parameters
     const input = { provider: "aws", resource: "aws_s3_bucket" };
-    
+
     // Make the request to the API
     const url = `https://registry.terraform.io/providers/${input.provider}/latest/docs/resources/${input.resource}`;
     const resp = await fetch(url);
     const html = await resp.text();
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    
+
     // Check that the example code can't be found (simulating fallback scenario)
     const exampleIndex = html.indexOf(">Example Usage<");
     expect(exampleIndex).toBe(-1);
@@ -119,19 +119,19 @@ describe("resourceUsage tool", () => {
     const testResourceFetch = async (provider: string, resource: string) => {
       // Construct the URL
       const url = `https://registry.terraform.io/providers/${provider}/latest/docs/resources/${resource}`;
-      
+
       // Mock HTML response
       const mockHtmlResponse = `<html><body><p>${resource}</p></body></html>`;
-      
+
       mockFetchResponse({
         ok: true,
         text: () => Promise.resolve(mockHtmlResponse),
         url: url // Add the URL to the mock response
       } as Response);
-      
+
       // Make the request to the API
       const response = await fetch(url);
-      
+
       // Verify the request was made correctly
       const calls = getFetchCalls();
       expect(calls.length).toBe(1);
@@ -152,4 +152,4 @@ describe("resourceUsage tool", () => {
       expect(response.url).toContain("google_compute_instance");
     });
   });
-}); 
+});

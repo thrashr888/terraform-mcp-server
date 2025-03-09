@@ -28,7 +28,7 @@ export interface AlgoliaSearchResult {
     "latest-version-published-at"?: number;
     verified: boolean;
     objectID: string;
-    example?: string;  // For policy libraries
+    example?: string; // For policy libraries
   }>;
   nbHits: number;
   page: number;
@@ -43,11 +43,15 @@ export interface AlgoliaSearchResult {
  * @param index Algolia index to search (defaults to modules)
  * @returns Search results from Algolia
  */
-export async function searchAlgolia(config: AlgoliaConfig, query: string, provider?: string): Promise<AlgoliaSearchResult> {
+export async function searchAlgolia(
+  config: AlgoliaConfig,
+  query: string,
+  provider?: string
+): Promise<AlgoliaSearchResult> {
   const searchParams = new URLSearchParams({
     query,
     "x-algolia-application-id": config.applicationId,
-    "x-algolia-api-key": config.apiKey,
+    "x-algolia-api-key": config.apiKey
   });
 
   if (provider) {
@@ -60,8 +64,8 @@ export async function searchAlgolia(config: AlgoliaConfig, query: string, provid
       headers: {
         "Content-Type": "application/json",
         "X-Algolia-Application-Id": config.applicationId,
-        "X-Algolia-API-Key": config.apiKey,
-      },
+        "X-Algolia-API-Key": config.apiKey
+      }
     }
   );
 
@@ -81,7 +85,7 @@ export async function searchAlgolia(config: AlgoliaConfig, query: string, provid
  * @returns Formatted module results
  */
 export function formatModuleResults(hits: AlgoliaSearchResult["hits"]) {
-  return hits.map(hit => ({
+  return hits.map((hit) => ({
     id: hit.id,
     namespace: hit.namespace,
     name: hit.name,
@@ -99,4 +103,4 @@ export function formatModuleResults(hits: AlgoliaSearchResult["hits"]) {
     ranking: {},
     highlights: {}
   }));
-} 
+}

@@ -4,13 +4,13 @@ export interface ProviderLookupInput {
   namespace?: string;
   provider: string;
   version?: string;
-  name?: string;       // fallback key if user uses { name: "aws" } etc.
+  name?: string; // fallback key if user uses { name: "aws" } etc.
 }
 
 export interface ResourceUsageInput {
-  provider?: string;   // e.g. "aws"
-  resource?: string;   // e.g. "aws_instance"
-  name?: string;       // fallback
+  provider?: string; // e.g. "aws"
+  resource?: string; // e.g. "aws_instance"
+  name?: string; // fallback
 }
 
 export interface ResourceUsageResponse {
@@ -33,33 +33,33 @@ export interface ResourceUsageResponse {
 }
 
 export interface ModuleRecommendationsInput {
-  query?: string;      // e.g. "vpc"
-  keyword?: string;    // fallback
-  provider?: string;   // e.g. "aws"
+  query?: string; // e.g. "vpc"
+  keyword?: string; // fallback
+  provider?: string; // e.g. "aws"
 }
 
 export interface DataSourceLookupInput {
-  provider: string;    // e.g. "aws"
-  namespace: string;   // e.g. "hashicorp"
+  provider: string; // e.g. "aws"
+  namespace: string; // e.g. "hashicorp"
 }
 
 export interface ResourceArgumentDetailsInput {
-  provider: string;    // e.g. "aws"
-  namespace: string;   // e.g. "hashicorp"
-  resource: string;    // e.g. "aws_instance"
+  provider: string; // e.g. "aws"
+  namespace: string; // e.g. "hashicorp"
+  resource: string; // e.g. "aws_instance"
 }
 
 export interface ModuleDetailsInput {
-  namespace: string;   // e.g. "terraform-aws-modules"
-  module: string;      // e.g. "vpc"
-  provider: string;    // e.g. "aws"
+  namespace: string; // e.g. "terraform-aws-modules"
+  module: string; // e.g. "vpc"
+  provider: string; // e.g. "aws"
 }
 
 export interface ResourceDocumentationInput {
   namespace: string;
   provider: string;
   resource: string;
-  version?: string;  // Optional version, defaults to "latest"
+  version?: string; // Optional version, defaults to "latest"
 }
 
 export interface ProviderVersion {
@@ -193,8 +193,8 @@ export interface FunctionDetailsInput {
 export interface ProviderGuidesInput {
   provider: string;
   namespace?: string;
-  guide?: string;    // Specific guide to fetch
-  search?: string;   // Search term to filter guides
+  guide?: string; // Specific guide to fetch
+  search?: string; // Search term to filter guides
 }
 
 export interface PolicySearchInput {
@@ -215,8 +215,8 @@ export interface PolicySearchResult {
 }
 
 export interface PolicyDetailsInput {
-  namespace: string;   // e.g. "Great-Stone"
-  name: string;       // e.g. "vault-aws-secret-type"
+  namespace: string; // e.g. "Great-Stone"
+  name: string; // e.g. "vault-aws-secret-type"
 }
 
 export interface PolicyDetails {

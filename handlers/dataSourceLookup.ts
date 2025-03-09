@@ -20,10 +20,10 @@ interface DataSource {
 export async function handleDataSourceLookup(params: DataSourceLookupInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing dataSourceLookup request", params);
-    
+
     // Extract parameters
     const { provider, namespace } = params;
-    
+
     // Validate required parameters
     if (!provider || !namespace) {
       throw new Error("Both provider and namespace are required.");
@@ -33,14 +33,14 @@ export async function handleDataSourceLookup(params: DataSourceLookupInput): Pro
     const versionsUrl = `${REGISTRY_API_BASE}/v2/providers/${namespace}/${provider}?include=provider-versions`;
     logger.info("Fetching versions from:", versionsUrl);
     const versionsResponse = await fetch(versionsUrl);
-    
+
     if (!versionsResponse.ok) {
       throw new Error(`Failed to fetch provider versions: ${versionsResponse.status} ${versionsResponse.statusText}`);
     }
 
     const versionsData = await versionsResponse.json();
     logger.debug("Versions response:", versionsData);
-    
+
     if (!versionsData.included || versionsData.included.length === 0) {
       throw new Error(`No versions found for provider ${namespace}/${provider}`);
     }
@@ -49,7 +49,7 @@ export async function handleDataSourceLookup(params: DataSourceLookupInput): Pro
     const versionId = versionsData.included[0].id;
     const publishedAt = versionsData.included[0].attributes["published-at"];
     const version = versionsData.included[0].attributes.version;
-    
+
     logger.info("Using version:", { versionId, version, publishedAt });
 
     // 2. Get data sources list
@@ -98,15 +98,15 @@ export async function handleDataSourceLookup(params: DataSourceLookupInput): Pro
     }
 
     const content = contentData.data.attributes.content;
-    
+
     // Extract category from content or default to "Other"
     const categoryMatch = content.match(/subcategory:\s*"([^"]+)"/);
     const category = categoryMatch ? categoryMatch[1] : "Other";
-    
+
     // Extract description
     const descriptionMatch = content.match(/description:\s*\|-\n(.*?)\n---/s);
     const description = descriptionMatch ? descriptionMatch[1].trim() : "";
-    
+
     // Extract example
     const exampleMatch = content.match(/### Example Usage\n\n```(?:hcl|terraform)?\n([\s\S]*?)```/);
     const example = exampleMatch ? exampleMatch[1].trim() : undefined;
@@ -165,10 +165,10 @@ output "example_output" {
       },
       documentationUrl: dataSource.documentationUrl
     };
-    
+
     // Add compatibility information
     addStandardContext(metadata);
-    
+
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
     return handleToolError("dataSourceLookup", error, {
@@ -186,18 +186,18 @@ output "example_output" {
  */
 function getCategoryDescription(category: string): string {
   const descriptions: { [key: string]: string } = {
-    "ACM": "AWS Certificate Manager - Manage SSL/TLS certificates",
+    ACM: "AWS Certificate Manager - Manage SSL/TLS certificates",
     "API Gateway": "Manage Amazon API Gateway resources",
-    "CloudWatch": "Monitor AWS resources and applications",
-    "EC2": "Amazon Elastic Compute Cloud - Virtual servers in the cloud",
-    "ECS": "Amazon Elastic Container Service - Run and manage containers",
-    "IAM": "Identity and Access Management - Manage user access and encryption keys",
-    "Lambda": "Run code without thinking about servers",
-    "RDS": "Relational Database Service - Manage relational databases",
-    "S3": "Simple Storage Service - Scalable storage in the cloud",
-    "VPC": "Virtual Private Cloud - Isolated cloud resources",
-    "Other": "Additional data sources for various AWS services"
+    CloudWatch: "Monitor AWS resources and applications",
+    EC2: "Amazon Elastic Compute Cloud - Virtual servers in the cloud",
+    ECS: "Amazon Elastic Container Service - Run and manage containers",
+    IAM: "Identity and Access Management - Manage user access and encryption keys",
+    Lambda: "Run code without thinking about servers",
+    RDS: "Relational Database Service - Manage relational databases",
+    S3: "Simple Storage Service - Scalable storage in the cloud",
+    VPC: "Virtual Private Cloud - Isolated cloud resources",
+    Other: "Additional data sources for various AWS services"
   };
-  
+
   return descriptions[category] || "";
 }

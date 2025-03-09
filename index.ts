@@ -32,11 +32,7 @@ import {
   handleExplorerQuery
 } from "./handlers/index.js";
 
-import { 
-  VERSION, 
-  SERVER_NAME,
-  TFC_TOKEN
-} from "./config.js";
+import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
 
 import logger from "./utils/logger.js";
 import {
@@ -68,8 +64,8 @@ const baseTools: Tool[] = [
   {
     name: "providerLookup",
     description: "Lookup a Terraform provider by name and optionally version.",
-    inputSchema: { 
-      type: "object", 
+    inputSchema: {
+      type: "object",
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
@@ -81,8 +77,8 @@ const baseTools: Tool[] = [
   {
     name: "resourceUsage",
     description: "Get an example usage of a Terraform resource and related resources.",
-    inputSchema: { 
-      type: "object", 
+    inputSchema: {
+      type: "object",
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
@@ -94,8 +90,8 @@ const baseTools: Tool[] = [
   {
     name: "moduleRecommendations",
     description: "Search for and recommend Terraform modules for a given query.",
-    inputSchema: { 
-      type: "object", 
+    inputSchema: {
+      type: "object",
       properties: {
         query: { type: "string", description: "Search query (e.g. 'vpc')" },
         keyword: { type: "string", description: "Alternative search keyword (fallback if query not specified)" },
@@ -107,8 +103,8 @@ const baseTools: Tool[] = [
   {
     name: "dataSourceLookup",
     description: "List all available data sources for a provider and their basic details.",
-    inputSchema: { 
-      type: "object", 
+    inputSchema: {
+      type: "object",
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
@@ -119,9 +115,10 @@ const baseTools: Tool[] = [
   },
   {
     name: "resourceArgumentDetails",
-    description: "Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.",
-    inputSchema: { 
-      type: "object", 
+    description:
+      "Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.",
+    inputSchema: {
+      type: "object",
       properties: {
         provider: { type: "string", description: "Provider name (e.g. 'aws')" },
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
@@ -134,9 +131,10 @@ const baseTools: Tool[] = [
   },
   {
     name: "moduleDetails",
-    description: "Retrieves detailed metadata for a Terraform module including versions, inputs, outputs, and dependencies.",
-    inputSchema: { 
-      type: "object", 
+    description:
+      "Retrieves detailed metadata for a Terraform module including versions, inputs, outputs, and dependencies.",
+    inputSchema: {
+      type: "object",
       properties: {
         namespace: { type: "string", description: "Module namespace (e.g. 'terraform-aws-modules')" },
         module: { type: "string", description: "Module name (e.g. 'vpc')" },
@@ -207,7 +205,7 @@ const tfcTools: Tool[] = [
   {
     name: "listOrganizations",
     description: "List all organizations the authenticated user has access to in Terraform Cloud.",
-    inputSchema: { 
+    inputSchema: {
       type: "object",
       properties: {}
     },
@@ -216,7 +214,7 @@ const tfcTools: Tool[] = [
   {
     name: "privateModuleSearch",
     description: "Search for private modules in a Terraform Cloud organization.",
-    inputSchema: { 
+    inputSchema: {
       type: "object",
       required: ["organization"],
       properties: {
@@ -231,8 +229,9 @@ const tfcTools: Tool[] = [
   },
   {
     name: "privateModuleDetails",
-    description: "Get detailed information about a private module including inputs, outputs, and no-code configuration.",
-    inputSchema: { 
+    description:
+      "Get detailed information about a private module including inputs, outputs, and no-code configuration.",
+    inputSchema: {
       type: "object",
       required: ["organization", "namespace", "name", "provider"],
       properties: {
@@ -298,9 +297,7 @@ const tfcTools: Tool[] = [
 ];
 
 // Combine tools based on TFC_TOKEN availability
-const tools: Tool[] = TFC_TOKEN 
-  ? [...baseTools, ...tfcTools]
-  : baseTools;
+const tools: Tool[] = TFC_TOKEN ? [...baseTools, ...tfcTools] : baseTools;
 
 // Initialize the server
 const server = new Server(
@@ -322,13 +319,13 @@ logger.info("Server constructor created, setting up handlers...");
 server.setRequestHandler(InitializeRequestSchema, async (request) => {
   logger.info("Received Initialize request!");
   logger.debug("Initialize request details:", request);
-  
+
   return {
     protocolVersion: request.params.protocolVersion,
     capabilities: { tools: {} },
-    serverInfo: { 
-      name: SERVER_NAME, 
-      version: VERSION 
+    serverInfo: {
+      name: SERVER_NAME,
+      version: VERSION
     }
   };
 });
@@ -342,13 +339,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Validate and convert arguments
 function validateArgs<T>(args: Record<string, unknown> | undefined, requiredFields: string[]): T | undefined {
   if (!args) return undefined;
-  
+
   for (const field of requiredFields) {
     if (!(field in args)) {
       throw new Error(`Missing required field: ${field}`);
     }
   }
-  
+
   return args as T;
 }
 
@@ -358,13 +355,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (!toolName) {
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify({
-          status: "error",
-          error: "Tool name is required"
-        })
-      }]
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            status: "error",
+            error: "Tool name is required"
+          })
+        }
+      ]
     };
   }
 
@@ -372,103 +371,110 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     let response;
 
     switch (toolName) {
-    case "resourceArgumentDetails": {
-      const validArgs = validateArgs<ResourceDocumentationInput>(args, ["namespace", "provider", "resource"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleResourceArgumentDetails(validArgs);
-      break;
-    }
-    case "resourceUsage": {
-      const validArgs = validateArgs<ResourceUsageInput>(args, ["provider", "resource"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleResourceUsage(validArgs);
-      break;
-    }
-    case "providerLookup": {
-      const validArgs = validateArgs<ProviderLookupInput>(args, ["provider"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleProviderLookup(validArgs);
-      break;
-    }
-    case "moduleRecommendations": {
-      const validArgs = validateArgs<ModuleRecommendationsInput>(args, ["query"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleModuleRecommendations(validArgs);
-      break;
-    }
-    case "dataSourceLookup": {
-      const validArgs = validateArgs<DataSourceLookupInput>(args, ["provider", "namespace"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleDataSourceLookup(validArgs);
-      break;
-    }
-    case "moduleDetails": {
-      const validArgs = validateArgs<ModuleDetailsInput>(args, ["namespace", "module", "provider"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleModuleDetails(validArgs);
-      break;
-    }
-    case "functionDetails": {
-      const validArgs = validateArgs<FunctionDetailsInput>(args, ["provider", "function"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleFunctionDetails(validArgs);
-      break;
-    }
-    case "providerGuides": {
-      const validArgs = validateArgs<ProviderGuidesInput>(args, ["provider"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleProviderGuides(validArgs);
-      break;
-    }
-    case "policySearch": {
-      const validArgs = validateArgs<PolicySearchInput>(args, ["query"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handlePolicySearch(validArgs);
-      break;
-    }
-    case "policyDetails": {
-      const validArgs = validateArgs<PolicyDetailsInput>(args, ["namespace", "name"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handlePolicyDetails(validArgs);
-      break;
-    }
-    case "listOrganizations": {
-      response = await handleListOrganizations();
-      break;
-    }
-    case "privateModuleSearch": {
-      const validArgs = validateArgs<PrivateModuleSearchParams>(args, ["organization"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handlePrivateModuleSearch(validArgs);
-      break;
-    }
-    case "privateModuleDetails": {
-      const validArgs = validateArgs<PrivateModuleDetailsParams>(args, ["organization", "namespace", "name", "provider"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handlePrivateModuleDetails(validArgs);
-      break;
-    }
-    case "explorerQuery": {
-      const validArgs = validateArgs<ExplorerQueryParams>(args, ["organization", "type"]);
-      if (!validArgs) throw new Error("Missing required arguments");
-      response = await handleExplorerQuery(validArgs);
-      break;
-    }
-    default:
-      throw new Error(`Unknown tool: ${toolName}`);
+      case "resourceArgumentDetails": {
+        const validArgs = validateArgs<ResourceDocumentationInput>(args, ["namespace", "provider", "resource"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleResourceArgumentDetails(validArgs);
+        break;
+      }
+      case "resourceUsage": {
+        const validArgs = validateArgs<ResourceUsageInput>(args, ["provider", "resource"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleResourceUsage(validArgs);
+        break;
+      }
+      case "providerLookup": {
+        const validArgs = validateArgs<ProviderLookupInput>(args, ["provider"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleProviderLookup(validArgs);
+        break;
+      }
+      case "moduleRecommendations": {
+        const validArgs = validateArgs<ModuleRecommendationsInput>(args, ["query"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleModuleRecommendations(validArgs);
+        break;
+      }
+      case "dataSourceLookup": {
+        const validArgs = validateArgs<DataSourceLookupInput>(args, ["provider", "namespace"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleDataSourceLookup(validArgs);
+        break;
+      }
+      case "moduleDetails": {
+        const validArgs = validateArgs<ModuleDetailsInput>(args, ["namespace", "module", "provider"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleModuleDetails(validArgs);
+        break;
+      }
+      case "functionDetails": {
+        const validArgs = validateArgs<FunctionDetailsInput>(args, ["provider", "function"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleFunctionDetails(validArgs);
+        break;
+      }
+      case "providerGuides": {
+        const validArgs = validateArgs<ProviderGuidesInput>(args, ["provider"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleProviderGuides(validArgs);
+        break;
+      }
+      case "policySearch": {
+        const validArgs = validateArgs<PolicySearchInput>(args, ["query"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handlePolicySearch(validArgs);
+        break;
+      }
+      case "policyDetails": {
+        const validArgs = validateArgs<PolicyDetailsInput>(args, ["namespace", "name"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handlePolicyDetails(validArgs);
+        break;
+      }
+      case "listOrganizations": {
+        response = await handleListOrganizations();
+        break;
+      }
+      case "privateModuleSearch": {
+        const validArgs = validateArgs<PrivateModuleSearchParams>(args, ["organization"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handlePrivateModuleSearch(validArgs);
+        break;
+      }
+      case "privateModuleDetails": {
+        const validArgs = validateArgs<PrivateModuleDetailsParams>(args, [
+          "organization",
+          "namespace",
+          "name",
+          "provider"
+        ]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handlePrivateModuleDetails(validArgs);
+        break;
+      }
+      case "explorerQuery": {
+        const validArgs = validateArgs<ExplorerQueryParams>(args, ["organization", "type"]);
+        if (!validArgs) throw new Error("Missing required arguments");
+        response = await handleExplorerQuery(validArgs);
+        break;
+      }
+      default:
+        throw new Error(`Unknown tool: ${toolName}`);
     }
 
     return response;
   } catch (error) {
     logger.error("Error handling tool request:", error);
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify({
-          status: "error",
-          error: error instanceof Error ? error.message : String(error)
-        })
-      }]
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            status: "error",
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      ]
     };
   }
 });
@@ -486,7 +492,7 @@ async function main() {
   try {
     await server.connect(transport);
     console.error("✅ Server connected and ready for requests");
-    
+
     console.error("📝 Server running on stdio transport");
   } catch (error) {
     console.error("❌ Fatal error:", error);

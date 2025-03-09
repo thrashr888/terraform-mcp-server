@@ -11,7 +11,7 @@ import logger from "../utils/logger.js";
 export async function handleResourceArgumentDetails(params: ResourceDocumentationInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing resourceArgumentDetails request", params);
-    
+
     // Validate required parameters
     if (!params.provider || !params.namespace || !params.resource) {
       throw new Error("Missing required parameters: provider, namespace, and resource are required");
@@ -24,7 +24,7 @@ export async function handleResourceArgumentDetails(params: ResourceDocumentatio
     const versionsUrl = `${REGISTRY_API_BASE}/v2/providers/${params.namespace}/${params.provider}?include=provider-versions`;
     logger.info("Fetching versions from:", versionsUrl);
     const versionsResponse = await fetch(versionsUrl);
-    
+
     if (!versionsResponse.ok) {
       throw new Error(`Failed to fetch provider versions: ${versionsResponse.status} ${versionsResponse.statusText}`);
     }
@@ -63,7 +63,9 @@ export async function handleResourceArgumentDetails(params: ResourceDocumentatio
     logger.info("Doc ID data:", docIdData);
 
     if (!docIdData.data || docIdData.data.length === 0) {
-      throw new Error(`Documentation not found for resource ${params.resource} in provider ${params.namespace}/${params.provider}`);
+      throw new Error(
+        `Documentation not found for resource ${params.resource} in provider ${params.namespace}/${params.provider}`
+      );
     }
 
     const docId = docIdData.data[0].id;

@@ -10,19 +10,21 @@ import { ResponseContent } from "../types/index.js";
  * @returns Formatted response object
  */
 export function createStandardResponse(
-  status: "success" | "error", 
-  content: string, 
+  status: "success" | "error",
+  content: string,
   metadata: Record<string, any> = {}
 ): ResponseContent {
-  return { 
-    content: [{ 
-      type: "text", 
-      text: JSON.stringify({
-        status,
-        content,
-        metadata
-      })
-    }]
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify({
+          status,
+          content,
+          metadata
+        })
+      }
+    ]
   };
 }
 
@@ -59,8 +61,8 @@ export function formatUrl(url: string): string {
  * @returns Enriched metadata object
  */
 export function addContextInfo(
-  metadata: Record<string, any>, 
-  contextType: string, 
+  metadata: Record<string, any>,
+  contextType: string,
   contextInfo: Record<string, any>
 ): Record<string, any> {
   if (!metadata.context) {
@@ -94,13 +96,15 @@ export function handleToolError(toolName: string, error: unknown, context?: Reco
   logger.error(`Error in ${toolName}:`, { error: errorMessage, context });
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify({
-        status: "error",
-        error: errorMessage,
-        context
-      })
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify({
+          status: "error",
+          error: errorMessage,
+          context
+        })
+      }
+    ]
   };
 }

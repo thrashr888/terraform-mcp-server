@@ -55,7 +55,7 @@ class MockTransport {
       if (Date.now() - startTime > timeout) {
         throw new Error("Timeout waiting for callback");
       }
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return check();
     };
     return check();
@@ -70,7 +70,7 @@ class MockTransport {
       if (Date.now() - startTime > timeout) {
         throw new Error("Timeout waiting for response");
       }
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return check();
     };
     return check();
@@ -83,23 +83,26 @@ describe("MCP Server", () => {
 
   beforeEach(async () => {
     transport = new MockTransport();
-    server = new Server({
-      name: SERVER_NAME,
-      version: VERSION
-    }, {
-      capabilities: {
-        tools: {}
+    server = new Server(
+      {
+        name: SERVER_NAME,
+        version: VERSION
+      },
+      {
+        capabilities: {
+          tools: {}
+        }
       }
-    });
+    );
 
     // Set up the initialization handler
     server.setRequestHandler(InitializeRequestSchema, async (request) => {
       return {
         protocolVersion: request.params.protocolVersion,
         capabilities: { tools: {} },
-        serverInfo: { 
-          name: SERVER_NAME, 
-          version: VERSION 
+        serverInfo: {
+          name: SERVER_NAME,
+          version: VERSION
         }
       };
     });
@@ -138,9 +141,9 @@ describe("MCP Server", () => {
       result: {
         protocolVersion: "1.0.0",
         capabilities: { tools: {} },
-        serverInfo: { 
-          name: SERVER_NAME, 
-          version: VERSION 
+        serverInfo: {
+          name: SERVER_NAME,
+          version: VERSION
         }
       }
     });
@@ -196,4 +199,4 @@ describe("MCP Server", () => {
     expect(response.result.serverInfo).toHaveProperty("name", SERVER_NAME);
     expect(response.result.serverInfo).toHaveProperty("version", VERSION);
   });
-}); 
+});

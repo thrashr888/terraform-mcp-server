@@ -20,13 +20,14 @@ export const DEFAULT_NAMESPACE = process.env.DEFAULT_PROVIDER_NAMESPACE || "hash
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info"; // Default log level
 export const LOG_LEVELS = {
   ERROR: "error",
-  WARN: "warn", 
+  WARN: "warn",
   INFO: "info",
   DEBUG: "debug"
 };
 
 // Default compatibility info
-export const DEFAULT_TERRAFORM_COMPATIBILITY = process.env.DEFAULT_TERRAFORM_COMPATIBILITY || "Terraform 0.12 and later";
+export const DEFAULT_TERRAFORM_COMPATIBILITY =
+  process.env.DEFAULT_TERRAFORM_COMPATIBILITY || "Terraform 0.12 and later";
 
 // Response statuses
 export const RESPONSE_STATUS = {

@@ -15,7 +15,7 @@ describe("List Organizations Tool", () => {
           attributes: {
             name: "test-org",
             "created-at": "2024-03-06T12:00:00Z",
-            "email": "admin@test-org.com",
+            email: "admin@test-org.com",
             "session-timeout": 20160,
             "session-remember": 20160,
             "collaborator-auth-policy": "password",
@@ -52,7 +52,7 @@ describe("List Organizations Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     const url = "https://app.terraform.io/api/v2/organizations";
     const res = await fetch(url, {
       headers: {
@@ -61,12 +61,12 @@ describe("List Organizations Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
     expect(calls[0].options?.headers).toHaveProperty("Authorization");
-    
+
     expect(data.data).toHaveLength(1);
     expect(data.data[0].attributes.name).toBe("test-org");
     expect(data.meta.pagination["total-count"]).toBe(1);
@@ -74,14 +74,16 @@ describe("List Organizations Tool", () => {
 
   test("should handle authentication errors", async () => {
     mockFetchRejection(new Error("Authentication failed"));
-    
+
     const url = "https://app.terraform.io/api/v2/organizations";
-    await expect(fetch(url, {
-      headers: {
-        Authorization: `Bearer ${TFC_TOKEN}`,
-        "Content-Type": "application/vnd.api+json"
-      }
-    })).rejects.toThrow("Authentication failed");
+    await expect(
+      fetch(url, {
+        headers: {
+          Authorization: `Bearer ${TFC_TOKEN}`,
+          "Content-Type": "application/vnd.api+json"
+        }
+      })
+    ).rejects.toThrow("Authentication failed");
   });
 
   test("should handle empty organization list", async () => {
@@ -102,7 +104,7 @@ describe("List Organizations Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     const url = "https://app.terraform.io/api/v2/organizations";
     const res = await fetch(url, {
       headers: {
@@ -111,11 +113,11 @@ describe("List Organizations Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
     expect(data.data).toHaveLength(0);
     expect(data.meta.pagination["total-count"]).toBe(0);
   });
-}); 
+});

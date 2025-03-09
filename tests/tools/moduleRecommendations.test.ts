@@ -26,7 +26,7 @@ describe("moduleRecommendations tool", () => {
         }
       ]
     };
-    
+
     mockFetchResponse({
       ok: true,
       json: () => Promise.resolve(mockModules)
@@ -34,27 +34,27 @@ describe("moduleRecommendations tool", () => {
 
     // Simulate the tool request handler
     const input = { query: "vpc", provider: "aws" };
-    
+
     // Construct the search URL
     const searchUrl = `https://registry.terraform.io/v1/modules/search?q=${encodeURIComponent(
       input.query
     )}&limit=3&verified=true&provider=${encodeURIComponent(input.provider)}`;
-    
+
     // Make the request
     const res = await fetch(searchUrl);
     const resultData = await res.json();
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(searchUrl);
-    
+
     // Verify the response processing
     expect(resultData).toHaveProperty("modules");
     expect(Array.isArray(resultData.modules)).toBe(true);
     expect(resultData.modules.length).toBe(2);
     expect(resultData.modules[0].name).toBe("vpc");
-    
+
     // Create the recommendation text
     let recommendationText = `Recommended modules for "${input.query}":\n`;
     resultData.modules.forEach((mod: any, index: number) => {
@@ -63,7 +63,7 @@ describe("moduleRecommendations tool", () => {
       const description = mod.description || "";
       recommendationText += `${index + 1}. ${name} (${prov}) - ${description}\n`;
     });
-    
+
     // Verify the output format
     expect(recommendationText).toContain("terraform-aws-modules/vpc (aws)");
     expect(recommendationText).toContain("terraform-aws-modules/eks (aws)");
@@ -78,17 +78,17 @@ describe("moduleRecommendations tool", () => {
 
     // Simulate the tool request handler
     const input = { query: "nonexistent", provider: "aws" };
-    
+
     // Construct the search URL
     const searchUrl = `https://registry.terraform.io/v1/modules/search?q=${encodeURIComponent(
       input.query
     )}&limit=3&verified=true&provider=${encodeURIComponent(input.provider)}`;
-    
+
     // Make the request
     const res = await fetch(searchUrl);
     const resultData = await res.json();
-    
+
     // Verify the response
     expect(resultData.modules).toHaveLength(0);
   });
-}); 
+});

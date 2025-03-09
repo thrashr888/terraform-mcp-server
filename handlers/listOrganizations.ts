@@ -9,9 +9,9 @@ export async function handleListOrganizations(): Promise<ResponseContent> {
   }
 
   const organizations = await listOrganizations(TFC_TOKEN);
-  
+
   // Format the organizations into a markdown table
-  const orgDetails = organizations.map(org => ({
+  const orgDetails = organizations.map((org) => ({
     "external-id": org.attributes["external-id"],
     name: org.attributes.name,
     email: org.attributes.email,
@@ -22,9 +22,7 @@ export async function handleListOrganizations(): Promise<ResponseContent> {
 
 | External ID | Name | Email | Created |
 |------------|------|-------|---------|
-${orgDetails.map(org => 
-    `| \`${org["external-id"]}\` | ${org.name} | ${org.email} | ${org.created} |`
-  ).join("\n")}`;
+${orgDetails.map((org) => `| \`${org["external-id"]}\` | ${org.name} | ${org.email} | ${org.created} |`).join("\n")}`;
 
   return createStandardResponse("success", markdown, {
     organizations: orgDetails,
@@ -33,4 +31,4 @@ ${orgDetails.map(org =>
       timestamp: new Date().toISOString()
     }
   });
-} 
+}

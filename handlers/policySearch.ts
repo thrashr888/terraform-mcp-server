@@ -18,7 +18,7 @@ export async function handlePolicySearch(request: PolicySearchInput): Promise<Re
     };
 
     const results = await searchAlgolia(config, query, request.provider);
-    
+
     if (!results.hits || results.hits.length === 0) {
       return createStandardResponse("error", `No policies found for query "${query}"`);
     }
@@ -31,9 +31,12 @@ export async function handlePolicySearch(request: PolicySearchInput): Promise<Re
       content += `**Provider**: ${hit.providers?.[0]?.name || "N/A"}\n`;
       content += `**Downloads**: ${hit["latest-version"]?.downloads?.toLocaleString() || 0}\n`;
       content += `**Latest Version**: ${hit["latest-version"]?.version || "N/A"}\n`;
-      content += `**Published**: ${hit["latest-version"]?.["published-at"] ? 
-        new Date(hit["latest-version"]["published-at"] * 1000).toLocaleDateString() : "N/A"}\n`;
-      
+      content += `**Published**: ${
+        hit["latest-version"]?.["published-at"]
+          ? new Date(hit["latest-version"]["published-at"] * 1000).toLocaleDateString()
+          : "N/A"
+      }\n`;
+
       if (hit.example) {
         content += `\n**Example**:\n\`\`\`hcl\n${hit.example}\n\`\`\`\n`;
       }
@@ -45,4 +48,4 @@ export async function handlePolicySearch(request: PolicySearchInput): Promise<Re
     logger.error("Error in policy search:", error);
     return createStandardResponse("error", error instanceof Error ? error.message : "Unknown error occurred");
   }
-} 
+}

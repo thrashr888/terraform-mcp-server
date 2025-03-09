@@ -27,9 +27,9 @@ interface GuideDataItem {
 export async function handleProviderGuides(params: ProviderGuidesInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing providerGuides request", params);
-    
+
     const { provider, namespace = "hashicorp", guide, search } = params;
-    
+
     if (!provider) {
       throw new Error("Provider is required");
     }
@@ -40,7 +40,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     // Build the URL for fetching guides
     const guidesUrl = `${REGISTRY_API_BASE}/v2/provider-docs?filter[provider-version]=${versionId}&filter[category]=guides&filter[language]=hcl`;
     logger.info("Fetching guides from:", guidesUrl);
-    
+
     const guidesResponse = await fetch(guidesUrl);
     if (!guidesResponse.ok) {
       throw new Error(`Failed to fetch guides: ${guidesResponse.status} ${guidesResponse.statusText}`);
@@ -60,7 +60,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
 
     // If a specific guide is requested, fetch its content
     if (guide) {
-      const targetGuide = guides.find(g => g.slug === guide || g.title.toLowerCase().includes(guide.toLowerCase()));
+      const targetGuide = guides.find((g) => g.slug === guide || g.title.toLowerCase().includes(guide.toLowerCase()));
       if (!targetGuide) {
         throw new Error(`Guide '${guide}' not found`);
       }
@@ -68,7 +68,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
       // Fetch the specific guide content
       const guideUrl = `${REGISTRY_API_BASE}/v2/provider-docs/${targetGuide.id}`;
       logger.info("Fetching guide content from:", guideUrl);
-      
+
       const guideResponse = await fetch(guideUrl);
       if (!guideResponse.ok) {
         throw new Error(`Failed to fetch guide content: ${guideResponse.status} ${guideResponse.statusText}`);
@@ -99,7 +99,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
           id: targetGuide.id
         }
       };
-      
+
       addStandardContext(metadata);
       return createStandardResponse("success", markdownResponse, metadata);
     }
@@ -108,9 +108,8 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     let filteredGuides = guides;
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredGuides = guides.filter(guide => 
-        guide.title.toLowerCase().includes(searchLower) ||
-        guide.slug.toLowerCase().includes(searchLower)
+      filteredGuides = guides.filter(
+        (guide) => guide.title.toLowerCase().includes(searchLower) || guide.slug.toLowerCase().includes(searchLower)
       );
     }
 
@@ -118,7 +117,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     const sections = [
       {
         title: "Available Guides",
-        guides: filteredGuides.map(guide => ({
+        guides: filteredGuides.map((guide) => ({
           title: guide.title,
           slug: guide.slug
         }))
@@ -126,9 +125,9 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     ];
 
     // Group guides by type if we can identify patterns
-    const upgradeGuides = filteredGuides.filter(g => g.slug.includes("version-") && g.slug.includes("-upgrade"));
-    const featureGuides = filteredGuides.filter(g => !g.slug.includes("version-") || !g.slug.includes("-upgrade"));
-    
+    const upgradeGuides = filteredGuides.filter((g) => g.slug.includes("version-") && g.slug.includes("-upgrade"));
+    const featureGuides = filteredGuides.filter((g) => !g.slug.includes("version-") || !g.slug.includes("-upgrade"));
+
     if (upgradeGuides.length > 0) {
       sections.push({
         title: "Version Upgrade Guides",
@@ -144,7 +143,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     }
 
     let markdownResponse = `# ${namespace}/${provider} Provider Guides\n\n`;
-    
+
     if (search) {
       markdownResponse += `Search results for: "${search}"\n\n`;
     }
@@ -152,10 +151,10 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
     if (filteredGuides.length === 0) {
       markdownResponse += "No guides found.\n\n";
     } else {
-      sections.forEach(section => {
+      sections.forEach((section) => {
         if (section.guides.length > 0) {
           markdownResponse += `## ${section.title}\n\n`;
-          section.guides.forEach(guide => {
+          section.guides.forEach((guide) => {
             markdownResponse += `- [${guide.title}](${REGISTRY_API_BASE}/providers/${namespace}/${provider}/latest/docs/guides/${guide.slug})\n`;
           });
           markdownResponse += "\n";
@@ -172,7 +171,7 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
         featureGuides: featureGuides.length
       }
     };
-    
+
     addStandardContext(metadata);
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
@@ -184,4 +183,4 @@ export async function handleProviderGuides(params: ProviderGuidesInput): Promise
       }
     });
   }
-} 
+}

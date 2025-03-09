@@ -37,19 +37,19 @@ describe("Explorer Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     // Simulate the explorer query parameters
     const params: ExplorerQueryParams = {
       organization: "test-org",
       type: "workspaces",
       fields: ["name", "terraform-version", "resource-count", "updated-at"]
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("type", params.type);
     if (params.fields) queryParams.append("fields", params.fields.join(","));
-    
+
     // Make the request to the API
     const url = `https://app.terraform.io/api/v2/organizations/${params.organization}/explorer?${queryParams.toString()}`;
     const res = await fetch(url, {
@@ -59,13 +59,13 @@ describe("Explorer Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
     expect(calls[0].options?.headers).toHaveProperty("Authorization");
-    
+
     // Verify response data
     expect(data.data).toHaveLength(2);
     expect(data.data[0].attributes.name).toBe("test-workspace");
@@ -92,7 +92,7 @@ describe("Explorer Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     // Simulate the explorer query parameters
     const params: ExplorerQueryParams = {
       organization: "test-org",
@@ -106,13 +106,13 @@ describe("Explorer Tool", () => {
         }
       ]
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("type", params.type);
     if (params.sort) queryParams.append("sort", params.sort);
     if (params.filter) queryParams.append("filter", JSON.stringify(params.filter));
-    
+
     // Make the request to the API
     const url = `https://app.terraform.io/api/v2/organizations/${params.organization}/explorer?${queryParams.toString()}`;
     const res = await fetch(url, {
@@ -122,7 +122,7 @@ describe("Explorer Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
@@ -130,7 +130,7 @@ describe("Explorer Tool", () => {
     expect(calls[0].url).toContain("type=modules");
     expect(calls[0].url).toContain("sort=-workspace-count");
     expect(calls[0].url).toContain("filter=");
-    
+
     // Verify response data
     expect(data.data).toHaveLength(1);
     expect(data.data[0].attributes.name).toBe("vpc");
@@ -146,7 +146,7 @@ describe("Explorer Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     // Simulate the explorer query parameters
     const params: ExplorerQueryParams = {
       organization: "test-org",
@@ -159,12 +159,12 @@ describe("Explorer Tool", () => {
         }
       ]
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("type", params.type);
     if (params.filter) queryParams.append("filter", JSON.stringify(params.filter));
-    
+
     // Make the request to the API
     const url = `https://app.terraform.io/api/v2/organizations/${params.organization}/explorer?${queryParams.toString()}`;
     const res = await fetch(url, {
@@ -174,32 +174,34 @@ describe("Explorer Tool", () => {
       }
     });
     const data = await res.json();
-    
+
     // Verify response data
     expect(data.data).toHaveLength(0);
   });
 
   test("should handle API errors", async () => {
     mockFetchRejection(new Error("API request failed"));
-    
+
     // Simulate the explorer query parameters
     const params: ExplorerQueryParams = {
       organization: "test-org",
       type: "tf_versions"
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("type", params.type);
-    
+
     // Make the request to the API and expect it to fail
     const url = `https://app.terraform.io/api/v2/organizations/${params.organization}/explorer?${queryParams.toString()}`;
-    await expect(fetch(url, {
-      headers: {
-        Authorization: `Bearer ${TFC_TOKEN}`,
-        "Content-Type": "application/vnd.api+json"
-      }
-    })).rejects.toThrow("API request failed");
+    await expect(
+      fetch(url, {
+        headers: {
+          Authorization: `Bearer ${TFC_TOKEN}`,
+          "Content-Type": "application/vnd.api+json"
+        }
+      })
+    ).rejects.toThrow("API request failed");
   });
 
   test("should handle pagination parameters", async () => {
@@ -220,7 +222,7 @@ describe("Explorer Tool", () => {
       ok: true,
       json: () => Promise.resolve(mockResponse)
     } as Response);
-    
+
     // Simulate the explorer query parameters
     const params: ExplorerQueryParams = {
       organization: "test-org",
@@ -228,13 +230,13 @@ describe("Explorer Tool", () => {
       page_number: 2,
       page_size: 10
     };
-    
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append("type", params.type);
     if (params.page_number) queryParams.append("page[number]", params.page_number.toString());
     if (params.page_size) queryParams.append("page[size]", params.page_size.toString());
-    
+
     // Make the request to the API
     const url = `https://app.terraform.io/api/v2/organizations/${params.organization}/explorer?${queryParams.toString()}`;
     await fetch(url, {
@@ -243,7 +245,7 @@ describe("Explorer Tool", () => {
         "Content-Type": "application/vnd.api+json"
       }
     });
-    
+
     // Verify the request was made correctly
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
@@ -251,4 +253,4 @@ describe("Explorer Tool", () => {
     expect(calls[0].url).toContain("page%5Bnumber%5D=2");
     expect(calls[0].url).toContain("page%5Bsize%5D=10");
   });
-}); 
+});

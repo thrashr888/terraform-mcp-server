@@ -49,22 +49,22 @@ interface TroubleshootingItem {
 function extractExamples(content: string): Example[] {
   const examples: Example[] = [];
   const exampleMatches = content.matchAll(/### ([^\n]+)\n\n(.*?)```(?:hcl|terraform)?\n([\s\S]*?)```/g);
-  
+
   for (const match of exampleMatches) {
     const name = match[1].trim();
     const description = match[2].trim();
     const code = match[3].trim();
-    
+
     // Extract tags from description or name
     const tags = extractTags(description);
-    
+
     // Extract dependencies from code
     const dependencies = extractDependencies(code);
-    
+
     // Extract variables and outputs
     const variables = extractVariables(code);
     const outputs = extractOutputs(code);
-    
+
     examples.push({
       name,
       description,
@@ -75,7 +75,7 @@ function extractExamples(content: string): Example[] {
       outputs
     });
   }
-  
+
   return examples;
 }
 
@@ -84,7 +84,7 @@ function extractExamples(content: string): Example[] {
  */
 function extractTags(text: string): string[] {
   const tags: Set<string> = new Set();
-  
+
   // Common configuration patterns
   if (text.toLowerCase().includes("encryption")) tags.add("encryption");
   if (text.toLowerCase().includes("backup")) tags.add("backup");
@@ -92,7 +92,7 @@ function extractTags(text: string): string[] {
   if (text.toLowerCase().includes("autoscal")) tags.add("autoscaling");
   if (text.toLowerCase().includes("basic")) tags.add("basic");
   if (text.toLowerCase().includes("advanced")) tags.add("advanced");
-  
+
   return Array.from(tags);
 }
 
@@ -102,48 +102,48 @@ function extractTags(text: string): string[] {
 function extractDependencies(code: string): string[] {
   const dependencies: Set<string> = new Set();
   const resourceMatches = code.matchAll(/resource\s+"([^"]+)"/g);
-  
+
   for (const match of resourceMatches) {
     dependencies.add(match[1]);
   }
-  
+
   return Array.from(dependencies);
 }
 
 /**
  * Extract variables from HCL code
  */
-function extractVariables(code: string): { name: string; type: string; description: string; }[] {
-  const variables: { name: string; type: string; description: string; }[] = [];
+function extractVariables(code: string): { name: string; type: string; description: string }[] {
+  const variables: { name: string; type: string; description: string }[] = [];
   const varMatches = code.matchAll(/variable\s+"([^"]+)"\s*{([^}]+)}/g);
-  
+
   for (const match of varMatches) {
     const name = match[1];
     const block = match[2];
     const type = block.match(/type\s*=\s*([^\n]+)/)?.[1] || "string";
     const description = block.match(/description\s*=\s*"([^"]+)"/)?.[1] || "";
-    
+
     variables.push({ name, type, description });
   }
-  
+
   return variables;
 }
 
 /**
  * Extract outputs from HCL code
  */
-function extractOutputs(code: string): { name: string; description: string; }[] {
-  const outputs: { name: string; description: string; }[] = [];
+function extractOutputs(code: string): { name: string; description: string }[] {
+  const outputs: { name: string; description: string }[] = [];
   const outputMatches = code.matchAll(/output\s+"([^"]+)"\s*{([^}]+)}/g);
-  
+
   for (const match of outputMatches) {
     const name = match[1];
     const block = match[2];
     const description = block.match(/description\s*=\s*"([^"]+)"/)?.[1] || "";
-    
+
     outputs.push({ name, description });
   }
-  
+
   return outputs;
 }
 
@@ -152,26 +152,26 @@ function extractOutputs(code: string): { name: string; description: string; }[] 
  */
 function extractCommonPatterns(content: string): CommonPattern[] {
   const patterns: CommonPattern[] = [];
-  
+
   // Look for sections that describe common patterns
   const patternMatches = content.matchAll(/## ([^\n]+Pattern[^\n]*)\n\n(.*?)(?=\n##|$)/gs);
-  
+
   for (const match of patternMatches) {
     const pattern = match[1].trim();
     const section = match[2];
-    
+
     // Extract description
     const description = section.match(/(?:^|\n\n)([^#\n].+?)(?=\n\n|$)/)?.[1] || "";
-    
+
     // Extract best practices
     const bestPractices = extractListItems(section, "Best Practices");
-    
+
     // Extract caveats
     const caveats = extractListItems(section, "Caveats");
-    
+
     // Extract code example
     const code = section.match(/```(?:hcl|terraform)?\n([\s\S]*?)```/)?.[1] || "";
-    
+
     patterns.push({
       pattern,
       description,
@@ -180,7 +180,7 @@ function extractCommonPatterns(content: string): CommonPattern[] {
       code
     });
   }
-  
+
   return patterns;
 }
 
@@ -194,32 +194,32 @@ function extractPrerequisites(content: string): Prerequisites {
     permissions: [],
     limitations: []
   };
-  
+
   // Extract required providers
   const providerMatches = content.matchAll(/required_providers\s*{([^}]+)}/g);
   for (const match of providerMatches) {
     const providers = match[1].match(/[a-zA-Z0-9_-]+\s*=/g) || [];
-    prerequisites.requiredProviders = providers.map(p => p.replace(/\s*=$/, ""));
+    prerequisites.requiredProviders = providers.map((p) => p.replace(/\s*=$/, ""));
   }
-  
+
   // Extract required resources from examples
   const resourceMatches = content.matchAll(/resource\s+"([^"]+)"/g);
   for (const match of resourceMatches) {
     prerequisites.requiredResources.push(match[1]);
   }
-  
+
   // Extract permissions from notes or requirements sections
   const permissionSection = content.match(/(?:##\s*Permissions|##\s*IAM[^\n]*)\n\n(.*?)(?=\n##|$)/s);
   if (permissionSection) {
     prerequisites.permissions = extractListItems(permissionSection[1]);
   }
-  
+
   // Extract limitations from notes or limitations sections
   const limitationSection = content.match(/(?:##\s*Limitations|##\s*Restrictions)[^\n]*\n\n(.*?)(?=\n##|$)/s);
   if (limitationSection) {
     prerequisites.limitations = extractListItems(limitationSection[1]);
   }
-  
+
   return prerequisites;
 }
 
@@ -228,25 +228,25 @@ function extractPrerequisites(content: string): Prerequisites {
  */
 function extractTroubleshooting(content: string): TroubleshootingItem[] {
   const items: TroubleshootingItem[] = [];
-  
+
   // Look for troubleshooting or common issues sections
   const troubleshootingSection = content.match(/##\s*(?:Troubleshooting|Common Issues)[^\n]*\n\n(.*?)(?=\n##|$)/s);
   if (!troubleshootingSection) return items;
-  
+
   const section = troubleshootingSection[1];
   const problemMatches = section.matchAll(/###\s*([^\n]+)\n\n(.*?)(?=\n###|$)/gs);
-  
+
   for (const match of problemMatches) {
     const problem = match[1].trim();
     const details = match[2];
-    
+
     // Extract cause and solution
     const cause = details.match(/(?:Cause|Why):\s*([^\n]+)/)?.[1] || "";
     const solution = details.match(/(?:Solution|Fix|Resolution):\s*([^\n]+)/)?.[1] || "";
-    
+
     // Extract code example if present
     const code = details.match(/```(?:hcl|terraform)?\n([\s\S]*?)```/)?.[1];
-    
+
     items.push({
       problem,
       cause,
@@ -254,7 +254,7 @@ function extractTroubleshooting(content: string): TroubleshootingItem[] {
       code
     });
   }
-  
+
   return items;
 }
 
@@ -267,9 +267,9 @@ function extractListItems(content: string, sectionTitle?: string): string[] {
     if (!section) return [];
     content = section[1];
   }
-  
+
   const items = content.match(/[-*]\s+([^\n]+)/g) || [];
-  return items.map(item => item.replace(/^[-*]\s+/, "").trim());
+  return items.map((item) => item.replace(/^[-*]\s+/, "").trim());
 }
 
 /**
@@ -278,11 +278,11 @@ function extractListItems(content: string, sectionTitle?: string): string[] {
 function extractNotes(content: string): string[] {
   const notes: string[] = [];
   const noteMatches = content.matchAll(/>\s*\*\*Note:\*\*\s*(.*?)(?=\n\n|\n>|\n#|$)/gs);
-  
+
   for (const match of noteMatches) {
     notes.push(match[1].trim());
   }
-  
+
   return notes;
 }
 
@@ -300,7 +300,7 @@ function extractImportInstructions(content: string): string {
 function extractRelatedDocs(content: string): Array<{ title: string; url: string }> {
   const relatedDocs: Array<{ title: string; url: string }> = [];
   const linkMatches = content.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g);
-  
+
   for (const match of linkMatches) {
     const title = match[1];
     const url = match[2];
@@ -309,7 +309,7 @@ function extractRelatedDocs(content: string): Array<{ title: string; url: string
       relatedDocs.push({ title, url });
     }
   }
-  
+
   return relatedDocs;
 }
 
@@ -335,11 +335,11 @@ function extractDescription(content: string): string {
 export async function handleResourceUsage(params: ResourceUsageInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing resourceUsage request", params);
-    
+
     // Extract resource parameters, handling either { provider, resource } or { name } format
     const resourceParams: ResourceUsageInput = {
       provider: params.provider,
-      resource: params.resource || params.name,
+      resource: params.resource || params.name
     };
 
     // Validate required parameters
@@ -354,14 +354,14 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     const versionsUrl = `${REGISTRY_API_BASE}/v2/providers/hashicorp/${resourceParams.provider}?include=provider-versions`;
     logger.info("Fetching versions from:", versionsUrl);
     const versionsResponse = await fetch(versionsUrl);
-    
+
     if (!versionsResponse.ok) {
       throw new Error(`Failed to fetch provider versions: ${versionsResponse.status} ${versionsResponse.statusText}`);
     }
 
     const versionsData = await versionsResponse.json();
     logger.debug("Versions response:", versionsData);
-    
+
     if (!versionsData.included || versionsData.included.length === 0) {
       throw new Error(`No versions found for provider hashicorp/${resourceParams.provider}`);
     }
@@ -370,7 +370,7 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     const versionId = versionsData.included[0].id;
     const publishedAt = versionsData.included[0].attributes["published-at"];
     const version = versionsData.included[0].attributes.version;
-    
+
     logger.info("Using version:", { versionId, version, publishedAt });
 
     // 2. Get resource documentation ID
@@ -448,34 +448,34 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
     // Add prerequisites section
     if (prerequisites.requiredProviders.length > 0 || prerequisites.requiredResources.length > 0) {
       markdownResponse += "## Prerequisites\n\n";
-      
+
       if (prerequisites.requiredProviders.length > 0) {
         markdownResponse += "### Required Providers\n\n";
-        prerequisites.requiredProviders.forEach(provider => {
+        prerequisites.requiredProviders.forEach((provider) => {
           markdownResponse += `* ${provider}\n`;
         });
         markdownResponse += "\n";
       }
-      
+
       if (prerequisites.requiredResources.length > 0) {
         markdownResponse += "### Required Resources\n\n";
-        prerequisites.requiredResources.forEach(resource => {
+        prerequisites.requiredResources.forEach((resource) => {
           markdownResponse += `* ${resource}\n`;
         });
         markdownResponse += "\n";
       }
-      
+
       if (prerequisites.permissions.length > 0) {
         markdownResponse += "### Required Permissions\n\n";
-        prerequisites.permissions.forEach(permission => {
+        prerequisites.permissions.forEach((permission) => {
           markdownResponse += `* ${permission}\n`;
         });
         markdownResponse += "\n";
       }
-      
+
       if (prerequisites.limitations.length > 0) {
         markdownResponse += "### Limitations\n\n";
-        prerequisites.limitations.forEach(limitation => {
+        prerequisites.limitations.forEach((limitation) => {
           markdownResponse += `* ${limitation}\n`;
         });
         markdownResponse += "\n";
@@ -493,36 +493,36 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
       markdownResponse += "## Examples\n\n";
       for (const example of examples) {
         markdownResponse += `### ${example.name}\n\n`;
-        
+
         if (example.tags.length > 0) {
           markdownResponse += `**Tags**: ${example.tags.join(", ")}\n\n`;
         }
-        
+
         if (example.description) {
           markdownResponse += `${example.description}\n\n`;
         }
-        
+
         if (example.dependencies?.length) {
           markdownResponse += "**Dependencies**:\n";
-          example.dependencies.forEach(dep => {
+          example.dependencies.forEach((dep) => {
             markdownResponse += `* ${dep}\n`;
           });
           markdownResponse += "\n";
         }
-        
+
         if (example.variables?.length) {
           markdownResponse += "**Variables**:\n";
-          example.variables.forEach(v => {
+          example.variables.forEach((v) => {
             markdownResponse += `* \`${v.name}\` (${v.type}): ${v.description}\n`;
           });
           markdownResponse += "\n";
         }
-        
+
         markdownResponse += "```hcl\n" + example.code + "\n```\n\n";
-        
+
         if (example.outputs?.length) {
           markdownResponse += "**Outputs**:\n";
-          example.outputs.forEach(o => {
+          example.outputs.forEach((o) => {
             markdownResponse += `* \`${o.name}\`: ${o.description}\n`;
           });
           markdownResponse += "\n";
@@ -535,23 +535,23 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
       for (const pattern of patterns) {
         markdownResponse += `### ${pattern.pattern}\n\n`;
         markdownResponse += `${pattern.description}\n\n`;
-        
+
         if (pattern.bestPractices.length > 0) {
           markdownResponse += "**Best Practices**:\n";
-          pattern.bestPractices.forEach(practice => {
+          pattern.bestPractices.forEach((practice) => {
             markdownResponse += `* ${practice}\n`;
           });
           markdownResponse += "\n";
         }
-        
+
         if (pattern.caveats.length > 0) {
           markdownResponse += "**Caveats**:\n";
-          pattern.caveats.forEach(caveat => {
+          pattern.caveats.forEach((caveat) => {
             markdownResponse += `* ${caveat}\n`;
           });
           markdownResponse += "\n";
         }
-        
+
         if (pattern.code) {
           markdownResponse += "```hcl\n" + pattern.code + "\n```\n\n";
         }
@@ -564,7 +564,7 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
         markdownResponse += `### ${item.problem}\n\n`;
         markdownResponse += `**Cause**: ${item.cause}\n\n`;
         markdownResponse += `**Solution**: ${item.solution}\n\n`;
-        
+
         if (item.code) {
           markdownResponse += "```hcl\n" + item.code + "\n```\n\n";
         }
@@ -599,14 +599,14 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
       documentationUrl,
       description,
       subcategory,
-      examples: examples.map(e => ({
+      examples: examples.map((e) => ({
         name: e.name,
         tags: e.tags,
         dependencies: e.dependencies,
-        variables: e.variables?.map(v => v.name),
-        outputs: e.outputs?.map(o => o.name)
+        variables: e.variables?.map((v) => v.name),
+        outputs: e.outputs?.map((o) => o.name)
       })),
-      patterns: patterns.map(p => ({
+      patterns: patterns.map((p) => ({
         pattern: p.pattern,
         bestPractices: p.bestPractices.length,
         caveats: p.caveats.length
@@ -617,7 +617,7 @@ export async function handleResourceUsage(params: ResourceUsageInput): Promise<R
         hasPermissions: prerequisites.permissions.length > 0,
         hasLimitations: prerequisites.limitations.length > 0
       },
-      troubleshooting: troubleshooting.map(t => ({
+      troubleshooting: troubleshooting.map((t) => ({
         problem: t.problem,
         hasSolution: !!t.solution
       })),

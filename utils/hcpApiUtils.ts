@@ -70,7 +70,7 @@ interface PrivateModule {
     "version-statuses": string[];
     "created-at": string;
     "updated-at": string;
-    "permissions": {
+    permissions: {
       "can-delete": boolean;
       "can-resync": boolean;
       "can-retry": boolean;
@@ -96,30 +96,30 @@ export async function fetchWithAuth<T>(
 
   try {
     logger.debug(`Fetching data from: ${url}`);
-    
+
     const fetchOptions: RequestInit = {
       ...options,
       headers: {
         ...options.headers,
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/vnd.api+json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/vnd.api+json"
       },
       signal: controller.signal
     };
-    
+
     const response = await fetch(url, fetchOptions);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
     }
-    
-    return await response.json() as TFCloudResponse<T>;
+
+    return (await response.json()) as TFCloudResponse<T>;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       logger.error(`Request to ${url} timed out after ${REQUEST_TIMEOUT_MS}ms`);
       throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`);
     }
-    
+
     logger.error(`Error fetching data from ${url}:`, error);
     throw error;
   } finally {
@@ -155,10 +155,10 @@ export async function searchPrivateModules(
   if (provider) params.set("filter[provider]", provider);
   params.set("page[number]", page.toString());
   params.set("page[size]", pageSize.toString());
-  
+
   const url = `${TF_CLOUD_API_BASE}/organizations/${orgName}/registry-modules${params.toString() ? `?${params.toString()}` : ""}`;
   const response = await fetchWithAuth<PrivateModule[]>(url, token);
-  
+
   return {
     modules: Array.isArray(response.data) ? response.data : [response.data],
     pagination: response.meta?.pagination
@@ -180,7 +180,7 @@ export async function getPrivateModuleDetails(
   // Get module details from v2 API
   const v2Url = `${TF_CLOUD_API_BASE}/organizations/${orgName}/registry-modules/private/${namespace}/${name}/${provider}?include=no-code-modules,no-code-modules.variable-options`;
   const v2Response = await fetchWithAuth<PrivateModule>(v2Url, token);
-  
+
   let moduleVersion;
   if (version) {
     // Get version details from v1 API
@@ -198,4 +198,4 @@ export async function getPrivateModuleDetails(
     moduleVersion,
     noCodeModules: v2Response.included
   };
-} 
+}

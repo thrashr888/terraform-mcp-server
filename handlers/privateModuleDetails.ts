@@ -1,5 +1,5 @@
-import { 
-  ResponseContent, 
+import {
+  ResponseContent,
   PrivateModuleDetailsParams,
   PrivateModule,
   ModuleVersion,
@@ -17,7 +17,7 @@ export async function handlePrivateModuleDetails(params: PrivateModuleDetailsPar
 
   try {
     logger.debug("Getting private module details", { params });
-    
+
     const result = await getPrivateModuleDetails(
       TFC_TOKEN,
       params.organization,
@@ -45,14 +45,14 @@ export async function handlePrivateModuleDetails(params: PrivateModuleDetailsPar
 
       if (inputs?.length) {
         markdown += "\n\n**Inputs:**\n";
-        inputs.forEach(input => {
+        inputs.forEach((input) => {
           markdown += `- \`${input.name}\` (${input.type})${input.required ? " (required)" : ""}: ${input.description}\n`;
         });
       }
 
       if (outputs?.length) {
         markdown += "\n**Outputs:**\n";
-        outputs.forEach(output => {
+        outputs.forEach((output) => {
           markdown += `- \`${output.name}\`: ${output.description}\n`;
         });
       }
@@ -60,11 +60,11 @@ export async function handlePrivateModuleDetails(params: PrivateModuleDetailsPar
 
     if (Array.isArray(noCodeModules) && noCodeModules.length > 0) {
       markdown += "\n\n### No-Code Configuration\n";
-      noCodeModules.forEach(ncm => {
+      noCodeModules.forEach((ncm) => {
         markdown += `\n**${ncm.attributes.name}**\n`;
         if (ncm.attributes["variable-options"]?.length > 0) {
           markdown += "Variables:\n";
-          ncm.attributes["variable-options"].forEach(vo => {
+          ncm.attributes["variable-options"].forEach((vo) => {
             markdown += `- \`${vo.name}\`: ${vo.type}\n`;
           });
         }
@@ -101,4 +101,4 @@ module "${params.name}" {
     logger.error("Error getting private module details:", error);
     throw error;
   }
-} 
+}

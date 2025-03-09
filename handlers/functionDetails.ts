@@ -20,11 +20,11 @@ interface FunctionDoc {
 export async function handleFunctionDetails(params: FunctionDetailsInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing functionDetails request", params);
-    
+
     // Extract parameters with default namespace
     const { provider, function: functionName } = params;
     const namespace = params.namespace || "hashicorp";
-    
+
     // Validate required parameters
     if (!provider || !functionName) {
       throw new Error("Provider and function name are required.");
@@ -79,11 +79,11 @@ export async function handleFunctionDetails(params: FunctionDetailsInput): Promi
     }
 
     const content = contentData.data.attributes.content;
-    
+
     // Extract description
     const descriptionMatch = content.match(/description: |-\n(.*?)\n---/s);
     const description = descriptionMatch ? descriptionMatch[1].trim() : "";
-    
+
     // Extract example
     const exampleMatch = content.match(/## Example Usage\n\n```(?:hcl|terraform)?\n([\s\S]*?)```/);
     const example = exampleMatch ? exampleMatch[1].trim() : undefined;
@@ -136,10 +136,10 @@ export async function handleFunctionDetails(params: FunctionDetailsInput): Promi
       },
       documentationUrl: functionDoc.documentationUrl
     };
-    
+
     // Add compatibility information
     addStandardContext(metadata);
-    
+
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
     return handleToolError("functionDetails", error, {
@@ -150,4 +150,4 @@ export async function handleFunctionDetails(params: FunctionDetailsInput): Promi
       }
     });
   }
-} 
+}

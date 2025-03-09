@@ -37,21 +37,21 @@ if (!process.env.DEBUG) {
 
   // Enable levels based on the configured log level
   switch (LOG_LEVEL) {
-  case LOG_LEVELS.ERROR:
-    enableDebug("error");
-    break;
-  case LOG_LEVELS.WARN:
-    enableDebug("error,warn");
-    break;
-  case LOG_LEVELS.INFO:
-    enableDebug("error,warn,info");
-    break;
-  case LOG_LEVELS.DEBUG:
-    enableDebug("error,warn,info,debug");
-    break;
-  default:
-    // Default to INFO level
-    enableDebug("error,warn,info");
+    case LOG_LEVELS.ERROR:
+      enableDebug("error");
+      break;
+    case LOG_LEVELS.WARN:
+      enableDebug("error,warn");
+      break;
+    case LOG_LEVELS.INFO:
+      enableDebug("error,warn,info");
+      break;
+    case LOG_LEVELS.DEBUG:
+      enableDebug("error,warn,info,debug");
+      break;
+    default:
+      // Default to INFO level
+      enableDebug("error,warn,info");
   }
 }
 
@@ -63,20 +63,20 @@ if (!process.env.DEBUG) {
  */
 export function log(level: string, message: string, metadata?: any): void {
   switch (level) {
-  case LOG_LEVELS.ERROR:
-    errorLogger(message, metadata);
-    break;
-  case LOG_LEVELS.WARN:
-    warnLogger(message, metadata);
-    break;
-  case LOG_LEVELS.INFO:
-    infoLogger(message, metadata);
-    break;
-  case LOG_LEVELS.DEBUG:
-    debugLogger(message, metadata);
-    break;
-  default:
-    infoLogger(message, metadata);
+    case LOG_LEVELS.ERROR:
+      errorLogger(message, metadata);
+      break;
+    case LOG_LEVELS.WARN:
+      warnLogger(message, metadata);
+      break;
+    case LOG_LEVELS.INFO:
+      infoLogger(message, metadata);
+      break;
+    case LOG_LEVELS.DEBUG:
+      debugLogger(message, metadata);
+      break;
+    default:
+      infoLogger(message, metadata);
   }
 }
 

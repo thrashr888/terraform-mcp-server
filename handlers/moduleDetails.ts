@@ -38,7 +38,7 @@ interface ModuleDetail {
 export async function handleModuleDetails(params: ModuleDetailsInput): Promise<ResponseContent> {
   try {
     logger.debug("Processing moduleDetails request", params);
-    
+
     // Extract required parameters
     const { namespace, module, provider } = params;
     if (!namespace || !module || !provider) {
@@ -48,7 +48,7 @@ export async function handleModuleDetails(params: ModuleDetailsInput): Promise<R
     // Fetch module details from the registry
     const url = `${REGISTRY_API_V1}/modules/${namespace}/${module}/${provider}`;
     const moduleData = await fetchData<ModuleDetail>(url);
-    
+
     const versions = moduleData.versions || [];
     const root = moduleData.root || {};
     const inputs = root.inputs || [];
@@ -57,15 +57,15 @@ export async function handleModuleDetails(params: ModuleDetailsInput): Promise<R
 
     // Create a summary markdown response that's more readable
     let markdownResponse = `## Module: ${namespace}/${module}/${provider}\n\n`;
-    
+
     // Include latest version and published date
     markdownResponse += `**Latest Version**: ${versions[0] || "unknown"}\n\n`;
-    
+
     // Add module description if available
     if (moduleData.description) {
       markdownResponse += `**Description**: ${moduleData.description}\n\n`;
     }
-    
+
     // Add usage example
     const usageExample = `module "${module}" {
   source = "${namespace}/${module}/${provider}"
@@ -73,18 +73,18 @@ export async function handleModuleDetails(params: ModuleDetailsInput): Promise<R
   
   # Required inputs
 ${inputs
-    .filter((input) => input.required)
-    .map((input) => `  ${input.name} = ${getExampleValue(input)}`)
-    .join("\n")}
+  .filter((input) => input.required)
+  .map((input) => `  ${input.name} = ${getExampleValue(input)}`)
+  .join("\n")}
 }`;
 
     markdownResponse += `**Example Usage**:\n\n${formatAsMarkdown(usageExample)}\n\n`;
-    
+
     // Add a summary of required inputs
     if (inputs.length > 0) {
       markdownResponse += "### Required Inputs\n\n";
       const requiredInputs = inputs.filter((input) => input.required);
-      
+
       if (requiredInputs.length > 0) {
         requiredInputs.forEach((input) => {
           markdownResponse += `- **${input.name}** (${input.type}): ${input.description || "No description available"}\n`;
@@ -94,7 +94,7 @@ ${inputs
       }
       markdownResponse += "\n";
     }
-    
+
     // Add a summary of key outputs
     if (outputs.length > 0) {
       markdownResponse += "### Key Outputs\n\n";
@@ -108,13 +108,13 @@ ${inputs
       }
       markdownResponse += "\n";
     }
-    
+
     // Include documentation URL
     const docsUrl = formatUrl(getModuleDocUrl(namespace, module, provider));
     markdownResponse += `**[View Full Documentation](${docsUrl})**\n`;
 
     logger.info(`Retrieved details for ${namespace}/${module}/${provider}`);
-    
+
     // Create metadata with structured information
     const metadata = {
       moduleId: `${namespace}/${module}/${provider}`,
@@ -126,10 +126,10 @@ ${inputs
       dependencies,
       documentationUrl: docsUrl
     };
-    
+
     // Add compatibility information
     addStandardContext(metadata);
-    
+
     return createStandardResponse("success", markdownResponse, metadata);
   } catch (error) {
     return handleToolError("moduleDetails", error, {

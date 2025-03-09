@@ -11,24 +11,25 @@ describe("providerGuides tool", () => {
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: [
-          {
-            id: "8419193",
-            attributes: {
-              title: "Using HCP Terraform's Continuous Validation feature with the AWS Provider",
-              slug: "continuous-validation-examples"
+      json: () =>
+        Promise.resolve({
+          data: [
+            {
+              id: "8419193",
+              attributes: {
+                title: "Using HCP Terraform's Continuous Validation feature with the AWS Provider",
+                slug: "continuous-validation-examples"
+              }
+            },
+            {
+              id: "8419197",
+              attributes: {
+                title: "Terraform AWS Provider Version 2 Upgrade Guide",
+                slug: "version-2-upgrade"
+              }
             }
-          },
-          {
-            id: "8419197",
-            attributes: {
-              title: "Terraform AWS Provider Version 2 Upgrade Guide",
-              slug: "version-2-upgrade"
-            }
-          }
-        ]
-      })
+          ]
+        })
     });
 
     const response = await handleProviderGuides({
@@ -48,28 +49,30 @@ describe("providerGuides tool", () => {
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: [
-          {
-            id: "8419197",
-            attributes: {
-              title: "Terraform AWS Provider Version 2 Upgrade Guide",
-              slug: "version-2-upgrade"
+      json: () =>
+        Promise.resolve({
+          data: [
+            {
+              id: "8419197",
+              attributes: {
+                title: "Terraform AWS Provider Version 2 Upgrade Guide",
+                slug: "version-2-upgrade"
+              }
             }
-          }
-        ]
-      })
+          ]
+        })
     });
 
     // Mock the specific guide content response
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: {
-          attributes: {
-            title: "Terraform AWS Provider Version 2 Upgrade Guide",
-            content: `---
+      json: () =>
+        Promise.resolve({
+          data: {
+            attributes: {
+              title: "Terraform AWS Provider Version 2 Upgrade Guide",
+              content: `---
 description: |-
   This guide helps with upgrading to version 2 of the AWS provider.
 ---
@@ -81,9 +84,9 @@ Version 2.0.0 of the AWS provider includes several breaking changes.
 ## Breaking Changes
 
 * Example breaking change`
+            }
           }
-        }
-      })
+        })
     });
 
     const response = await handleProviderGuides({
@@ -103,31 +106,32 @@ Version 2.0.0 of the AWS provider includes several breaking changes.
     mockFetchResponse({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({
-        data: [
-          {
-            id: "8419197",
-            attributes: {
-              title: "Terraform AWS Provider Version 2 Upgrade Guide",
-              slug: "version-2-upgrade"
+      json: () =>
+        Promise.resolve({
+          data: [
+            {
+              id: "8419197",
+              attributes: {
+                title: "Terraform AWS Provider Version 2 Upgrade Guide",
+                slug: "version-2-upgrade"
+              }
+            },
+            {
+              id: "8419198",
+              attributes: {
+                title: "Terraform AWS Provider Version 3 Upgrade Guide",
+                slug: "version-3-upgrade"
+              }
+            },
+            {
+              id: "8419193",
+              attributes: {
+                title: "Using HCP Terraform's Continuous Validation feature",
+                slug: "continuous-validation-examples"
+              }
             }
-          },
-          {
-            id: "8419198",
-            attributes: {
-              title: "Terraform AWS Provider Version 3 Upgrade Guide",
-              slug: "version-3-upgrade"
-            }
-          },
-          {
-            id: "8419193",
-            attributes: {
-              title: "Using HCP Terraform's Continuous Validation feature",
-              slug: "continuous-validation-examples"
-            }
-          }
-        ]
-      })
+          ]
+        })
     });
 
     const response = await handleProviderGuides({
@@ -137,7 +141,7 @@ Version 2.0.0 of the AWS provider includes several breaking changes.
 
     const parsedContent = JSON.parse(response.content[0].text);
     expect(parsedContent.status).toBe("success");
-    expect(parsedContent.content).toContain("Search results for: \"upgrade\"");
+    expect(parsedContent.content).toContain('Search results for: "upgrade"');
     expect(parsedContent.content).toContain("Version 2 Upgrade Guide");
     expect(parsedContent.content).toContain("Version 3 Upgrade Guide");
     expect(parsedContent.content).not.toContain("Continuous Validation");
@@ -170,4 +174,4 @@ Version 2.0.0 of the AWS provider includes several breaking changes.
     expect(parsedContent.status).toBe("error");
     expect(parsedContent.error).toContain("required");
   });
-}); 
+});

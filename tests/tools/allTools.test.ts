@@ -10,17 +10,22 @@ describe("Resource Argument Details tool", () => {
   test("should return resource arguments when found", async () => {
     mockFetchResponse({
       ok: true,
-      json: () => Promise.resolve({ block: { attributes: { 
-        ami: { type: "string", description: "AMI ID", required: true },
-        instance_type: { type: "string", description: "Instance type", required: true }
-      }}})
+      json: () =>
+        Promise.resolve({
+          block: {
+            attributes: {
+              ami: { type: "string", description: "AMI ID", required: true },
+              instance_type: { type: "string", description: "Instance type", required: true }
+            }
+          }
+        })
     } as Response);
 
     const input = { provider: "aws", namespace: "hashicorp", resource: "aws_instance" };
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/resources/${input.resource}`;
     const response = await fetch(url);
     const data = await response.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
@@ -36,21 +41,22 @@ describe("Module Details tool", () => {
   test("should return module details when found", async () => {
     mockFetchResponse({
       ok: true,
-      json: () => Promise.resolve({ 
-        versions: ["5.0.0"], 
-        root: { 
-          inputs: [{ name: "region", description: "AWS region" }],
-          outputs: [{ name: "vpc_id", description: "VPC ID" }],
-          dependencies: []
-        }
-      })
+      json: () =>
+        Promise.resolve({
+          versions: ["5.0.0"],
+          root: {
+            inputs: [{ name: "region", description: "AWS region" }],
+            outputs: [{ name: "vpc_id", description: "VPC ID" }],
+            dependencies: []
+          }
+        })
     } as Response);
 
     const input = { namespace: "terraform-aws-modules", module: "vpc", provider: "aws" };
     const url = `https://registry.terraform.io/v1/modules/${input.namespace}/${input.module}/${input.provider}`;
     const response = await fetch(url);
     const data = await response.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
@@ -67,37 +73,42 @@ describe("Example Config Generator tool", () => {
   test("should generate example config when resource schema found", async () => {
     mockFetchResponse({
       ok: true,
-      json: () => Promise.resolve({ block: { attributes: { 
-        ami: { type: "string", description: "AMI ID", required: true, computed: false },
-        instance_type: { type: "string", description: "Instance type", required: true, computed: false }
-      }}})
+      json: () =>
+        Promise.resolve({
+          block: {
+            attributes: {
+              ami: { type: "string", description: "AMI ID", required: true, computed: false },
+              instance_type: { type: "string", description: "Instance type", required: true, computed: false }
+            }
+          }
+        })
     } as Response);
 
     const input = { provider: "aws", namespace: "hashicorp", resource: "aws_instance" };
     const url = `https://registry.terraform.io/v1/providers/${input.namespace}/${input.provider}/resources/${input.resource}`;
     const response = await fetch(url);
     const schema = await response.json();
-    
+
     const calls = getFetchCalls();
     expect(calls.length).toBe(1);
     expect(calls[0].url).toBe(url);
-    
+
     // Generate config
     const attrs = schema.block.attributes;
     let config = `resource "${input.resource}" "example" {\n`;
-    
+
     for (const [name, attr] of Object.entries(attrs)) {
       const typedAttr = attr as any;
       const isRequired = typedAttr.required === true && typedAttr.computed !== true;
       if (isRequired) {
-        const placeholder = "\"example\"";
+        const placeholder = '"example"';
         config += `  ${name} = ${placeholder}\n`;
       }
     }
     config += "}\n";
-    
+
     // Verify the generated config
-    expect(config).toContain("resource \"aws_instance\" \"example\"");
+    expect(config).toContain('resource "aws_instance" "example"');
     expect(config).toContain("ami");
     expect(config).toContain("instance_type");
   });
@@ -112,4 +123,4 @@ const toolCases = [
     input: { provider: "aws", namespace: "hashicorp" },
     successExpect: (result: any) => expect(result).toContain("aws")
   },
-*/ 
+*/

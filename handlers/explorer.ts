@@ -30,11 +30,11 @@ export async function handleExplorerQuery(params: ExplorerQueryParams): Promise<
   }
 
   const { organization, type, sort, filter, fields, page_number, page_size } = params;
-  
+
   // Build query parameters
   const queryParams = new URLSearchParams();
   queryParams.append("type", type);
-  
+
   if (sort) queryParams.append("sort", sort);
   if (fields) queryParams.append("fields", fields.join(","));
   if (page_number) queryParams.append("page[number]", page_number.toString());
@@ -58,14 +58,14 @@ export async function handleExplorerQuery(params: ExplorerQueryParams): Promise<
   if (rows.length > 0) {
     // Extract headers from the first row
     const headers = Object.keys(rows[0]);
-    
+
     // Create markdown table header
     markdown += `| ${headers.join(" | ")} |\n`;
     markdown += `| ${headers.map(() => "---").join(" | ")} |\n`;
 
     // Add table rows
     rows.forEach((row: Record<string, any>) => {
-      markdown += `| ${headers.map(h => row[h] || "-").join(" | ")} |\n`;
+      markdown += `| ${headers.map((h) => row[h] || "-").join(" | ")} |\n`;
     });
   } else {
     markdown += "No results found.";
@@ -80,4 +80,4 @@ export async function handleExplorerQuery(params: ExplorerQueryParams): Promise<
       timestamp: new Date().toISOString()
     }
   });
-} 
+}

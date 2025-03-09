@@ -25,8 +25,15 @@ export async function handlePrivateModuleSearch(params: PrivateModuleSearchParam
 
   try {
     logger.debug("Searching private modules", { params });
-    
-    const result = await searchPrivateModules(TFC_TOKEN, params.organization, params.query, params.provider, params.page, params.per_page);
+
+    const result = await searchPrivateModules(
+      TFC_TOKEN,
+      params.organization,
+      params.query,
+      params.provider,
+      params.page,
+      params.per_page
+    );
     const modules = result.modules as unknown as ApiModule[];
     const { pagination } = result;
 
@@ -39,8 +46,8 @@ export async function handlePrivateModuleSearch(params: PrivateModuleSearchParam
       markdown += `Found ${pagination?.total_count || modules.length} module(s)\n\n`;
       markdown += "| Name | Provider | Status | Latest Version |\n";
       markdown += "|------|----------|--------|----------------|\n";
-      
-      modules.forEach(module => {
+
+      modules.forEach((module) => {
         const latestVersion = module.attributes["version-statuses"]?.[0]?.version || "N/A";
         markdown += `| ${module.attributes.name} | ${module.attributes.provider} | ${module.attributes.status} | ${latestVersion} |\n`;
       });
@@ -51,7 +58,7 @@ export async function handlePrivateModuleSearch(params: PrivateModuleSearchParam
     }
 
     return createStandardResponse("success", markdown, {
-      modules: modules.map(module => ({
+      modules: modules.map((module) => ({
         id: module.id,
         name: module.attributes.name,
         provider: module.attributes.provider,
@@ -71,4 +78,4 @@ export async function handlePrivateModuleSearch(params: PrivateModuleSearchParam
     logger.error("Error searching private modules:", error);
     throw error;
   }
-} 
+}

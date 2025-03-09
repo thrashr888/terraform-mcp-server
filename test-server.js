@@ -31,9 +31,9 @@ setTimeout(() => {
       name: "providerLookup",
       arguments: {
         provider: "aws",
-        namespace: "hashicorp",
-      },
-    },
+        namespace: "hashicorp"
+      }
+    }
   };
 
   console.log("Sending test request to server:");
