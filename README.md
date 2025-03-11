@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, and module metadata.
 
+<a href="https://glama.ai/mcp/servers/zznclqgard">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/zznclqgard/badge" alt="Terraform Registry Server MCP server" />
+</a>
+
 ## Installation
 
 ### Installing in Cursor
