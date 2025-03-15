@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0 (2025-03-15)
+
+### Changed
+- Standardized tool naming patterns across the codebase for better consistency:
+  - `providerLookup` → `providerDetails`
+  - `moduleRecommendations` → `moduleSearch`
+  - `dataSourceLookup` → `listDataSources` 
+  - `showWorkspace` → `workspaceDetails`
+  - `showRun` → `runDetails`
+- Reorganized tool documentation in README.md with clearer grouping
+- Separated core Registry tools from Terraform Cloud tools in documentation
+- Updated tool descriptions for better clarity
+- Updated test scripts to use the new standardized tool names
+
 ## 0.11.0 (2025-03-15)
 
 ### Added

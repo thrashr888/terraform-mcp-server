@@ -50,29 +50,41 @@ To install and use this MCP server in Claude Desktop:
 
 The following tools are available in this MCP server:
 
+### Core Registry Tools
+
 | Tool | Description |
 |------|-------------|
-| `providerLookup` | Looks up Terraform provider details by name and version |
+| `providerDetails` | Gets detailed information about a Terraform provider |
 | `resourceUsage` | Gets example usage of a Terraform resource and related resources |
-| `moduleRecommendations` | Searches for and recommends Terraform modules based on a query |
-| `dataSourceLookup` | Retrieves available data source identifiers for a given provider |
+| `moduleSearch` | Searches for and recommends Terraform modules based on a query |
+| `listDataSources` | Lists all available data sources for a provider and their basic details |
 | `resourceArgumentDetails` | Fetches comprehensive details about a resource type's arguments |
 | `moduleDetails` | Retrieves detailed metadata for a Terraform module |
 | `functionDetails` | Gets details about a Terraform provider function |
 | `providerGuides` | Lists and views provider-specific guides and documentation |
 | `policySearch` | Searches for policy libraries in the Terraform Registry |
 | `policyDetails` | Gets detailed information about a specific policy library |
+
+### Terraform Cloud Tools
+
+These tools require a Terraform Cloud API token (`TFC_TOKEN`):
+
+| Tool | Description |
+|------|-------------|
+| `listOrganizations` | Lists all organizations the authenticated user has access to |
+| `privateModuleSearch` | Searches for private modules in an organization |
+| `privateModuleDetails` | Gets detailed information about a private module |
 | `explorerQuery` | Queries the Terraform Cloud Explorer API to analyze data |
-| `workspaces.list` | Lists workspaces in a Terraform Cloud organization |
-| `workspaces.show` | Shows details of a specific workspace |
-| `workspaces.lock` | Locks a workspace to prevent runs |
-| `workspaces.unlock` | Unlocks a workspace to allow runs |
-| `runs.list` | Lists runs for a workspace |
-| `runs.show` | Shows details of a specific run |
-| `runs.create` | Creates a new run for a workspace |
-| `runs.apply` | Applies a run that's been planned |
-| `runs.cancel` | Cancels a run that's in progress |
-| `workspaceResources.list` | Lists resources in a workspace |
+| `listWorkspaces` | Lists workspaces in an organization |
+| `workspaceDetails` | Gets detailed information about a specific workspace |
+| `lockWorkspace` | Locks a workspace to prevent runs |
+| `unlockWorkspace` | Unlocks a workspace to allow runs |
+| `listRuns` | Lists runs for a workspace |
+| `runDetails` | Gets detailed information about a specific run |
+| `createRun` | Creates a new run for a workspace |
+| `applyRun` | Applies a run that's been planned |
+| `cancelRun` | Cancels a run that's in progress |
+| `listWorkspaceResources` | Lists resources in a workspace |
 
 ## Running the Server
 

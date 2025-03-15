@@ -75,8 +75,8 @@ declare module "@modelcontextprotocol/sdk/server/index.js" {
 // Define the base tools available in the server
 const baseTools: Tool[] = [
   {
-    name: "providerLookup",
-    description: "Lookup a Terraform provider by name and optionally version.",
+    name: "providerDetails",
+    description: "Get detailed information about a Terraform provider by name and optionally version.",
     inputSchema: {
       type: "object",
       properties: {
@@ -101,8 +101,8 @@ const baseTools: Tool[] = [
     handler: handleResourceUsage
   },
   {
-    name: "moduleRecommendations",
-    description: "Search for and recommend Terraform modules for a given query.",
+    name: "moduleSearch",
+    description: "Search for and recommend Terraform modules based on a query.",
     inputSchema: {
       type: "object",
       properties: {
@@ -114,7 +114,7 @@ const baseTools: Tool[] = [
     handler: handleModuleRecommendations
   },
   {
-    name: "dataSourceLookup",
+    name: "listDataSources",
     description: "List all available data sources for a provider and their basic details.",
     inputSchema: {
       type: "object",
@@ -336,8 +336,8 @@ const tfcTools: Tool[] = [
     handler: handleListWorkspaces
   },
   {
-    name: "showWorkspace",
-    description: "Show details of a specific workspace in a Terraform Cloud organization",
+    name: "workspaceDetails",
+    description: "Get detailed information about a specific workspace in a Terraform Cloud organization",
     inputSchema: {
       type: "object",
       required: ["organization", "name"],
@@ -422,8 +422,8 @@ const tfcTools: Tool[] = [
     handler: handleListRuns
   },
   {
-    name: "showRun",
-    description: "Show details of a specific run",
+    name: "runDetails",
+    description: "Get detailed information about a specific run",
     inputSchema: {
       type: "object",
       required: ["run_id"],
@@ -633,19 +633,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         response = await handleResourceUsage(validArgs);
         break;
       }
-      case "providerLookup": {
+      case "providerDetails": {
         const validArgs = validateArgs<ProviderLookupInput>(args, ["provider"]);
         if (!validArgs) throw new Error("Missing required arguments");
         response = await handleProviderLookup(validArgs);
         break;
       }
-      case "moduleRecommendations": {
+      case "moduleSearch": {
         const validArgs = validateArgs<ModuleRecommendationsInput>(args, ["query"]);
         if (!validArgs) throw new Error("Missing required arguments");
         response = await handleModuleRecommendations(validArgs);
         break;
       }
-      case "dataSourceLookup": {
+      case "listDataSources": {
         const validArgs = validateArgs<DataSourceLookupInput>(args, ["provider", "namespace"]);
         if (!validArgs) throw new Error("Missing required arguments");
         response = await handleDataSourceLookup(validArgs);
@@ -714,7 +714,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         response = await handleListWorkspaces(validArgs);
         break;
       }
-      case "showWorkspace": {
+      case "workspaceDetails": {
         const validArgs = validateArgs<Record<string, any>>(args, ["organization", "name"]);
         if (!validArgs) throw new Error("Missing required arguments");
 
@@ -745,7 +745,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         response = await handleListRuns(validArgs);
         break;
       }
-      case "showRun": {
+      case "runDetails": {
         const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
         if (!validArgs) throw new Error("Missing required arguments");
         response = await handleShowRun(validArgs);

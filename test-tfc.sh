@@ -61,9 +61,9 @@ run_tool_request "Explorer Query" "$EXPLORER_QUERY"
 LIST_WORKSPACES='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"listWorkspaces","arguments":{"organization":"pthrasher_v2"}}}'
 run_tool_request "List Workspaces" "$LIST_WORKSPACES"
 
-# 6. showWorkspace - Show workspace details
-SHOW_WORKSPACE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"showWorkspace","arguments":{"organization":"pthrasher_v2","name":"cool-website"}}}'
-run_tool_request "Show Workspace" "$SHOW_WORKSPACE"
+# 6. workspaceDetails - Get workspace details
+SHOW_WORKSPACE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"workspaceDetails","arguments":{"organization":"pthrasher_v2","name":"cool-website"}}}'
+run_tool_request "Workspace Details" "$SHOW_WORKSPACE"
 
 # 7. lockWorkspace - Lock a workspace
 LOCK_WORKSPACE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"lockWorkspace","arguments":{"workspace_id":"ws-oXwyb8BweA2SssLk","reason":"Testing lock functionality"}}}'
@@ -77,9 +77,9 @@ run_tool_request "Unlock Workspace" "$UNLOCK_WORKSPACE"
 LIST_RUNS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"listRuns","arguments":{"workspace_id":"ws-oXwyb8BweA2SssLk"}}}'
 run_tool_request "List Runs" "$LIST_RUNS"
 
-# 10. showRun - Show run details
-SHOW_RUN='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"showRun","arguments":{"run_id":"run-UQAxKgYo3g5LqJ94"}}}'
-run_tool_request "Show Run" "$SHOW_RUN"
+# 10. runDetails - Get run details
+SHOW_RUN='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"runDetails","arguments":{"run_id":"run-UQAxKgYo3g5LqJ94"}}}'
+run_tool_request "Run Details" "$SHOW_RUN"
 
 # 11. createRun - Create a new run
 CREATE_RUN='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"createRun","arguments":{"workspace_id":"ws-oXwyb8BweA2SssLk","message":"Test run from MCP"}}}'

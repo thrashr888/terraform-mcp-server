@@ -46,21 +46,21 @@ echo -e "${GREEN}Response:${NC}"
 echo "$TOOLS_LIST_REQUEST" | node dist/index.js | grep "\"result\"" | jq .
 echo -e "${BLUE}====================================${NC}\n"
 
-# 2. providerLookup - Get details about a provider
-PROVIDER_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"providerLookup","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
-run_tool_request "Provider Lookup: AWS" "$PROVIDER_LOOKUP"
+# 2. providerDetails - Get details about a provider
+PROVIDER_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"providerDetails","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
+run_tool_request "Provider Details: AWS" "$PROVIDER_LOOKUP"
 
 # 3. resourceUsage - Get usage examples for a resource
 RESOURCE_USAGE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"resourceUsage","arguments":{"provider":"aws","resource":"aws_s3_bucket"}}}'
 run_tool_request "Resource Usage: AWS S3 Bucket" "$RESOURCE_USAGE"
 
-# 4. moduleRecommendations - Get module recommendations
-MODULE_RECOMMENDATIONS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"moduleRecommendations","arguments":{"query":"vpc"}}}'
-run_tool_request "Module Recommendations: VPC" "$MODULE_RECOMMENDATIONS"
+# 4. moduleSearch - Get module recommendations
+MODULE_RECOMMENDATIONS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"moduleSearch","arguments":{"query":"vpc"}}}'
+run_tool_request "Module Search: VPC" "$MODULE_RECOMMENDATIONS"
 
-# 5. dataSourceLookup - Get data sources for a provider
-DATA_SOURCE_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"dataSourceLookup","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
-run_tool_request "Data Source Lookup: AWS" "$DATA_SOURCE_LOOKUP"
+# 5. listDataSources - Get data sources for a provider
+DATA_SOURCE_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"listDataSources","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
+run_tool_request "List Data Sources: AWS" "$DATA_SOURCE_LOOKUP"
 
 # 6. resourceArgumentDetails - Get argument details for a resource
 RESOURCE_ARGS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"resourceArgumentDetails","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'

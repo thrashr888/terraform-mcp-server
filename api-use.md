@@ -7,11 +7,11 @@ This document outlines our understanding and use of the Terraform Registry API f
 ### Provider Endpoints
 
 - **Provider Lookup**: `https://registry.terraform.io/v1/providers/{namespace}/{provider}`
-  - Used in `providerLookup` tool
+  - Used in `providerDetails` tool
   - Returns provider metadata including versions
 
 - **Provider Schema**: `https://registry.terraform.io/v1/providers/{namespace}/{provider}/{version}/download/{os}/{arch}`
-  - Used as a fallback in `dataSourceLookup` and `resourceArgumentDetails` tools
+  - Used as a fallback in `listDataSources` and `resourceArgumentDetails` tools
   - Returns detailed provider schema with resources and data sources
 
 ### Resource Endpoints
@@ -28,7 +28,7 @@ This document outlines our understanding and use of the Terraform Registry API f
 ### Module Endpoints
 
 - **Module Search**: `https://registry.terraform.io/v1/modules/search?q={query}`
-  - Used in `moduleRecommendations` tool
+  - Used in `moduleSearch` tool
   - Returns modules matching the search query
 
 - **Module Details**: `https://registry.terraform.io/v1/modules/{namespace}/{name}/{provider}`
@@ -37,7 +37,7 @@ This document outlines our understanding and use of the Terraform Registry API f
 
 ## API Changes and Issues
 
-As of version 0.9.6, we've encountered some issues with the Terraform Registry API:
+As of version 0.12.0, we've encountered some issues with the Terraform Registry API:
 
 1. **Resource Details Endpoint Failures**:
    - The `/v1/providers/{namespace}/{provider}/resources/{resource}` endpoint often returns 404 errors
