@@ -62,16 +62,29 @@ run_tool_request "Module Recommendations: VPC" "$MODULE_RECOMMENDATIONS"
 DATA_SOURCE_LOOKUP='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"dataSourceLookup","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
 run_tool_request "Data Source Lookup: AWS" "$DATA_SOURCE_LOOKUP"
 
-# 6. providerSchemaDetails - Get schema details for a provider
-# REMOVED: providerSchemaDetails section
-
-# 7. resourceArgumentDetails - Get argument details for a resource
+# 6. resourceArgumentDetails - Get argument details for a resource
 RESOURCE_ARGS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"resourceArgumentDetails","arguments":{"provider":"aws","namespace":"hashicorp","resource":"aws_instance"}}}'
 run_tool_request "Resource Argument Details: AWS Instance" "$RESOURCE_ARGS"
 
-# 8. moduleDetails - Get details for a module
+# 7. moduleDetails - Get details for a module
 MODULE_DETAILS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"moduleDetails","arguments":{"namespace":"terraform-aws-modules","module":"vpc","provider":"aws"}}}'
 run_tool_request "Module Details: AWS VPC" "$MODULE_DETAILS"
+
+# 8. functionDetails - Get details about a provider function
+FUNCTION_DETAILS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"functionDetails","arguments":{"provider":"aws","function":"cidrsubnet","namespace":"hashicorp"}}}'
+run_tool_request "Function Details: AWS cidrsubnet" "$FUNCTION_DETAILS"
+
+# 9. providerGuides - Get provider guides
+PROVIDER_GUIDES='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"providerGuides","arguments":{"provider":"aws","namespace":"hashicorp"}}}'
+run_tool_request "Provider Guides: AWS" "$PROVIDER_GUIDES"
+
+# 10. policySearch - Search for policy libraries
+POLICY_SEARCH='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"policySearch","arguments":{"query":"security"}}}'
+run_tool_request "Policy Search: Security" "$POLICY_SEARCH"
+
+# 11. policyDetails - Get details for a policy library
+POLICY_DETAILS='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"policyDetails","arguments":{"namespace":"hashicorp","name":"CIS-Policy-Set-for-AWS-S3-Terraform"}}}'
+run_tool_request "Policy Details: HashiCorp CIS AWS S3 Policy" "$POLICY_DETAILS"
 
 echo -e "${BLUE}====================================${NC}\n"
 

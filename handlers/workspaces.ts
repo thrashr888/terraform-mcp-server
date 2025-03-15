@@ -5,7 +5,7 @@ import { createStandardResponse } from "../utils/responseUtils.js";
 import { URLSearchParams } from "url";
 
 export interface WorkspacesQueryParams {
-  organization_name: string;
+  organization: string;
   page_number?: number;
   page_size?: number;
   search?: string;
@@ -46,7 +46,13 @@ export async function handleListWorkspaces(params: WorkspacesQueryParams): Promi
     throw new Error("TFC_TOKEN environment variable is required for workspace operations");
   }
 
-  const { organization_name, page_number, page_size, search } = params;
+  const { organization, page_number, page_size, search } = params;
+
+  if (!organization) {
+    return createStandardResponse("error", "Missing required parameter: organization", {
+      error: "Missing required parameter: organization"
+    });
+  }
 
   // Build query parameters
   const queryParams = new URLSearchParams();
@@ -54,43 +60,52 @@ export async function handleListWorkspaces(params: WorkspacesQueryParams): Promi
   if (page_size) queryParams.append("page[size]", page_size.toString());
   if (search) queryParams.append("search", search);
 
-  const response = await fetchWithAuth<Workspace[]>(
-    `${TF_CLOUD_API_BASE}/organizations/${organization_name}/workspaces?${queryParams.toString()}`,
-    TFC_TOKEN
-  );
+  try {
+    const response = await fetchWithAuth<Workspace[]>(
+      `${TF_CLOUD_API_BASE}/organizations/${organization}/workspaces${queryParams.toString() ? `?${queryParams.toString()}` : ""}`,
+      TFC_TOKEN
+    );
 
-  // Format the response into a markdown table
-  const workspaces = response.data.map((workspace: Workspace) => ({
-    id: workspace.id,
-    ...workspace.attributes
-  }));
+    // Format the response into a markdown table
+    const workspaces = response.data.map((workspace: Workspace) => ({
+      id: workspace.id,
+      ...workspace.attributes
+    }));
 
-  let markdown = `## Workspaces in Organization: ${organization_name}\n\n`;
+    let markdown = `## Workspaces in Organization: ${organization}\n\n`;
 
-  if (workspaces.length > 0) {
-    // Extract headers from the first workspace
-    const headers = ["name", "id", "terraform-version", "updated-at"];
+    if (workspaces.length > 0) {
+      // Create markdown table
+      markdown += "| Name | Terraform Version | Auto Apply | Resources | Updated At |\n";
+      markdown += "|------|------------------|------------|-----------|------------|\n";
 
-    // Create markdown table header
-    markdown += `| ${headers.join(" | ")} |\n`;
-    markdown += `| ${headers.map(() => "---").join(" | ")} |\n`;
-
-    // Add table rows
-    workspaces.forEach((workspace: Record<string, any>) => {
-      markdown += `| ${headers.map((h) => workspace[h] || "-").join(" | ")} |\n`;
-    });
-  } else {
-    markdown += "No workspaces found.";
-  }
-
-  return createStandardResponse("success", markdown, {
-    workspaces,
-    total: workspaces.length,
-    context: {
-      organization: organization_name,
-      timestamp: new Date().toISOString()
+      workspaces.forEach((workspace: any) => {
+        markdown += `| ${workspace.name} | ${workspace["terraform-version"]} | ${
+          workspace["auto-apply"] ? "Yes" : "No"
+        } | ${workspace["resource-count"]} | ${workspace["updated-at"]} |\n`;
+      });
+    } else {
+      markdown += "No workspaces found in this organization.";
     }
-  });
+
+    return createStandardResponse("success", markdown, {
+      workspaces,
+      total: workspaces.length,
+      context: {
+        organization: organization,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    // Provide a more helpful error message
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createStandardResponse("error", `Error listing workspaces: ${errorMessage}`, {
+      error: errorMessage,
+      context: {
+        organization: organization
+      }
+    });
+  }
 }
 
 export async function handleShowWorkspace(params: {

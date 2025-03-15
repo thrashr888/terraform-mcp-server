@@ -9,7 +9,7 @@ The project includes several test scripts for different purposes:
 | Script | Description |
 |--------|-------------|
 | `test.sh` | Main test script that tests all tools with formatted output |
-| `test-simple.sh` | Simplified test script that doesn't require jq |
+| `test-tfc.sh` | Test script focused on Terraform Cloud (TFC) tools with formatted output |
 | `test-resources.sh` | Minimal resource testing script focused on ResourceUsage handler |
 | `test-server.js` | Starts a test server for manual testing |
 
@@ -79,11 +79,44 @@ Usage:
 ./test.sh
 ```
 
-### test-simple.sh
+## Terraform Cloud (TFC) Test Scripts
 
-A simplified version of the main test script without dependencies on external tools like jq.
+### test-tfc.sh
+
+A dedicated test script for Terraform Cloud related tools with detailed output formatting.
 
 Usage:
 ```bash
-./test-simple.sh
+./test-tfc.sh
+```
+
+## Terraform Cloud (TFC) Tools
+
+The following Terraform Cloud related tools are tested in the TFC test scripts:
+
+| Tool | Description |
+|------|-------------|
+| `listOrganizations` | Lists all organizations the authenticated user has access to |
+| `privateModuleSearch` | Searches for private modules in a Terraform Cloud organization |
+| `privateModuleDetails` | Gets detailed information about a private module |
+| `explorerQuery` | Queries the Terraform Cloud Explorer API to analyze data |
+| `listWorkspaces` | Lists workspaces in a Terraform Cloud organization |
+| `showWorkspace` | Shows details of a specific workspace |
+| `lockWorkspace` | Locks a workspace to prevent runs |
+| `unlockWorkspace` | Unlocks a workspace to allow runs |
+| `listRuns` | Lists runs for a workspace |
+| `showRun` | Shows details of a specific run |
+| `createRun` | Creates a new run for a workspace |
+| `applyRun` | Applies a run that's been planned |
+| `cancelRun` | Cancels a run that's in progress |
+| `listWorkspaceResources` | Lists resources in a workspace |
+
+Example usage in a test script:
+
+```bash
+# List workspaces in an organization
+run_tool_request "List Workspaces" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"listWorkspaces","arguments":{"organization":"example-org"}}}'
+
+# Show details of a specific run
+run_tool_request "Show Run" '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"showRun","arguments":{"run_id":"run-example"}}}'
 ```
