@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.11.0 (2025-03-15)
+
+### Added
+- Added support for Explorer API integration to query workspace data
+- Enhanced Terraform Cloud API integration with additional workspace management features
+- Improved error handling for Terraform Cloud API requests
+
+### Fixed
+- Fixed authentication issues with Terraform Cloud API
+- Updated error messages to provide more context about API failures
+- Improved handling of rate limits for Terraform Registry API
+
+### Changed
+- Refactored Terraform Cloud API integration code for better maintainability
+- Updated documentation with more examples for new API functionality
+
 ## 0.10.0 (2025-03-09)
 
 ### Added
