@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.13.0 (unreleased)
+
+### Added
+- Implemented MCP Resources API support for resource-oriented access patterns
+- Added URI-based resource handlers for Terraform Registry and Terraform Cloud resources
+- Created new URI schemes for accessing resources:
+  - `registry://providers` - Access Terraform Registry providers
+  - `registry://modules` - Access Terraform Registry modules
+  - `terraform://organizations` - Access Terraform Cloud organizations and workspaces
+- Added support for resources/list, resources/read, resources/templates/list, and resources/subscribe endpoints
+- Created test script for resources implementation
+
+### Changed
+- Updated server initialization to include resources capability
+- Maintained backward compatibility with existing tool-based API
+
 ## 0.12.0 (2025-03-15)
 
 ### Changed

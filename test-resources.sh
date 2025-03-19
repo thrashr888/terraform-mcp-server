@@ -1,31 +1,30 @@
 #!/bin/bash
 
-# Basic test script for terraform-mcp-server resource usage handler
-# This script tests a minimal set of resources to verify functionality
+# Test script for terraform-mcp-server resources implementation
+# This script tests both the resource usage handler and the new resources API
 
-echo "=== Testing terraform-mcp-server Resource Usage Handler ==="
-echo "=========================================================="
+echo "=== Testing terraform-mcp-server Resources Implementation ==="
+echo "==========================================================="
 
 # Build the project first
 echo "Building project..."
 npm run build > /dev/null
 
-# Function to run a resource usage test
-test_resource() {
-  local provider=$1
-  local resource=$2
-  local description=$3
+# Function to run a resource list test
+test_resource_list() {
+  local uri=$1
+  local description=$2
 
   echo ""
-  echo "=== Testing $description ($provider/$resource) ==="
+  echo "=== Testing resources/list: $description ($uri) ==="
   
-  # Create JSON-RPC request
-  local request="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"resourceUsage\",\"arguments\":{\"provider\":\"$provider\",\"resource\":\"$resource\"}}}"
+  # Create JSON-RPC request for resources/list
+  local request="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"resources/list\",\"params\":{\"uri\":\"$uri\"}}"
   
-  echo "Request: $resource"
+  echo "Request URI: $uri"
   
   # Pipe request to server and filter log messages
-  local response=$(echo "$request" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received" | grep -v "=== DETAILED REQUEST DEBUG INFO ===" | grep -v "Processing tool" | grep -v "Using tool")
+  local response=$(echo "$request" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received")
   
   # Display brief content preview
   echo "Content preview:"
@@ -33,11 +32,46 @@ test_resource() {
   echo "..."
   
   # Check for errors
-  if echo "$response" | grep -q "Error"; then
-    echo -e "\nTEST FAILED: $provider/$resource"
+  if echo "$response" | grep -q "error"; then
+    echo -e "\nTEST FAILED: $uri"
+    failed=$((failed + 1))
     return 1
   else
-    echo -e "\nTEST PASSED: $provider/$resource"
+    echo -e "\nTEST PASSED: $uri"
+    passed=$((passed + 1))
+    return 0
+  fi
+}
+
+# Function to run a resource read test
+test_resource_read() {
+  local uri=$1
+  local description=$2
+
+  echo ""
+  echo "=== Testing resources/read: $description ($uri) ==="
+  
+  # Create JSON-RPC request for resources/read
+  local request="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"resources/read\",\"params\":{\"uri\":\"$uri\"}}"
+  
+  echo "Request URI: $uri"
+  
+  # Pipe request to server and filter log messages
+  local response=$(echo "$request" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received")
+  
+  # Display brief content preview
+  echo "Content preview:"
+  echo "$response" | head -c 300
+  echo "..."
+  
+  # Check for errors
+  if echo "$response" | grep -q "error"; then
+    echo -e "\nTEST FAILED: $uri"
+    failed=$((failed + 1))
+    return 1
+  else
+    echo -e "\nTEST PASSED: $uri"
+    passed=$((passed + 1))
     return 0
   fi
 }
@@ -46,25 +80,24 @@ test_resource() {
 passed=0
 failed=0
 
-# Test only the most essential resources - one AWS and one Google
-run_test() {
-  if test_resource "$1" "$2" "$3"; then
-    passed=$((passed + 1))
-  else
-    failed=$((failed + 1))
-  fi
-}
+# Test registry resources
+test_resource_list "registry://providers" "List providers"
+test_resource_list "registry://providers/hashicorp/aws/data-sources" "List AWS data sources"
+test_resource_read "registry://providers/hashicorp/aws" "Read AWS provider details"
+test_resource_read "registry://providers/hashicorp/aws/resources/aws_instance" "Read AWS instance resource"
+test_resource_list "registry://modules" "List modules"
 
-# Test AWS resources
-test_resource "aws" "aws_s3_bucket" "AWS S3 Bucket"
-test_resource "aws" "aws_api_gateway_account" "AWS API Gateway Account"
-test_resource "aws" "aws_lambda_function" "AWS Lambda Function"
-test_resource "aws" "aws_instance" "AWS EC2 Instance"
-test_resource "aws" "aws_vpc" "AWS VPC"
+# Test TFC resources (these might fail if TFC_TOKEN is not set)
+test_resource_list "terraform://organizations" "List organizations"
 
-# Test other cloud providers
-test_resource "google" "google_compute_instance" "Google Compute Instance"
-test_resource "azurerm" "azurerm_resource_group" "Azure Resource Group"
+# Also test original resource usage handler for compatibility
+echo ""
+echo "=== Testing original resourceUsage handler ==="
+request="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"resourceUsage\",\"arguments\":{\"provider\":\"aws\",\"resource\":\"aws_s3_bucket\"}}}"
+response=$(echo "$request" | node dist/index.js | grep -v "Server constructor" | grep -v "terraform-registry-mcp" | grep -v "Received")
+echo "Content preview:"
+echo "$response" | head -c 300
+echo "..."
 
 # Show summary
 echo ""

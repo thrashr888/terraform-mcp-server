@@ -1,6 +1,6 @@
 # release
 - update the version in `./config.ts` and `./package.json`
-- update the `./CHANGELOG.md`
+- update the `./CHANGELOG.md` to reflect customer-facing changes. be concise.
 - commit, tag, and push to GitHub
 - create a new release on GitHub using `gh`
 - npm and docker releases are handled automatically via GitHub Actions
@@ -9,7 +9,7 @@
 - run `npm run build` to build the project
 - the server needs manually restarted after building
 - run `npm run test` to run the tests
-- run `npm run lint` to run the linting
+- run `npm run lint:fix` to run the linting
 - run `./test.sh` to run the tests
 - run `./test-simple.sh` to run the tests
 - locally managed MCP config is in `./.cursor/mcp.json` and `~/Library/Application Support/Claude/claude_desktop_config.json`

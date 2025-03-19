@@ -1,6 +1,6 @@
 {
     "name": "terraform-mcp-server",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "description": "MCP server for Terraform Registry operations",
     "license": "MIT",
     "author": "Paul Thrasher (https://github.com/thrashr888)",
@@ -21,6 +21,9 @@
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
         "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
         "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+        "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration",
+        "test:integration:registry": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration/resources.test.ts tests/integration/tools.test.ts",
+        "test:all": "npm run test && npm run test:integration && npm run lint",
         "test-server": "node test-server.js",
         "lint": "eslint . --ext .ts,.js",
         "lint:fix": "eslint . --ext .ts,.js --fix",

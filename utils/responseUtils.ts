@@ -108,3 +108,35 @@ export function handleToolError(toolName: string, error: unknown, context?: Reco
     ]
   };
 }
+
+/**
+ * Handle errors for resource list operations
+ * @param error The error that occurred
+ * @returns A standardized error response
+ */
+export function handleListError(error: any): any {
+  logger.error("List error:", error);
+  return {
+    type: "error",
+    error: {
+      code: "list_failed",
+      message: error?.message || "Failed to list resources"
+    }
+  };
+}
+
+/**
+ * Handle errors for resource read operations
+ * @param error The error that occurred
+ * @returns A standardized error response
+ */
+export function handleResourceError(error: any): any {
+  logger.error("Resource error:", error);
+  return {
+    type: "error",
+    error: {
+      code: "resource_error",
+      message: error?.message || "Error processing resource"
+    }
+  };
+}

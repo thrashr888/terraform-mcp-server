@@ -14,6 +14,7 @@ import {
   Tool,
   InitializeRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 
 import {
   handleProviderLookup,
@@ -64,6 +65,13 @@ import { ExplorerQueryParams } from "./handlers/explorer.js";
 import { WorkspacesQueryParams, WorkspaceActionParams } from "./handlers/workspaces.js";
 import { RunsQueryParams, RunCreateParams, RunActionParams } from "./handlers/runs.js";
 import { WorkspaceResourcesQueryParams } from "./handlers/workspaceResources.js";
+
+import {
+  handleResourcesList,
+  handleResourcesRead,
+  handleResourcesTemplatesList,
+  handleResourcesSubscribe
+} from "./resources/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
 declare module "@modelcontextprotocol/sdk/server/index.js" {
@@ -557,7 +565,11 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {}
+      tools: {},
+      resources: {
+        subscribe: true,
+        listChanged: true
+      }
     }
   }
 );
@@ -584,6 +596,63 @@ server.setRequestHandler(InitializeRequestSchema, async (request) => {
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   logger.info("Received ListToolsRequest");
   return { tools };
+});
+
+// Define resource schemas
+const ResourcesListSchema = z.object({
+  method: z.literal("resources/list"),
+  params: z.object({
+    uri: z.string()
+  })
+});
+
+const ResourcesReadSchema = z.object({
+  method: z.literal("resources/read"),
+  params: z.object({
+    uri: z.string()
+  })
+});
+
+const ResourcesTemplatesListSchema = z.object({
+  method: z.literal("resources/templates/list"),
+  params: z.object({
+    uri: z.string()
+  })
+});
+
+const ResourcesSubscribeSchema = z.object({
+  method: z.literal("resources/subscribe"),
+  params: z.object({
+    uri: z.string()
+  })
+});
+
+// Register resources/list handler
+server.setRequestHandler(ResourcesListSchema, async (request) => {
+  logger.info("Received resources/list request!");
+  const { uri } = request.params;
+  return await handleResourcesList(uri);
+});
+
+// Register resources/read handler
+server.setRequestHandler(ResourcesReadSchema, async (request) => {
+  logger.info("Received resources/read request!");
+  const { uri } = request.params;
+  return await handleResourcesRead(uri);
+});
+
+// Register resources/templates/list handler
+server.setRequestHandler(ResourcesTemplatesListSchema, async (request) => {
+  logger.info("Received resources/templates/list request!");
+  const { uri } = request.params;
+  return await handleResourcesTemplatesList(uri);
+});
+
+// Register resources/subscribe handler
+server.setRequestHandler(ResourcesSubscribeSchema, async (request) => {
+  logger.info("Received resources/subscribe request!");
+  const { uri } = request.params;
+  return await handleResourcesSubscribe(uri);
 });
 
 // Validate and convert arguments
