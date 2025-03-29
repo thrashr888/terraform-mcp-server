@@ -1,5 +1,5 @@
 // Import the necessary modules and types
-import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls } from "../global-mock";
+import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls } from "../global-mock.js";
 
 // Import the necessary modules - note: we'd need to refactor the actual code to make this more testable
 // For now, we're going to simulate testing the handler with minimal dependencies

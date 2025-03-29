@@ -1,4 +1,4 @@
-import { resetFetchMocks, mockFetchResponse } from "./global-mock";
+import { resetFetchMocks, mockFetchResponse } from "./global-mock.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
 // Define the callback type

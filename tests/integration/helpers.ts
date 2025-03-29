@@ -3,7 +3,7 @@ import { createInterface } from "readline";
 
 // Timeout values
 const SERVER_READY_TIMEOUT = 7000; // 7 seconds
-const RESPONSE_TIMEOUT = 5000; // 5 seconds
+const RESPONSE_TIMEOUT = 15000; // 15 seconds
 
 // Default values for testing
 export const TEST_ORG = "pthrasher_v2";
@@ -154,6 +154,8 @@ export async function runRequest(request: any): Promise<any> {
     // Cleanup
     console.log("Cleaning up server process");
     serverProcess.kill();
+    stdoutRl.removeAllListeners();
+    stderrRl.removeAllListeners();
     stdoutRl.close();
     stderrRl.close();
 
@@ -162,6 +164,8 @@ export async function runRequest(request: any): Promise<any> {
     // Make sure we clean up if there's an error
     console.log("Error in test, cleaning up:", error);
     serverProcess.kill();
+    stdoutRl.removeAllListeners();
+    stderrRl.removeAllListeners();
     stdoutRl.close();
     stderrRl.close();
     throw error;

@@ -1,6 +1,6 @@
 // This file contains simplified tests for the remaining tools to avoid repetition
 // The approach is similar to the more detailed tests in other files
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock.js";
 
 describe("Resource Argument Details tool", () => {
   beforeEach(() => {

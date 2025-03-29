@@ -108,7 +108,7 @@ The server can be configured using environment variables:
 | `RATE_LIMIT_ENABLED` | Enable rate limiting for API requests | false |
 | `RATE_LIMIT_REQUESTS` | Number of requests allowed in time window | 60 |
 | `RATE_LIMIT_WINDOW_MS` | Time window for rate limiting in milliseconds | 60000 |
-| `TFC_TOKEN` | Terraform Cloud API token for private registry access | |
+| `TFC_TOKEN` | Terraform Cloud API token for private registry access (optional) | |
 
 Example usage with environment variables:
 

@@ -1,4 +1,4 @@
-import { runResourcesList, runResourcesRead, runToolCall, assertSuccessResponse, getOrganization } from "./helpers";
+import { runResourcesList, runResourcesRead, runToolCall, assertSuccessResponse, getOrganization } from "./helpers.js";
 import { jest, describe, test, expect } from "@jest/globals";
 
 // Set shorter timeout for integration tests

@@ -1,5 +1,5 @@
 // Import the necessary modules and types
-import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock";
+import { resetFetchMocks, mockFetchResponse, getFetchCalls } from "../global-mock.js";
 
 describe("resourceUsage tool", () => {
   beforeEach(() => {

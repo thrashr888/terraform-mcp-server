@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, jest } from "@jest/globals";
-import { mockConfig, safeUrlIncludes, createMockFetchWithAuth } from "../testHelpers";
-import { TF_CLOUD_API_BASE } from "../../config";
+import { mockConfig, safeUrlIncludes, createMockFetchWithAuth } from "../testHelpers.js";
+import { TF_CLOUD_API_BASE } from "../../config.js";
 
 // Create a mock implementation for fetchWithAuth
 const mockFetchWithAuthImpl = async (url: any, token: any, options: any = {}) => {
@@ -85,7 +85,7 @@ jest.mock("../../utils/hcpApiUtils", () => ({
 }));
 
 // Mock the config
-jest.mock("../../config", () => ({
+jest.mock("../../config.js", () => ({
   ...mockConfig
 }));
 

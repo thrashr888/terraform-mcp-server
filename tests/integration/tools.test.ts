@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { runRequest, runToolCall, assertSuccessResponse, getOrganization } from "./helpers";
+import { runRequest, runToolCall, assertSuccessResponse, getOrganization } from "./helpers.js";
 
 // Set shorter timeout for integration tests
 jest.setTimeout(10000); // 10 seconds

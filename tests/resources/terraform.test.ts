@@ -1,6 +1,6 @@
-import { resetFetchMocks, mockFetchResponse } from "../global-mock";
-import { handleResourcesList, handleResourcesRead } from "../../resources/index";
-import { TFC_TOKEN } from "../../config";
+import { resetFetchMocks, mockFetchResponse } from "../global-mock.js";
+import { handleResourcesList, handleResourcesRead } from "../../resources/index.js";
+import { TFC_TOKEN } from "../../config.js";
 
 // Skip tests if TFC_TOKEN is not set
 const runTest = TFC_TOKEN ? describe : describe.skip;

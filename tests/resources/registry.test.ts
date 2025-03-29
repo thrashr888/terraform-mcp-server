@@ -1,5 +1,5 @@
-import { resetFetchMocks, mockFetchResponse } from "../global-mock";
-import { handleResourcesList, handleResourcesRead } from "../../resources/index";
+import { resetFetchMocks, mockFetchResponse } from "../global-mock.js";
+import { handleResourcesList, handleResourcesRead } from "../../resources/index.js";
 import { jest } from "@jest/globals";
 
 describe("Registry Resources", () => {

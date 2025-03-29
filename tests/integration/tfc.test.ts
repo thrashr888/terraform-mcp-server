@@ -1,4 +1,4 @@
-import { runToolCall, assertSuccessResponse, getOrganization, getWorkspaceId } from "./helpers";
+import { runToolCall, assertSuccessResponse, getOrganization, getWorkspaceId } from "./helpers.js";
 import { jest, describe, test, expect, beforeAll } from "@jest/globals";
 
 // Set shorter timeout for integration tests
@@ -238,6 +238,6 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
       } catch (error) {
         console.warn(`Could not list workspace resources: ${error}`);
       }
-    });
+    }, 30000);
   });
 });

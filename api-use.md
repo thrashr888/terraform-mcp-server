@@ -63,6 +63,5 @@ When API endpoints fail, we employ these fallback strategies:
 
 Potential improvements to our API interaction:
 
-1. **Caching**: Implement local caching of API responses to reduce load on the Registry
-2. **Retry Logic**: Add more sophisticated retry logic for transient failures
-3. **Version Selection**: Allow users to specify provider versions for more precise documentation
+1. **Retry Logic**: Add more sophisticated retry logic for transient failures
+2. **Version Selection**: Allow users to specify provider versions for more precise documentation

@@ -644,15 +644,13 @@ server.setRequestHandler(ResourcesReadSchema, async (request) => {
 // Register resources/templates/list handler
 server.setRequestHandler(ResourcesTemplatesListSchema, async (request) => {
   logger.info("Received resources/templates/list request!");
-  const { uri } = request.params;
-  return await handleResourcesTemplatesList(uri);
+  return await handleResourcesTemplatesList();
 });
 
 // Register resources/subscribe handler
 server.setRequestHandler(ResourcesSubscribeSchema, async (request) => {
   logger.info("Received resources/subscribe request!");
-  const { uri } = request.params;
-  return await handleResourcesSubscribe(uri);
+  return await handleResourcesSubscribe();
 });
 
 // Validate and convert arguments

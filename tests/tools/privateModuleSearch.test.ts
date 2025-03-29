@@ -1,4 +1,4 @@
-import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls } from "../global-mock";
+import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls } from "../global-mock.js";
 import { TFC_TOKEN } from "../../config.js";
 
 describe("Private Module Search Tool", () => {
