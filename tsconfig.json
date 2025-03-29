@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
       "outDir": "./dist",
-      "rootDir": ".",
       "moduleResolution": "NodeNext",
       "module": "NodeNext",
       "target": "ES2022",
@@ -14,10 +13,7 @@
     },
     "include": [
       "./*.ts",
-      "./resources/**/*.ts",
-      "./utils/**/*.ts",
-      "./tools/**/*.ts",
-      "./tests/**/*.ts"
+      "./src/**/*.ts"
     ],
     "exclude": [
       "node_modules",

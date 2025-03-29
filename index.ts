@@ -41,11 +41,11 @@ import {
   handleApplyRun,
   handleCancelRun,
   handleListWorkspaceResources
-} from "./tools/index.js";
+} from "./src/tools/index.js";
 
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
 
-import logger from "./utils/logger.js";
+import logger from "./src/utils/logger.js";
 import {
   ProviderLookupInput,
   ResourceUsageInput,
@@ -59,19 +59,19 @@ import {
   PolicyDetailsInput,
   PrivateModuleSearchParams,
   PrivateModuleDetailsParams
-} from "./types/index.js";
+} from "./src/types/index.js";
 
-import { ExplorerQueryParams } from "./tools/explorer.js";
-import { WorkspacesQueryParams, WorkspaceActionParams } from "./tools/workspaces.js";
-import { RunsQueryParams, RunCreateParams, RunActionParams } from "./tools/runs.js";
-import { WorkspaceResourcesQueryParams } from "./tools/workspaceResources.js";
+import { ExplorerQueryParams } from "./src/tools/explorer.js";
+import { WorkspacesQueryParams, WorkspaceActionParams } from "./src/tools/workspaces.js";
+import { RunsQueryParams, RunCreateParams, RunActionParams } from "./src/tools/runs.js";
+import { WorkspaceResourcesQueryParams } from "./src/tools/workspaceResources.js";
 
 import {
   handleResourcesList,
   handleResourcesRead,
   handleResourcesTemplatesList,
   handleResourcesSubscribe
-} from "./resources/index.js";
+} from "./src/resources/index.js";
 
 // Add a type definition for handleRequest which isn't directly exposed in types
 declare module "@modelcontextprotocol/sdk/server/index.js" {
@@ -642,13 +642,13 @@ server.setRequestHandler(ResourcesReadSchema, async (request) => {
 });
 
 // Register resources/templates/list handler
-server.setRequestHandler(ResourcesTemplatesListSchema, async (request) => {
+server.setRequestHandler(ResourcesTemplatesListSchema, async () => {
   logger.info("Received resources/templates/list request!");
   return await handleResourcesTemplatesList();
 });
 
 // Register resources/subscribe handler
-server.setRequestHandler(ResourcesSubscribeSchema, async (request) => {
+server.setRequestHandler(ResourcesSubscribeSchema, async () => {
   logger.info("Received resources/subscribe request!");
   return await handleResourcesSubscribe();
 });

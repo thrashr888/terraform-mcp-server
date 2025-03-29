@@ -9,7 +9,7 @@ export default {
   },
   moduleFileExtensions: ["ts", "js", "json"],
   extensionsToTreatAsEsm: [".ts"],
-  testMatch: ["**/tests/**/*.test.ts"],
-  setupFiles: ["./tests/setup.js"],
+  testMatch: ["**/src/tests/**/*.test.ts"],
+  setupFiles: ["./src/tests/setup.js"],
   verbose: true
 };
