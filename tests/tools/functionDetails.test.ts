@@ -1,4 +1,4 @@
-import { handleFunctionDetails } from "../../handlers/index.js";
+import { handleFunctionDetails } from "../../tools/index.js";
 import { mockFetchResponse, resetFetchMocks } from "../global-mock.js";
 
 describe("functionDetails tool", () => {

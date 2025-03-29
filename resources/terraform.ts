@@ -3,9 +3,9 @@
  */
 
 import { TFC_TOKEN } from "../config.js";
-import { handleListOrganizations } from "../handlers/organizations.js";
-import { handleListWorkspaces, handleShowWorkspace } from "../handlers/workspaces.js";
-import { handleListWorkspaceResources } from "../handlers/workspaceResources.js";
+import { handleListOrganizations } from "../tools/organizations.js";
+import { handleListWorkspaces, handleShowWorkspace } from "../tools/workspaces.js";
+import { handleListWorkspaceResources } from "../tools/workspaceResources.js";
 import { ResourceHandler } from "./index.js";
 import logger from "../utils/logger.js";
 

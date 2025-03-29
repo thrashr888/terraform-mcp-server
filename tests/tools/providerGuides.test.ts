@@ -1,4 +1,4 @@
-import { handleProviderGuides } from "../../handlers/index.js";
+import { handleProviderGuides } from "../../tools/index.js";
 import { mockFetchResponse, resetFetchMocks } from "../global-mock.js";
 
 describe("providerGuides tool", () => {

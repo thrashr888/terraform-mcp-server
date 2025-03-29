@@ -3,11 +3,11 @@
  */
 
 import { DEFAULT_NAMESPACE } from "../config.js";
-import { handleProviderLookup } from "../handlers/providerLookup.js";
-import { handleDataSourceLookup } from "../handlers/dataSourceLookup.js";
-import { handleResourceArgumentDetails } from "../handlers/resourceArgumentDetails.js";
-import { handleModuleRecommendations } from "../handlers/moduleRecommendations.js";
-import { handleModuleDetails } from "../handlers/moduleDetails.js";
+import { handleProviderLookup } from "../tools/providerLookup.js";
+import { handleDataSourceLookup } from "../tools/dataSourceLookup.js";
+import { handleResourceArgumentDetails } from "../tools/resourceArgumentDetails.js";
+import { handleModuleRecommendations } from "../tools/moduleRecommendations.js";
+import { handleModuleDetails } from "../tools/moduleDetails.js";
 import { ResourceHandler } from "./index.js";
 import logger from "../utils/logger.js";
 

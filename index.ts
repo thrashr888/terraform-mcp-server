@@ -41,7 +41,7 @@ import {
   handleApplyRun,
   handleCancelRun,
   handleListWorkspaceResources
-} from "./handlers/index.js";
+} from "./tools/index.js";
 
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
 
@@ -61,10 +61,10 @@ import {
   PrivateModuleDetailsParams
 } from "./types/index.js";
 
-import { ExplorerQueryParams } from "./handlers/explorer.js";
-import { WorkspacesQueryParams, WorkspaceActionParams } from "./handlers/workspaces.js";
-import { RunsQueryParams, RunCreateParams, RunActionParams } from "./handlers/runs.js";
-import { WorkspaceResourcesQueryParams } from "./handlers/workspaceResources.js";
+import { ExplorerQueryParams } from "./tools/explorer.js";
+import { WorkspacesQueryParams, WorkspaceActionParams } from "./tools/workspaces.js";
+import { RunsQueryParams, RunCreateParams, RunActionParams } from "./tools/runs.js";
+import { WorkspaceResourcesQueryParams } from "./tools/workspaceResources.js";
 
 import {
   handleResourcesList,

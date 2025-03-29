@@ -1,6 +1,6 @@
 import { resetFetchMocks, mockFetchResponse, mockFetchRejection, getFetchCalls } from "../global-mock.js";
 import { TFC_TOKEN } from "../../config.js";
-import { ExplorerQueryParams } from "../../handlers/explorer.js";
+import { ExplorerQueryParams } from "../../tools/explorer.js";
 
 describe("Explorer Tool", () => {
   beforeEach(() => {

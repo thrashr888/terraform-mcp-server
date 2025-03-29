@@ -14,8 +14,9 @@
     },
     "include": [
       "./*.ts",
+      "./resources/**/*.ts",
       "./utils/**/*.ts",
-      "./handlers/**/*.ts",
+      "./tools/**/*.ts",
       "./tests/**/*.ts"
     ],
     "exclude": [
