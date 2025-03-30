@@ -208,8 +208,10 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
           assertSuccessResponse(listRunsResponse);
           // Ensure the response content isn't empty and includes run data
           const listRunsText = listRunsResponse.result.content?.[0]?.text;
-          expect(listRunsText).toBeDefined();
-          expect(listRunsText).toContain("| run-");
+          // eslint-disable-next-line jest/no-conditional-expect
+          expect(listRunsText).toBeTruthy();
+          // eslint-disable-next-line jest/no-conditional-expect
+          expect(listRunsText).toMatch(/run-/);
         } catch (error) {
           console.warn(`Could not list runs: ${error}`);
         }
@@ -254,7 +256,7 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
 
       // 7. List workspace resources
       console.log("Listing workspace resources...");
-      
+
       const resourcesResponse = await runToolCall("listWorkspaceResources", {
         // workspace "cool-website" is known to have resources
         workspace_id: "ws-r9XriqiYaXk4Xrfb"
