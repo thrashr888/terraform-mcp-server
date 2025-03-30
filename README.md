@@ -86,6 +86,27 @@ These tools require a Terraform Cloud API token (`TFC_TOKEN`):
 | `cancelRun` | Cancels a run that's in progress |
 | `listWorkspaceResources` | Lists resources in a workspace |
 
+## Resources
+
+The MCP server supports the following resource URIs for listing and reading via the `resources/*` methods:
+
+| Resource Type | Example URI(s) | Description |
+|---------------|----------------|-------------|
+| **Providers** | `terraform:providers` | List all namespaces/providers |
+|               | `terraform:provider:<namespace>/<name>` | Get details for a specific provider |
+| **Provider Versions** | `terraform:provider:<namespace>/<name>/versions` | List available versions for a provider |
+| **Provider Resources** | `terraform:provider:<namespace>/<name>/resources` | List resources for a provider |
+|                 | `terraform:resource:<namespace>/<name>/<resource_name>` | Get details for a specific resource type |
+| **Provider Data Sources** | `terraform:provider:<namespace>/<name>/dataSources` | List data sources for a provider |
+|                       | `terraform:dataSource:<namespace>/<name>/<data_source_name>` | Get details for a specific data source |
+| **Provider Functions** | `terraform:provider:<namespace>/<name>/functions` | List functions for a provider |
+|                      | `terraform:function:<namespace>/<name>/<function_name>` | Get details for a specific function |
+
+The server also supports `resources/templates/list` to provide templates for creating:
+- `terraform:provider`
+- `terraform:resource`
+- `terraform:dataSource`
+
 ## Prompts
 
 The following prompts are available for generating contextual responses:

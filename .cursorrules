@@ -16,5 +16,5 @@
 - update the version in `./config.ts` and `./package.json`
 - update the `./CHANGELOG.md` to reflect customer-facing changes. be concise.
 - commit, tag, and push to GitHub
-- create a new release on GitHub using `gh`
+- after the CI pipeline completes, create a new release on GitHub using `gh`
 - npm and docker releases are handled automatically via GitHub Actions
