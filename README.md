@@ -1,4 +1,5 @@
 # Terraform Registry MCP Server
+[![smithery badge](https://smithery.ai/badge/@thrashr888/terraform-mcp-server)](https://smithery.ai/server/@thrashr888/terraform-mcp-server)
 
 A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, and module metadata.
 
@@ -125,6 +126,15 @@ The following prompts are available for generating contextual responses:
 
 ## Running the Server
 
+### Installing via Smithery
+
+To install Terraform Registry MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@thrashr888/terraform-mcp-server):
+
+```bash
+npx -y @smithery/cli install @thrashr888/terraform-mcp-server --client claude
+```
+
+### Manual Installation
 The server runs using stdio transport for MCP communication:
 
 ```bash
