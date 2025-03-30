@@ -6,20 +6,9 @@ if (!globalThis.fetch) {
   globalThis.fetch = fetch as unknown as typeof globalThis.fetch;
 }
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  Tool,
-  InitializeRequestSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  ListResourceTemplatesRequestSchema,
-  SubscribeRequestSchema,
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema
-} from "@modelcontextprotocol/sdk/types.js";
+
 import { z } from "zod";
 
 import {
@@ -50,944 +39,548 @@ import {
 } from "./src/tools/index.js";
 
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
-
 import logger from "./src/utils/logger.js";
-// Reverted: Import Zod schemas for tool inputs (using original types)
-import {
-  ProviderLookupInput,
-  ResourceUsageInput,
-  ModuleRecommendationsInput,
-  DataSourceLookupInput,
-  ResourceDocumentationInput,
-  ModuleDetailsInput,
-  FunctionDetailsInput,
-  ProviderGuidesInput,
-  PolicySearchInput,
-  PolicyDetailsInput,
-  PrivateModuleSearchParams,
-  PrivateModuleDetailsParams
-} from "./src/types/index.js";
-
-import { ExplorerQueryParams } from "./src/tools/explorer.js";
-import { WorkspacesQueryParams, WorkspaceActionParams } from "./src/tools/workspaces.js";
-import { RunsQueryParams, RunCreateParams, RunActionParams } from "./src/tools/runs.js";
-import { WorkspaceResourcesQueryParams } from "./src/tools/workspaceResources.js";
 
 import {
-  handleResourcesList,
-  handleResourcesRead,
-  handleResourcesTemplatesList,
-  handleResourcesSubscribe
+  handleResourcesRead
+  // handleResourcesSubscribe is likely handled by McpServer or needs specific implementation
 } from "./src/resources/index.js";
 
-// Infer request types from SDK schemas
-type ListResourcesRequest = z.infer<typeof ListResourcesRequestSchema>;
-type ReadResourceRequest = z.infer<typeof ReadResourceRequestSchema>;
+// Import prompt handlers
+import { addMigrateCloudsPrompt } from "./src/prompts/migrate-clouds.js";
+import { addGenerateResourceSkeletonPrompt } from "./src/prompts/generate-resource-skeleton.js";
+import { addOptimizeTerraformModulePrompt } from "./src/prompts/optimize-terraform-module.js";
+import { addMigrateProviderVersionPrompt } from "./src/prompts/migrate-provider-version.js";
+import { addAnalyzeWorkspaceRunsPrompt } from "./src/prompts/analyze-workspace-runs.js";
 
-// Reverted: Define the base tools available in the server (original structure)
-const baseTools: Tool[] = [
-  {
-    name: "providerDetails",
-    description: "Get detailed information about a Terraform provider by name and optionally version.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        version: { type: "string", description: "Provider version (defaults to latest)" }
-      }
-    }
-    // Removed handler from here, it's used in the CallTool handler below
-  },
-  {
-    name: "resourceUsage",
-    description: "Get an example usage of a Terraform resource and related resources.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
-        name: { type: "string", description: "Alternative resource name field (fallback if resource not specified)" }
-      }
-    }
-  },
-  {
-    name: "moduleSearch",
-    description: "Search for and recommend Terraform modules based on a query.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Search query (e.g. 'vpc')" },
-        keyword: { type: "string", description: "Alternative search keyword (fallback if query not specified)" },
-        provider: { type: "string", description: "Filter modules by provider (e.g. 'aws')" }
-      }
-    }
-  },
-  {
-    name: "listDataSources",
-    description: "List all available data sources for a provider and their basic details.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
-      },
-      required: ["provider", "namespace"]
-    }
-  },
-  {
-    name: "resourceArgumentDetails",
-    description:
-      "Fetches comprehensive details about a specific resource type's arguments, including required and optional attributes, nested blocks, and their descriptions.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
-        version: { type: "string", description: "Provider version (defaults to latest)" }
-      },
-      required: ["provider", "namespace", "resource"]
-    }
-  },
-  {
-    name: "moduleDetails",
-    description:
-      "Retrieves detailed metadata for a Terraform module including versions, inputs, outputs, and dependencies.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        namespace: { type: "string", description: "Module namespace (e.g. 'terraform-aws-modules')" },
-        module: { type: "string", description: "Module name (e.g. 'vpc')" },
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" }
-      },
-      required: ["namespace", "module", "provider"]
-    }
-  },
-  {
-    name: "functionDetails",
-    description: "Get details about a Terraform provider function.",
-    inputSchema: {
-      type: "object",
-      required: ["provider", "function"],
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        function: { type: "string", description: "Function name (e.g. 'arn_parse')" }
-      }
-    }
-  },
-  {
-    name: "providerGuides",
-    description: "List and view provider-specific guides, including version upgrades and feature guides.",
-    inputSchema: {
-      type: "object",
-      required: ["provider"],
-      properties: {
-        provider: { type: "string", description: "Provider name (e.g. 'aws')" },
-        namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
-        guide: { type: "string", description: "Specific guide to fetch (by slug or title)" },
-        search: { type: "string", description: "Search term to filter guides" }
-      }
-    }
-  },
-  {
-    name: "policySearch",
-    description: "Search for policy libraries in the Terraform Registry.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Search query for finding policy libraries" },
-        provider: { type: "string", description: "Filter policies by provider (e.g. 'aws')" }
-      }
-    }
-  },
-  {
-    name: "policyDetails",
-    description: "Get detailed information about a specific policy library including its latest version.",
-    inputSchema: {
-      type: "object",
-      required: ["namespace", "name"],
-      properties: {
-        namespace: { type: "string", description: "Policy library namespace (e.g. 'Great-Stone')" },
-        name: { type: "string", description: "Policy library name (e.g. 'vault-aws-secret-type')" }
-      }
-    }
-  }
-];
-// Define the TFC-specific tools (original structure)
-const tfcTools: Tool[] = [
-  {
-    name: "listOrganizations",
-    description: "List all organizations the authenticated user has access to in Terraform Cloud.",
-    inputSchema: {
-      type: "object",
-      properties: {}
-    }
-  },
-  {
-    name: "privateModuleSearch",
-    description: "Search for private modules in a Terraform Cloud organization.",
-    inputSchema: {
-      type: "object",
-      required: ["organization"],
-      properties: {
-        organization: { type: "string", description: "The organization name to search in" },
-        query: { type: "string", description: "Search term" },
-        provider: { type: "string", description: "Filter by provider" },
-        page: { type: "number", description: "Page number (default: 1)" },
-        per_page: { type: "number", description: "Results per page (default: 20)" }
-      }
-    }
-  },
-  {
-    name: "privateModuleDetails",
-    description:
-      "Get detailed information about a private module including inputs, outputs, and no-code configuration.",
-    inputSchema: {
-      type: "object",
-      required: ["organization", "namespace", "name", "provider"],
-      properties: {
-        organization: { type: "string", description: "The organization name" },
-        namespace: { type: "string", description: "The module namespace, likely same as organization name" },
-        name: { type: "string", description: "The module name" },
-        provider: { type: "string", description: "The provider name" },
-        version: { type: "string", description: "Optional specific version to fetch" }
-      }
-    }
-  },
-  {
-    name: "explorerQuery",
-    description: "Query the Terraform Cloud Explorer API to analyze data across workspaces in an organization",
-    inputSchema: {
-      type: "object",
-      required: ["organization", "type"],
-      properties: {
-        organization: {
-          type: "string",
-          description: "The name of the organization to query"
-        },
-        type: {
-          type: "string",
-          enum: ["workspaces", "tf_versions", "providers", "modules"],
-          description: "The type of view to query"
-        },
-        sort: {
-          type: "string",
-          description: "Optional field to sort by (prefix with - for descending)"
-        },
-        filter: {
-          type: "array",
-          items: {
-            type: "object",
-            required: ["field", "operator", "value"],
-            properties: {
-              field: { type: "string" },
-              operator: { type: "string" },
-              value: { type: "array", items: { type: "string" } }
-            }
-          },
-          description: "Optional filters to apply"
-        },
-        fields: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional specific fields to return"
-        },
-        page_number: {
-          type: "number",
-          description: "Optional page number"
-        },
-        page_size: {
-          type: "number",
-          description: "Optional page size"
-        }
-      }
-    }
-  },
-  {
-    name: "listWorkspaces",
-    description: "List workspaces in a Terraform Cloud organization",
-    inputSchema: {
-      type: "object",
-      required: ["organization"],
-      properties: {
-        organization: {
-          type: "string",
-          description: "The name of the organization"
-        },
-        page_number: {
-          type: "number",
-          description: "Optional page number"
-        },
-        page_size: {
-          type: "number",
-          description: "Optional page size"
-        },
-        include: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional related resources to include"
-        }
-      }
-    }
-  },
-  {
-    name: "workspaceDetails",
-    description: "Get detailed information about a specific workspace in a Terraform Cloud organization",
-    inputSchema: {
-      type: "object",
-      required: ["organization", "name"],
-      properties: {
-        organization: {
-          type: "string",
-          description: "The name of the organization"
-        },
-        name: {
-          type: "string",
-          description: "The name of the workspace"
-        },
-        include: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional related resources to include"
-        }
-      }
-    }
-  },
-  {
-    name: "lockWorkspace",
-    description: "Lock a workspace to prevent runs",
-    inputSchema: {
-      type: "object",
-      required: ["workspace_id"],
-      properties: {
-        workspace_id: {
-          type: "string",
-          description: "The ID of the workspace to lock"
-        },
-        reason: {
-          type: "string",
-          description: "Optional reason for locking"
-        }
-      }
-    }
-  },
-  {
-    name: "unlockWorkspace",
-    description: "Unlock a workspace to allow runs",
-    inputSchema: {
-      type: "object",
-      required: ["workspace_id"],
-      properties: {
-        workspace_id: {
-          type: "string",
-          description: "The ID of the workspace to unlock"
-        }
-      }
-    }
-  },
-  {
-    name: "listRuns",
-    description: "List runs for a workspace",
-    inputSchema: {
-      type: "object",
-      required: ["workspace_id"],
-      properties: {
-        workspace_id: {
-          type: "string",
-          description: "The ID of the workspace"
-        },
-        page_number: {
-          type: "number",
-          description: "Optional page number"
-        },
-        page_size: {
-          type: "number",
-          description: "Optional page size"
-        },
-        include: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional related resources to include"
-        }
-      }
-    }
-  },
-  {
-    name: "runDetails",
-    description: "Get detailed information about a specific run",
-    inputSchema: {
-      type: "object",
-      required: ["run_id"],
-      properties: {
-        run_id: {
-          type: "string",
-          description: "The ID of the run"
-        }
-      }
-    }
-  },
-  {
-    name: "createRun",
-    description: "Create a new run for a workspace",
-    inputSchema: {
-      type: "object",
-      required: ["workspace_id"],
-      properties: {
-        workspace_id: {
-          type: "string",
-          description: "The ID of the workspace"
-        },
-        is_destroy: {
-          type: "boolean",
-          description: "Optional destroy flag"
-        },
-        message: {
-          type: "string",
-          description: "Optional message"
-        },
-        auto_apply: {
-          type: "boolean",
-          description: "Optional auto-apply setting"
-        },
-        refresh: {
-          type: "boolean",
-          description: "Optional refresh flag"
-        },
-        refresh_only: {
-          type: "boolean",
-          description: "Optional refresh-only flag"
-        },
-        plan_only: {
-          type: "boolean",
-          description: "Optional plan-only flag"
-        },
-        terraform_version: {
-          type: "string",
-          description: "Optional Terraform version"
-        }
-      }
-    }
-  },
-  {
-    name: "applyRun",
-    description: "Apply a run that's been planned",
-    inputSchema: {
-      type: "object",
-      required: ["run_id"],
-      properties: {
-        run_id: {
-          type: "string",
-          description: "The ID of the run to apply"
-        },
-        comment: {
-          type: "string",
-          description: "Optional comment"
-        }
-      }
-    }
-  },
-  {
-    name: "cancelRun",
-    description: "Cancel a run that's in progress",
-    inputSchema: {
-      type: "object",
-      required: ["run_id"],
-      properties: {
-        run_id: {
-          type: "string",
-          description: "The ID of the run to cancel"
-        },
-        comment: {
-          type: "string",
-          description: "Optional comment"
-        }
-      }
-    }
-  },
-  {
-    name: "listWorkspaceResources",
-    description: "List resources in a workspace",
-    inputSchema: {
-      type: "object",
-      required: ["workspace_id"],
-      properties: {
-        workspace_id: {
-          type: "string",
-          description: "The ID of the workspace"
-        },
-        page_number: {
-          type: "number",
-          description: "Optional page number"
-        },
-        page_size: {
-          type: "number",
-          description: "Optional page size"
-        },
-        filter: {
-          type: "string",
-          description: "Optional filter string"
-        }
-      }
-    }
-  }
-];
+// --- Define Zod Shapes for Tools ---
 
-// Combine tools based on TFC_TOKEN availability
-const tools: Tool[] = TFC_TOKEN ? [...baseTools, ...tfcTools] : baseTools;
+const ProviderLookupShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  namespace: z.string().optional().describe("Provider namespace (e.g. 'hashicorp')"),
+  version: z.string().optional().describe("Provider version (defaults to latest)")
+};
 
-// Reverted: Initialize the low-level Server
-const server = new Server(
-  {
-    name: SERVER_NAME,
-    version: VERSION
-  },
-  {
-    capabilities: {
-      // Added prompts capability back
-      tools: {},
-      resources: {
-        subscribe: true,
-        listChanged: true
-      },
-      prompts: {}
-    }
-  }
-);
+const ResourceUsageShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  resource: z.string().describe("Resource name (e.g. 'aws_instance')"),
+  name: z.string().optional().describe("Alternative resource name field (fallback if resource not specified)")
+};
+
+const ModuleRecommendationsShape = {
+  query: z.string().optional().describe("Search query (e.g. 'vpc')"), // Made optional as keyword is fallback
+  keyword: z.string().optional().describe("Alternative search keyword (fallback if query not specified)"),
+  provider: z.string().optional().describe("Filter modules by provider (e.g. 'aws')")
+};
+
+const DataSourceLookupShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  namespace: z.string().describe("Provider namespace (e.g. 'hashicorp')")
+};
+
+const ResourceDocumentationShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  namespace: z.string().describe("Provider namespace (e.g. 'hashicorp')"),
+  resource: z.string().describe("Resource name (e.g. 'aws_instance')"),
+  version: z.string().optional().describe("Provider version (defaults to latest)")
+};
+
+const ModuleDetailsShape = {
+  namespace: z.string().describe("Module namespace (e.g. 'terraform-aws-modules')"),
+  module: z.string().describe("Module name (e.g. 'vpc')"),
+  provider: z.string().describe("Provider name (e.g. 'aws')")
+};
+
+const FunctionDetailsShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  namespace: z.string().optional().describe("Provider namespace (e.g. 'hashicorp')"),
+  function: z.string().describe("Function name (e.g. 'arn_parse')")
+};
+
+const ProviderGuidesShape = {
+  provider: z.string().describe("Provider name (e.g. 'aws')"),
+  namespace: z.string().optional().describe("Provider namespace (e.g. 'hashicorp')"),
+  guide: z.string().optional().describe("Specific guide to fetch (by slug or title)"),
+  search: z.string().optional().describe("Search term to filter guides")
+};
+
+const PolicySearchShape = {
+  query: z.string().optional().describe("Search query for finding policy libraries"),
+  provider: z.string().optional().describe("Filter policies by provider (e.g. 'aws')")
+};
+
+const PolicyDetailsShape = {
+  namespace: z.string().describe("Policy library namespace (e.g. 'Great-Stone')"),
+  name: z.string().describe("Policy library name (e.g. 'vault-aws-secret-type')")
+};
+
+const ListOrganizationsShape = {}; // No input needed
+
+const PrivateModuleSearchShape = {
+  organization: z.string().describe("The organization name to search in"),
+  query: z.string().optional().describe("Search term"),
+  provider: z.string().optional().describe("Filter by provider"),
+  page: z.number().optional().describe("Page number (default: 1)"),
+  per_page: z.number().optional().describe("Results per page (default: 20)")
+};
+
+const PrivateModuleDetailsShape = {
+  organization: z.string().describe("The organization name"),
+  namespace: z.string().describe("The module namespace, likely same as organization name"),
+  name: z.string().describe("The module name"),
+  provider: z.string().describe("The provider name"),
+  version: z.string().optional().describe("Optional specific version to fetch")
+};
+
+// Note: ExplorerQueryParams might already be a Zod schema, if not, define it
+// const ExplorerQuerySchema = ExplorerQueryParams; // Assuming ExplorerQueryParams is a Zod schema
+// Define ExplorerQuerySchema based on original inputSchema
+const ExplorerQueryShape = {
+  organization: z.string().describe("The name of the organization to query"),
+  type: z.enum(["workspaces", "tf_versions", "providers", "modules"]).describe("The type of view to query"),
+  sort: z.string().optional().describe("Optional field to sort by (prefix with - for descending)"),
+  filter: z
+    .array(
+      z.object({
+        field: z.string(),
+        operator: z.string(),
+        value: z.array(z.string())
+      })
+    )
+    .optional()
+    .describe("Optional filters to apply"),
+  fields: z.array(z.string()).optional().describe("Optional specific fields to return"),
+  page_number: z.number().optional().describe("Optional page number"),
+  page_size: z.number().optional().describe("Optional page size")
+};
+
+// Note: WorkspacesQueryParams might already be a Zod schema, if not, define it
+// const ListWorkspacesSchema = WorkspacesQueryParams.pick({
+//   organization: true,
+//   page_number: true,
+//   page_size: true,
+//   include: true
+// }); // Assuming WorkspacesQueryParams is Zod
+// Define ListWorkspacesSchema based on original inputSchema
+const ListWorkspacesShape = {
+  organization: z.string().describe("The name of the organization"),
+  page_number: z.number().optional().describe("Optional page number"),
+  page_size: z.number().optional().describe("Optional page size"),
+  include: z.array(z.string()).optional().describe("Optional related resources to include")
+};
+
+const WorkspaceDetailsShape = {
+  organization: z.string().describe("The name of the organization"),
+  name: z.string().describe("The name of the workspace"),
+  include: z.array(z.string()).optional().describe("Optional related resources to include")
+};
+
+// Note: WorkspaceActionParams might already be a Zod schema, if not, define it
+// const LockWorkspaceSchema = WorkspaceActionParams.pick({
+//   workspace_id: true,
+//   reason: true
+// }); // Assuming WorkspaceActionParams is Zod
+// Define LockWorkspaceSchema based on original inputSchema
+const LockWorkspaceShape = {
+  workspace_id: z.string().describe("The ID of the workspace to lock"),
+  reason: z.string().optional().describe("Optional reason for locking")
+};
+
+// const UnlockWorkspaceSchema = WorkspaceActionParams.pick({
+//   workspace_id: true
+// }); // Assuming WorkspaceActionParams is Zod
+// Define UnlockWorkspaceSchema based on original inputSchema
+const UnlockWorkspaceShape = {
+  workspace_id: z.string().describe("The ID of the workspace to unlock")
+};
+
+// Note: RunsQueryParams might already be a Zod schema, if not, define it
+// const ListRunsSchema = RunsQueryParams; // Assuming RunsQueryParams is a Zod schema
+// Define ListRunsSchema based on original inputSchema
+const ListRunsShape = {
+  workspace_id: z.string().describe("The ID of the workspace"),
+  page_number: z.number().optional().describe("Optional page number"),
+  page_size: z.number().optional().describe("Optional page size"),
+  include: z.array(z.string()).optional().describe("Optional related resources to include")
+};
+
+// Note: RunActionParams might already be a Zod schema, if not, define it
+// const RunDetailsSchema = RunActionParams.pick({ run_id: true }); // Assuming RunActionParams is Zod
+// Define RunDetailsSchema based on original inputSchema
+const RunDetailsShape = {
+  run_id: z.string().describe("The ID of the run")
+};
+
+// Note: RunCreateParams might already be a Zod schema, if not, define it
+// const CreateRunSchema = RunCreateParams; // Assuming RunCreateParams is a Zod schema
+// Define CreateRunSchema based on original inputSchema
+const CreateRunShape = {
+  workspace_id: z.string().describe("The ID of the workspace"),
+  is_destroy: z.boolean().optional().describe("Optional destroy flag"),
+  message: z.string().optional().describe("Optional message"),
+  auto_apply: z.boolean().optional().describe("Optional auto-apply setting"),
+  refresh: z.boolean().optional().describe("Optional refresh flag"),
+  refresh_only: z.boolean().optional().describe("Optional refresh-only flag"),
+  plan_only: z.boolean().optional().describe("Optional plan-only flag"),
+  terraform_version: z.string().optional().describe("Optional Terraform version")
+};
+
+// const ApplyRunSchema = RunActionParams.pick({ run_id: true, comment: true }); // Assuming RunActionParams is Zod
+// Define ApplyRunSchema based on original inputSchema
+const ApplyRunShape = {
+  run_id: z.string().describe("The ID of the run to apply"),
+  comment: z.string().optional().describe("Optional comment")
+};
+
+// const CancelRunSchema = RunActionParams.pick({ run_id: true, comment: true }); // Assuming RunActionParams is Zod
+// Define CancelRunSchema based on original inputSchema
+const CancelRunShape = {
+  run_id: z.string().describe("The ID of the run to cancel"),
+  comment: z.string().optional().describe("Optional comment")
+};
+
+// Note: WorkspaceResourcesQueryParams might already be a Zod schema, if not, define it
+// const ListWorkspaceResourcesSchema = WorkspaceResourcesQueryParams; // Assuming WorkspaceResourcesQueryParams is Zod
+// Define ListWorkspaceResourcesSchema based on original inputSchema
+const ListWorkspaceResourcesShape = {
+  workspace_id: z.string().describe("The ID of the workspace"),
+  page_number: z.number().optional().describe("Optional page number"),
+  page_size: z.number().optional().describe("Optional page size"),
+  filter: z.string().optional().describe("Optional filter string")
+};
+
+// --- Instantiate McpServer ---
+const server = new McpServer({
+  name: SERVER_NAME,
+  version: VERSION
+  // McpServer automatically sets capabilities based on registered items
+});
 
 // Log initialization
-logger.info("Server constructor created, setting up handlers...");
+logger.info("McpServer created, setting up handlers...");
 
-// Initialize handler (original)
-server.setRequestHandler(InitializeRequestSchema, async (request) => {
-  logger.info("Received Initialize request!");
-  logger.debug("Initialize request details:", request);
+// --- Register Base Tools ---
+server.tool("providerDetails", ProviderLookupShape, async (args) => {
+  // Ensure return type matches McpServer expectation
+  const result = await handleProviderLookup(args);
+  // Assuming handleProviderLookup returns { content: [{ text: string }] }
+  // Explicitly set type: "text"
   return {
-    protocolVersion: request.params.protocolVersion,
-    capabilities: {
-      // Ensure prompts capability is included here too
-      tools: {},
-      resources: {
-        subscribe: true,
-        listChanged: true
-      },
-      prompts: {}
-    },
-    serverInfo: {
-      name: SERVER_NAME,
-      version: VERSION
-    }
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
   };
 });
 
-// ListToolsRequest handler (original)
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  logger.info("Received ListToolsRequest");
-  return { tools };
-});
-
-// Define prompts metadata (original)
-const promptsMetadata = [
-  {
-    name: "migrate-clouds",
-    description: "Generate Terraform code to migrate infrastructure between cloud providers.",
-    arguments: [
-      {
-        name: "sourceCloud",
-        description: "The cloud provider to migrate from (e.g., AWS, Azure, GCP)",
-        required: true
-      },
-      { name: "targetCloud", description: "The cloud provider to migrate to (e.g., AWS, Azure, GCP)", required: true },
-      { name: "terraformCode", description: "The Terraform code for the existing infrastructure", required: true }
-    ]
-  },
-  {
-    name: "generate-resource-skeleton",
-    description: "Helps users quickly scaffold new Terraform resources with best practices.",
-    arguments: [
-      {
-        name: "resourceType",
-        description: "The type of Terraform resource to generate (e.g., aws_s3_bucket)",
-        required: true
-      }
-    ]
-  },
-  {
-    name: "optimize-terraform-module",
-    description: "Provides actionable recommendations for improving Terraform code.",
-    arguments: [{ name: "terraformCode", description: "The Terraform module code to optimize", required: true }]
-  },
-  {
-    name: "migrate-provider-version",
-    description: "Assists with provider version upgrades and breaking changes.",
-    arguments: [
-      { name: "providerName", description: "The name of the Terraform provider (e.g., aws)", required: true },
-      { name: "currentVersion", description: "The current version of the provider", required: true },
-      { name: "targetVersion", description: "The target version of the provider", required: true },
-      { name: "terraformCode", description: "Optional: Relevant Terraform code using the provider", required: false }
-    ]
-  },
-  {
-    name: "analyze-workspace-runs",
-    description: "Analyzes recent run failures and provides troubleshooting guidance for Terraform Cloud workspaces.",
-    arguments: [
-      { name: "workspaceId", description: "The Terraform Cloud workspace ID to analyze", required: true },
-      { name: "runsToAnalyze", description: "Number of recent runs to analyze (default: 5)", required: false }
-    ]
+server.tool("resourceUsage", ResourceUsageShape, async (args) => {
+  // Handle potential missing resource/name if needed, or ensure schema requires one
+  if (!args.resource && !args.name) {
+    throw new Error("Either 'resource' or 'name' must be provided for resourceUsage");
   }
-];
-
-// ListPrompts handler (original)
-server.setRequestHandler(ListPromptsRequestSchema, async () => {
-  logger.info("Received ListPrompts request!");
-  return { prompts: promptsMetadata };
+  const result = await handleResourceUsage(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
 });
 
-// GetPrompt handler with proper error handling
-server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-  const { name: promptName, arguments: args } = request.params;
-  logger.info(`Received GetPrompt request for: ${promptName}`);
-  logger.debug("GetPrompt arguments:", args);
+server.tool("moduleSearch", ModuleRecommendationsShape, async (args) => {
+  if (!args.query && !args.keyword) {
+    throw new Error("Either 'query' or 'keyword' must be provided for moduleSearch");
+  }
+  const result = await handleModuleRecommendations(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
 
-  try {
-    // Find metadata for the requested prompt
-    const metadata = promptsMetadata.find((p) => p.name === promptName);
-    if (!metadata) {
-      logger.error(`Prompt metadata not found for: ${promptName}`);
-      logger.info(`Returning error for unknown prompt: ${promptName}`);
-      return {
-        messages: [],
-        error: {
-          code: -32000,
-          message: `Unknown prompt: ${promptName}`
-        }
-      };
-    }
-    logger.debug(`Found metadata for ${promptName}:`, metadata);
+server.tool("listDataSources", DataSourceLookupShape, async (args) => {
+  const result = await handleDataSourceLookup(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
 
-    // Validate required arguments
-    for (const argDef of metadata.arguments) {
-      if (argDef.required && !(args && argDef.name in args)) {
-        logger.error(`Missing required argument '${argDef.name}' for prompt '${promptName}'`);
-        logger.info(`Returning error for missing required argument: ${argDef.name}`);
-        return {
-          messages: [],
-          error: {
-            code: -32000,
-            message: `Missing required argument '${argDef.name}' for prompt '${promptName}'`
-          }
-        };
-      }
-    }
-    logger.debug(`Arguments validated successfully for ${promptName}`);
+server.tool("resourceArgumentDetails", ResourceDocumentationShape, async (args) => {
+  const result = await handleResourceArgumentDetails(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
 
-    let text = "";
-    switch (promptName) {
-      case "migrate-clouds":
-        text = `Please help migrate the following Terraform code from ${args?.sourceCloud} to ${args?.targetCloud}:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\``;
-        break;
-      case "generate-resource-skeleton":
-        text = `Please generate a skeleton for the Terraform resource type: ${args?.resourceType}`;
-        break;
-      case "optimize-terraform-module":
-        text = `Please optimize the following Terraform module code:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\``;
-        break;
-      case "migrate-provider-version":
-        text = `Please help migrate provider ${args?.providerName} from version ${args?.currentVersion} to ${args?.targetVersion}.\n${args?.terraformCode ? `\nHere is the current Terraform code:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\`` : ""}`;
-        break;
-      case "analyze-workspace-runs":
-        text = `Please analyze the last ${args?.runsToAnalyze || 5} run(s) for Terraform Cloud workspace ${args?.workspaceId}. Identify any common failure patterns, suggest troubleshooting steps, and recommend configuration improvements to prevent future issues.`;
-        break;
-      default:
-        logger.error(`Unhandled prompt name in switch statement: ${promptName}`);
-        return {
-          messages: [],
-          error: {
-            code: -32000,
-            message: `Logic not implemented for prompt: ${promptName}`
-          }
-        };
-    }
-    logger.debug(`Constructed text for ${promptName}:`, text);
+server.tool("moduleDetails", ModuleDetailsShape, async (args) => {
+  const result = await handleModuleDetails(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
 
-    const responsePayload = {
-      description: metadata.description,
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: text
-          }
-        }
-      ]
-    };
-    logger.info(`Returning GetPrompt response for ${promptName}`);
-    logger.debug(`GetPrompt response payload for ${promptName}:`, responsePayload);
-    return responsePayload;
-  } catch (error) {
-    // Catch any unexpected errors
-    logger.error(`Unexpected error in GetPrompt handler for ${promptName}:`, error);
+server.tool("functionDetails", FunctionDetailsShape, async (args) => {
+  const result = await handleFunctionDetails(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
+
+server.tool("providerGuides", ProviderGuidesShape, async (args) => {
+  const result = await handleProviderGuides(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
+
+server.tool("policySearch", PolicySearchShape, async (args) => {
+  if (!args.query) {
+    // Assuming query is the primary way to search, adjust if needed
+    throw new Error("'query' must be provided for policySearch");
+  }
+  const result = await handlePolicySearch(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
+
+server.tool("policyDetails", PolicyDetailsShape, async (args) => {
+  const result = await handlePolicyDetails(args);
+  return {
+    ...result,
+    content: result.content.map((c) => ({ type: "text", text: c.text }))
+  };
+});
+
+// --- Register TFC Tools (if TFC_TOKEN is set) ---
+if (TFC_TOKEN) {
+  logger.info("TFC_TOKEN detected, registering Terraform Cloud tools...");
+  server.tool("listOrganizations", ListOrganizationsShape, async () => {
+    const result = await handleListOrganizations();
     return {
-      messages: [],
-      error: {
-        code: -32000,
-        message: error instanceof Error ? error.message : String(error)
-      }
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
     };
-  }
-});
+  });
 
-// Resource Handlers (original)
-server.setRequestHandler(ListResourcesRequestSchema, async (request: ListResourcesRequest) => {
-  logger.info("Received resources/list request!");
-  const uri = request.params?.uri;
-  if (typeof uri !== "string") {
-    throw new Error("Missing or invalid 'uri' parameter in resources/list request");
-  }
-  return await handleResourcesList(uri);
-});
-server.setRequestHandler(ReadResourceRequestSchema, async (request: ReadResourceRequest) => {
-  logger.info("Received resources/read request!");
-  const uri = request.params?.uri;
-  if (!uri) {
-    throw new Error("Missing 'uri' parameter in resources/read request");
-  }
-  return await handleResourcesRead(uri);
-});
-server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
-  logger.info("Received resources/templates/list request!");
-  // Original handler didn't use uri, assuming correct
-  return await handleResourcesTemplatesList();
-});
-server.setRequestHandler(SubscribeRequestSchema, async () => {
-  logger.info("Received resources/subscribe request!");
-  // Original handler didn't use uri, assuming correct
-  return await handleResourcesSubscribe();
-});
+  server.tool("privateModuleSearch", PrivateModuleSearchShape, async (args) => {
+    const result = await handlePrivateModuleSearch(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
 
-// validateArgs function (original)
-function validateArgs<T>(args: Record<string, unknown> | undefined, requiredFields: string[]): T | undefined {
-  if (!args) return undefined;
+  server.tool("privateModuleDetails", PrivateModuleDetailsShape, async (args) => {
+    const result = await handlePrivateModuleDetails(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
 
-  for (const field of requiredFields) {
-    if (!(field in args)) {
-      throw new Error(`Missing required field: ${field}`);
-    }
-  }
+  server.tool("explorerQuery", ExplorerQueryShape, async (args) => {
+    const result = await handleExplorerQuery(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
 
-  return args as T;
+  server.tool("listWorkspaces", ListWorkspacesShape, async (args) => {
+    const result = await handleListWorkspaces(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("workspaceDetails", WorkspaceDetailsShape, async (args) => {
+    // Adapt args for the handler if needed
+    const result = await handleShowWorkspace({
+      organization_name: args.organization,
+      name: args.name,
+      // Pass include directly if the handler supports it, otherwise map
+      ...(args.include && { include: args.include.join(",") }) // Example if handler expects comma-separated string
+    });
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("lockWorkspace", LockWorkspaceShape, async (args) => {
+    const result = await handleLockWorkspace(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("unlockWorkspace", UnlockWorkspaceShape, async (args) => {
+    const result = await handleUnlockWorkspace(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("listRuns", ListRunsShape, async (args) => {
+    const result = await handleListRuns(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("runDetails", RunDetailsShape, async (args) => {
+    const result = await handleShowRun(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("createRun", CreateRunShape, async (args) => {
+    const result = await handleCreateRun(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("applyRun", ApplyRunShape, async (args) => {
+    const result = await handleApplyRun(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("cancelRun", CancelRunShape, async (args) => {
+    const result = await handleCancelRun(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+
+  server.tool("listWorkspaceResources", ListWorkspaceResourcesShape, async (args) => {
+    const result = await handleListWorkspaceResources(args);
+    return {
+      ...result,
+      content: result.content.map((c) => ({ type: "text", text: c.text }))
+    };
+  });
+} else {
+  logger.warn("TFC_TOKEN not set, skipping Terraform Cloud tool registration.");
 }
 
-// CallTool handler (original)
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name: toolName, arguments: args } = request.params;
-
-  if (!toolName) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            status: "error",
-            error: "Tool name is required"
-          })
-        }
-      ]
-    };
-  }
-
+// --- Register Prompts ---
+function registerPrompts(server: McpServer) {
   try {
-    let response;
+    logger.info("Registering prompts...");
 
-    switch (toolName) {
-      case "resourceArgumentDetails": {
-        const validArgs = validateArgs<ResourceDocumentationInput>(args, ["namespace", "provider", "resource"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleResourceArgumentDetails(validArgs);
-        break;
-      }
-      case "resourceUsage": {
-        const validArgs = validateArgs<ResourceUsageInput>(args, ["provider", "resource"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleResourceUsage(validArgs);
-        break;
-      }
-      case "providerDetails": {
-        const validArgs = validateArgs<ProviderLookupInput>(args, ["provider"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleProviderLookup(validArgs);
-        break;
-      }
-      case "moduleSearch": {
-        const validArgs = validateArgs<ModuleRecommendationsInput>(args, ["query"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleModuleRecommendations(validArgs);
-        break;
-      }
-      case "listDataSources": {
-        const validArgs = validateArgs<DataSourceLookupInput>(args, ["provider", "namespace"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleDataSourceLookup(validArgs);
-        break;
-      }
-      case "moduleDetails": {
-        const validArgs = validateArgs<ModuleDetailsInput>(args, ["namespace", "module", "provider"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleModuleDetails(validArgs);
-        break;
-      }
-      case "functionDetails": {
-        const validArgs = validateArgs<FunctionDetailsInput>(args, ["provider", "function"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleFunctionDetails(validArgs);
-        break;
-      }
-      case "providerGuides": {
-        const validArgs = validateArgs<ProviderGuidesInput>(args, ["provider"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleProviderGuides(validArgs);
-        break;
-      }
-      case "policySearch": {
-        const validArgs = validateArgs<PolicySearchInput>(args, ["query"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handlePolicySearch(validArgs);
-        break;
-      }
-      case "policyDetails": {
-        const validArgs = validateArgs<PolicyDetailsInput>(args, ["namespace", "name"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handlePolicyDetails(validArgs);
-        break;
-      }
-      case "listOrganizations": {
-        response = await handleListOrganizations();
-        break;
-      }
-      case "privateModuleSearch": {
-        const validArgs = validateArgs<PrivateModuleSearchParams>(args, ["organization"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handlePrivateModuleSearch(validArgs);
-        break;
-      }
-      case "privateModuleDetails": {
-        const validArgs = validateArgs<PrivateModuleDetailsParams>(args, [
-          "organization",
-          "namespace",
-          "name",
-          "provider"
-        ]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handlePrivateModuleDetails(validArgs);
-        break;
-      }
-      case "explorerQuery": {
-        const validArgs = validateArgs<ExplorerQueryParams>(args, ["organization", "type"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleExplorerQuery(validArgs);
-        break;
-      }
-      case "listWorkspaces": {
-        const validArgs = validateArgs<WorkspacesQueryParams>(args, ["organization"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleListWorkspaces(validArgs);
-        break;
-      }
-      case "workspaceDetails": {
-        const validArgs = validateArgs<Record<string, any>>(args, ["organization", "name"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        const params = {
-          organization_name: validArgs.organization,
-          name: validArgs.name
-        };
-        response = await handleShowWorkspace(params);
-        break;
-      }
-      case "lockWorkspace": {
-        const validArgs = validateArgs<WorkspaceActionParams>(args, ["workspace_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleLockWorkspace(validArgs);
-        break;
-      }
-      case "unlockWorkspace": {
-        const validArgs = validateArgs<WorkspaceActionParams>(args, ["workspace_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleUnlockWorkspace(validArgs);
-        break;
-      }
-      case "listRuns": {
-        const validArgs = validateArgs<RunsQueryParams>(args, ["workspace_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleListRuns(validArgs);
-        break;
-      }
-      case "runDetails": {
-        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleShowRun(validArgs);
-        break;
-      }
-      case "createRun": {
-        const validArgs = validateArgs<RunCreateParams>(args, ["workspace_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleCreateRun(validArgs);
-        break;
-      }
-      case "applyRun": {
-        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleApplyRun(validArgs);
-        break;
-      }
-      case "cancelRun": {
-        const validArgs = validateArgs<RunActionParams>(args, ["run_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleCancelRun(validArgs);
-        break;
-      }
-      case "listWorkspaceResources": {
-        const validArgs = validateArgs<WorkspaceResourcesQueryParams>(args, ["workspace_id"]);
-        if (!validArgs) throw new Error("Missing required arguments");
-        response = await handleListWorkspaceResources(validArgs);
-        break;
-      }
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
+    // Register each prompt with error handling
+    try {
+      logger.debug("Registering migrate-clouds prompt");
+      addMigrateCloudsPrompt(server);
+      logger.debug("Successfully registered migrate-clouds prompt");
+    } catch (error) {
+      logger.error("Failed to register migrate-clouds prompt:", error);
     }
 
-    return response;
+    try {
+      logger.debug("Registering generate-resource-skeleton prompt");
+      addGenerateResourceSkeletonPrompt(server);
+      logger.debug("Successfully registered generate-resource-skeleton prompt");
+    } catch (error) {
+      logger.error("Failed to register generate-resource-skeleton prompt:", error);
+    }
+
+    try {
+      logger.debug("Registering optimize-terraform-module prompt");
+      addOptimizeTerraformModulePrompt(server);
+      logger.debug("Successfully registered optimize-terraform-module prompt");
+    } catch (error) {
+      logger.error("Failed to register optimize-terraform-module prompt:", error);
+    }
+
+    try {
+      logger.debug("Registering migrate-provider-version prompt");
+      addMigrateProviderVersionPrompt(server);
+      logger.debug("Successfully registered migrate-provider-version prompt");
+    } catch (error) {
+      logger.error("Failed to register migrate-provider-version prompt:", error);
+    }
+
+    try {
+      logger.debug("Registering analyze-workspace-runs prompt");
+      addAnalyzeWorkspaceRunsPrompt(server);
+      logger.debug("Successfully registered analyze-workspace-runs prompt");
+    } catch (error) {
+      logger.error("Failed to register analyze-workspace-runs prompt:", error);
+    }
+
+    logger.info("All prompts registered successfully");
   } catch (error) {
-    logger.error("Error handling tool request:", error);
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            status: "error",
-            error: error instanceof Error ? error.message : String(error)
-          })
-        }
-      ]
-    };
+    logger.error("Fatal error during prompt registration:", error);
   }
+}
+
+// --- Register Resources ---
+// McpServer automatically handles ListResourceTemplates if templates are defined.
+// Need to define templates and handlers for actual resources.
+
+// Example: Registering a simple static resource (replace with actual logic)
+server.resource("static-example", "static://example/info", async (uri) => {
+  logger.info(`Handling static resource read for: ${uri.href}`);
+  const result = await handleResourcesRead(uri.href);
+  // Assuming handleResourcesRead returns { contents: [{ text: string, uri: string }] }; return matching format.
+  return { contents: result.contents.map((c: { uri: string; text: string }) => ({ uri: c.uri, text: c.text })) };
 });
 
-// Start the server (original)
+// Example: Registering a resource template (replace with actual logic)
+// Assuming handleResourcesRead can handle URIs matching this pattern
+server.resource(
+  "dynamic-example",
+  new ResourceTemplate("dynamic://data/{itemId}", { list: undefined }), // list: undefined means it won't appear in listResources by default
+  async (uri, params) => {
+    logger.info(`Handling dynamic resource read for: ${uri.href} with params: ${JSON.stringify(params)}`);
+    // Assuming handleResourcesRead takes the URI and uses it
+    const result = await handleResourcesRead(uri.href);
+    // Assuming handleResourcesRead returns { contents: [...] }; return matching format.
+    return { contents: result.contents.map((c: { uri: string; text: string }) => ({ uri: c.uri, text: c.text })) };
+  }
+);
+
+// TODO: Properly map handleResourcesList and handleResourcesRead to McpServer resources.
+// This likely involves defining ResourceTemplates for patterns handleResourcesRead can handle,
+// and potentially a "list" resource that calls handleResourcesList.
+// handleResourcesTemplatesList might be implicitly handled or need a specific resource.
+// Subscription handling might require more specific setup depending on how changes are detected.
+
+// --- Start the server ---
 async function main() {
-  console.error(`🚀 Starting ${SERVER_NAME} MCP server v${VERSION}...`);
+  console.error(`🚀 Starting ${SERVER_NAME} MCP server v${VERSION} using McpServer...`);
   const transport = new StdioServerTransport();
 
   process.on("unhandledRejection", (reason) => {
     console.error("💥 Unhandled Promise Rejection:", reason);
+    // Consider more robust error handling or process exit depending on severity
   });
 
   try {
+    // Register prompts before connecting
+    registerPrompts(server);
+
+    // McpServer handles connection internally
     await server.connect(transport);
-    console.error("✅ Server connected and ready for requests via stdio");
+    console.error("✅ McpServer connected and ready for requests via stdio");
   } catch (error) {
-    console.error("❌ Fatal error during server connection:", error);
+    console.error("❌ Fatal error during McpServer connection:", error);
     process.exit(1);
   }
 }
@@ -996,5 +589,3 @@ main().catch((error) => {
   console.error("💀 Fatal error in main function:", error);
   process.exit(1);
 });
-
-/* NOTE: Ellipses (...) indicate original code blocks that were collapsed for brevity */

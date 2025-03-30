@@ -77,11 +77,61 @@ export function addContextInfo(
  * @param metadata Metadata object to enrich
  * @returns Enriched metadata with compatibility info
  */
-export function addStandardContext(metadata: Record<string, any>): Record<string, any> {
-  return addContextInfo(metadata, "compatibility", {
-    terraformCoreVersions: DEFAULT_TERRAFORM_COMPATIBILITY,
-    lastUpdated: new Date().toISOString()
-  });
+export function addStandardContext(metadata: Record<string, any> = {}): void {
+  // Ensure context exists
+  if (!metadata.context) {
+    metadata.context = {};
+  }
+
+  // Add Terraform compatibility if not already specified
+  if (!metadata.context.compatibility) {
+    metadata.context.compatibility = {
+      terraformCoreVersions: DEFAULT_TERRAFORM_COMPATIBILITY,
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  // Add timestamp
+  metadata.context.timestamp = new Date().toISOString();
+}
+
+/**
+ * Add standardized error metadata to an error response
+ * @param metadata The metadata object to enhance
+ * @param errorType The type/category of error
+ * @param errorDetails Additional error details
+ */
+export function addErrorContext(
+  metadata: Record<string, any> = {},
+  errorType: string,
+  errorDetails: Record<string, any> = {}
+): void {
+  // Ensure error context exists
+  if (!metadata.error) {
+    metadata.error = {};
+  }
+
+  metadata.error.type = errorType;
+  metadata.error.timestamp = new Date().toISOString();
+
+  // Add any additional error details
+  Object.assign(metadata.error, errorDetails);
+}
+
+/**
+ * Format errors for resources API responses
+ * @param errorType Type of error (e.g., "not_found", "api_error", "parse_error")
+ * @param message User-facing error message
+ * @param details Additional error details (for logging/debugging)
+ * @returns Standardized error structure
+ */
+export function formatResourceError(errorType: string, message: string, details?: Record<string, any>) {
+  return {
+    type: "error",
+    code: errorType,
+    message,
+    details
+  };
 }
 
 /**
@@ -93,7 +143,18 @@ export function addStandardContext(metadata: Record<string, any>): Record<string
  */
 export function handleToolError(toolName: string, error: unknown, context?: Record<string, unknown>): ResponseContent {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  logger.error(`Error in ${toolName}:`, { error: errorMessage, context });
+  const statusCode = (error as any)?.status || (error as any)?.statusCode;
+
+  logger.error(`Error in ${toolName}:`, { error: errorMessage, context, statusCode });
+
+  // Create enhanced error context
+  const errorContext = {
+    ...(context || {}),
+    tool: toolName,
+    timestamp: new Date().toISOString(),
+    errorType: error instanceof Error ? error.constructor.name : typeof error,
+    statusCode
+  };
 
   return {
     content: [
@@ -102,7 +163,7 @@ export function handleToolError(toolName: string, error: unknown, context?: Reco
         text: JSON.stringify({
           status: "error",
           error: errorMessage,
-          context
+          context: errorContext
         })
       }
     ]
@@ -112,15 +173,40 @@ export function handleToolError(toolName: string, error: unknown, context?: Reco
 /**
  * Handle errors for resource list operations
  * @param error The error that occurred
+ * @param context Additional context about the error
  * @returns A standardized error response
  */
-export function handleListError(error: any): any {
-  logger.error("List error:", error);
+export function handleListError(error: any, context?: Record<string, any>): any {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const statusCode = error?.status || error?.statusCode;
+
+  logger.error("Resource list error:", {
+    error: errorMessage,
+    context,
+    statusCode,
+    stack: error instanceof Error ? error.stack : undefined
+  });
+
+  // Determine error type based on status code or error message
+  let errorCode = "list_failed";
+  if (statusCode === 404 || errorMessage.includes("not found")) {
+    errorCode = "not_found";
+  } else if (statusCode >= 400 && statusCode < 500) {
+    errorCode = "client_error";
+  } else if (statusCode >= 500) {
+    errorCode = "server_error";
+  }
+
   return {
     type: "error",
     error: {
-      code: "list_failed",
-      message: error?.message || "Failed to list resources"
+      code: errorCode,
+      message: errorMessage || "Failed to list resources",
+      context: {
+        ...(context || {}),
+        timestamp: new Date().toISOString(),
+        statusCode
+      }
     }
   };
 }
@@ -128,15 +214,40 @@ export function handleListError(error: any): any {
 /**
  * Handle errors for resource read operations
  * @param error The error that occurred
+ * @param context Additional context about the error
  * @returns A standardized error response
  */
-export function handleResourceError(error: any): any {
-  logger.error("Resource error:", error);
+export function handleResourceError(error: any, context?: Record<string, any>): any {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const statusCode = error?.status || error?.statusCode;
+
+  logger.error("Resource error:", {
+    error: errorMessage,
+    context,
+    statusCode,
+    stack: error instanceof Error ? error.stack : undefined
+  });
+
+  // Determine error type based on status code or error message
+  let errorCode = "resource_error";
+  if (statusCode === 404 || errorMessage.includes("not found")) {
+    errorCode = "not_found";
+  } else if (statusCode >= 400 && statusCode < 500) {
+    errorCode = "client_error";
+  } else if (statusCode >= 500) {
+    errorCode = "server_error";
+  }
+
   return {
     type: "error",
     error: {
-      code: "resource_error",
-      message: error?.message || "Error processing resource"
+      code: errorCode,
+      message: errorMessage || "Error processing resource",
+      context: {
+        ...(context || {}),
+        timestamp: new Date().toISOString(),
+        statusCode
+      }
     }
   };
 }

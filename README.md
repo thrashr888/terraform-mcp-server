@@ -119,6 +119,10 @@ The following prompts are available for generating contextual responses:
 | `migrate-provider-version` | Assists with provider version upgrades and breaking changes | `providerName`, `currentVersion`, `targetVersion`, `terraformCode` (optional) |
 | `analyze-workspace-runs` | Analyzes recent run failures and provides troubleshooting guidance for Terraform Cloud workspaces | `workspaceId`, `runsToAnalyze` (optional, default: 5) |
 
+### Known Issues with Prompts
+
+**Note**: There is a known issue with the `getPrompt` functionality that can cause server crashes. The server properly registers prompts and can list them, but direct requests using the `getPrompt` method may cause connectivity issues. This is being investigated and may be related to SDK compatibility or implementation details. Until resolved, use `listPrompts` to see available prompts but avoid direct `getPrompt` calls. 
+
 ## Running the Server
 
 The server runs using stdio transport for MCP communication:

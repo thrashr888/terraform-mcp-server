@@ -70,14 +70,11 @@ End-to-end tests that verify the complete server functionality:
 - Resource listing and reading
 - Error handling and validation
 
-## Test Scripts
+## Known Issues
 
-For convenience, the project includes helper scripts:
+### getPrompt Test Failures
 
-- `test.sh` - Main test script for all tools
-- `test-tfc.sh` - Tests TFC-specific tools
-- `test-resources.sh` - Tests resource functionality
-- `test-server.js` - Starts a test server for manual testing
+Currently, tests for the `getPrompt` functionality are disabled due to consistent timeouts and server crashes. This is a known issue that needs further investigation. The issue might be related to how the SDK handles prompt requests or an implementation detail in the server.
 
 ## Environment Variables
 

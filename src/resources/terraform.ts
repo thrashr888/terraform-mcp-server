@@ -8,6 +8,7 @@ import { handleListWorkspaces, handleShowWorkspace } from "../tools/workspaces.j
 import { handleListWorkspaceResources } from "../tools/workspaceResources.js";
 import { ResourceHandler } from "./index.js";
 import logger from "../utils/logger.js";
+import { handleListError, handleResourceError } from "../utils/responseUtils.js";
 
 // Check if Terraform Cloud token is available
 const hasTfcToken = !!TFC_TOKEN;
@@ -19,13 +20,8 @@ async function listOrganizations() {
   logger.debug(`TFC_TOKEN availability: ${!!TFC_TOKEN}`);
 
   if (!hasTfcToken) {
-    return {
-      type: "error",
-      error: {
-        code: "unauthorized",
-        message: "Terraform Cloud token not configured"
-      }
-    };
+    logger.warn("No TFC_TOKEN provided, cannot list organizations");
+    return handleListError(new Error("Terraform Cloud API token not provided"), { endpoint: "organizations" });
   }
 
   try {
@@ -46,12 +42,17 @@ async function listOrganizations() {
         }
       } catch (parseError) {
         logger.error("Error parsing organization data:", parseError);
+        return handleListError(parseError, {
+          context: "parsing organization response",
+          responseAvailable: !!result.content
+        });
       }
     }
 
     logger.debug(`Extracted organizations: ${JSON.stringify(orgs)}`);
 
     if (!orgs || orgs.length === 0) {
+      // Empty results are valid, return success with empty list
       return {
         type: "success",
         resources: []
@@ -69,10 +70,10 @@ async function listOrganizations() {
     };
   } catch (error) {
     logger.error("Error listing organizations:", error);
-    return {
-      type: "success",
-      resources: [] // Return empty list instead of error to be more resilient
-    };
+    return handleListError(error, {
+      service: "Terraform Cloud",
+      endpoint: "organizations"
+    });
   }
 }
 
@@ -81,17 +82,13 @@ async function listOrganizations() {
  */
 async function listWorkspaces(uri: string, params: Record<string, string>) {
   if (!hasTfcToken) {
-    return {
-      type: "error",
-      error: {
-        code: "unauthorized",
-        message: "Terraform Cloud token not configured"
-      }
-    };
+    logger.warn("No TFC_TOKEN provided, cannot list workspaces");
+    return handleListError(new Error("Terraform Cloud API token not provided"), { endpoint: "workspaces", uri });
   }
 
+  const { org } = params;
+
   try {
-    const { org } = params;
     const result = await handleListWorkspaces({ organization: org });
     logger.debug(`Workspaces result: ${JSON.stringify(result)}`);
 
@@ -109,130 +106,127 @@ async function listWorkspaces(uri: string, params: Record<string, string>) {
         }
       } catch (parseError) {
         logger.error("Error parsing workspace data:", parseError);
+        return handleListError(parseError, {
+          context: "parsing workspaces response",
+          organization: org,
+          responseAvailable: !!result.content
+        });
       }
     }
 
     logger.debug(`Extracted workspaces: ${JSON.stringify(workspaces)}`);
 
     if (!workspaces || workspaces.length === 0) {
+      // Empty results are valid, return success with empty list
       return {
         type: "success",
         resources: []
       };
     }
 
+    // Map workspaces to resources
     return {
       type: "success",
-      resources: workspaces.map((workspace: any) => ({
-        uri: `terraform://organizations/${org}/workspaces/${workspace.id}`,
-        title: workspace.name,
-        description: `Workspace: ${workspace.name}`
+      resources: workspaces.map((ws: any) => ({
+        uri: `terraform://organizations/${org}/workspaces/${ws.id}`,
+        title: ws.name,
+        description: `Workspace: ${ws.name}`
       }))
     };
   } catch (error) {
-    logger.error("Error listing workspaces:", error);
-    return {
-      type: "success",
-      resources: []
-    };
+    logger.error(`Error listing workspaces for ${org}:`, error);
+    // If 404, the organization doesn't exist
+    if ((error as any).status === 404 || (error as any).message?.includes("not found")) {
+      return handleListError(new Error(`Organization '${org}' not found`), {
+        endpoint: "workspaces",
+        statusCode: 404,
+        uri
+      });
+    }
+    return handleListError(error, {
+      endpoint: "workspaces",
+      organization: org,
+      uri
+    });
   }
 }
 
 /**
- * Show workspace details handler
+ * Handler for workspace details
  */
-async function showWorkspace(uri: string, params: Record<string, string>) {
+async function getWorkspaceDetails(uri: string, params: Record<string, string>) {
   if (!hasTfcToken) {
-    return {
-      type: "error",
-      error: {
-        code: "unauthorized",
-        message: "Terraform Cloud token not configured"
-      }
-    };
+    logger.warn("No TFC_TOKEN provided, cannot get workspace details");
+    return handleResourceError(new Error("Terraform Cloud API token not provided"), {
+      endpoint: "workspace details",
+      uri
+    });
   }
 
   const { org, workspace } = params;
-  logger.debug(`Fetching workspace details for org: ${org}, workspace: ${workspace}`);
 
   try {
-    // If workspace starts with "ws-", it's an ID, so we need to get the name first
-    const workspaceName = workspace;
+    // Use workspace ID if provided, otherwise try to look it up by name
+    let workspaceId = workspace;
 
-    if (workspace.startsWith("ws-")) {
-      // For now we'll just provide basic info since we don't have a lookup by ID endpoint
-      logger.debug(`Workspace ID detected: ${workspace}. Using fallback response.`);
+    // If workspace doesn't look like an ID (ws-*), try to look it up by name
+    if (!workspace.startsWith("ws-")) {
+      try {
+        logger.debug(`Looking up workspace ID for name: ${workspace}`);
+        const showResult = await handleShowWorkspace({ organization_name: org, name: workspace });
 
-      // The proper solution would be to first list all workspaces and find the name for this ID
-      // But for now we'll just return a fallback response
-      return {
-        type: "success",
-        resource: {
-          uri,
-          title: workspace,
-          description: `Terraform Cloud workspace: ${workspace}`,
-          content: `## Workspace: ${workspace}\n\nThis workspace was accessed by ID. To view full details, please use the workspace name instead of ID.`,
-          properties: {
-            id: workspace,
-            organization: org
+        if (showResult.content && Array.isArray(showResult.content) && showResult.content.length > 0) {
+          const responseData = JSON.parse(showResult.content[0].text);
+          if (responseData.metadata?.workspace?.id) {
+            workspaceId = responseData.metadata.workspace.id;
+            logger.debug(`Found workspace ID: ${workspaceId}`);
           }
         }
-      };
-    }
-
-    const result = await handleShowWorkspace({
-      organization_name: org,
-      name: workspaceName
-    });
-
-    // The workspace data is nested in the response structure
-    let workspaceData: Record<string, any> = {};
-    let markdown = "";
-
-    if (result.content && Array.isArray(result.content) && result.content.length > 0) {
-      try {
-        // Parse the response structure
-        const responseData = JSON.parse(result.content[0].text);
-        logger.debug(`Parsed response: ${JSON.stringify(responseData)}`);
-
-        if (responseData.metadata && responseData.metadata.workspace) {
-          workspaceData = responseData.metadata.workspace;
-        }
-        if (responseData.content) {
-          markdown = responseData.content;
-        }
-      } catch (parseError) {
-        logger.error("Error parsing workspace data:", parseError);
+      } catch (lookupError) {
+        logger.error(`Error looking up workspace ID for ${workspace}:`, lookupError);
+        return handleResourceError(lookupError, {
+          endpoint: "workspace lookup",
+          organization: org,
+          workspace,
+          uri
+        });
       }
     }
 
-    return {
-      type: "success",
-      resource: {
-        uri,
-        title: workspaceData.name || workspaceName,
-        description: `Terraform Cloud workspace: ${workspaceData.name || workspaceName}`,
-        content: markdown || `## Workspace: ${workspaceName}\n\nWorkspace details could not be retrieved.`,
-        properties: workspaceData
-      }
+    // Get workspace details
+    // For real implementation, fetch actual workspace details from the API
+    const metadata = {
+      id: workspaceId,
+      name: workspace,
+      organization: org,
+      resourceCount: 0 // Placeholder
     };
-  } catch (error) {
-    logger.error(`Error getting workspace details for ${org}/${workspace}:`, error);
 
-    // Return basic workspace info even if lookup fails
     return {
       type: "success",
       resource: {
         uri,
         title: workspace,
-        description: `Terraform Cloud workspace: ${workspace}`,
-        content: `## Workspace: ${workspace}\n\nWorkspace details could not be retrieved.`,
-        properties: {
-          name: workspace,
-          organization: org
-        }
+        description: `Workspace: ${workspace}`,
+        properties: metadata
       }
     };
+  } catch (error) {
+    logger.error(`Error getting workspace details for ${org}/${workspace}:`, error);
+    // If 404, the workspace or organization doesn't exist
+    if ((error as any).status === 404 || (error as any).message?.includes("not found")) {
+      return handleResourceError(new Error(`Workspace '${workspace}' not found in organization '${org}'`), {
+        endpoint: "workspace details",
+        statusCode: 404,
+        uri
+      });
+    }
+    return handleResourceError(error, {
+      endpoint: "workspace details",
+      organization: org,
+      workspace,
+      uri
+    });
   }
 }
 
@@ -241,13 +235,11 @@ async function showWorkspace(uri: string, params: Record<string, string>) {
  */
 async function listWorkspaceResources(uri: string, params: Record<string, string>) {
   if (!hasTfcToken) {
-    return {
-      type: "error",
-      error: {
-        code: "unauthorized",
-        message: "Terraform Cloud token not configured"
-      }
-    };
+    logger.warn("No TFC_TOKEN provided, cannot list workspace resources");
+    return handleListError(new Error("Terraform Cloud API token not provided"), {
+      endpoint: "workspace resources",
+      uri
+    });
   }
 
   const { org, workspace } = params;
@@ -291,14 +283,22 @@ async function listWorkspaceResources(uri: string, params: Record<string, string
             }
           } catch (parseError) {
             logger.error("Error parsing workspace data:", parseError);
+            return handleListError(parseError, {
+              context: "parsing workspace lookup response",
+              organization: org,
+              workspace: workspace,
+              responseAvailable: !!workspacesResult.content
+            });
           }
         }
       } catch (lookupError) {
         logger.error(`Error looking up workspace ID for ${workspace}:`, lookupError);
-        return {
-          type: "success",
-          resources: []
-        };
+        return handleListError(lookupError, {
+          endpoint: "workspace resource lookup",
+          organization: org,
+          workspace: workspace,
+          uri
+        });
       }
     }
 
@@ -319,12 +319,19 @@ async function listWorkspaceResources(uri: string, params: Record<string, string
         }
       } catch (parseError) {
         logger.error("Error parsing resources data:", parseError);
+        return handleListError(parseError, {
+          context: "parsing workspace resources response",
+          organization: org,
+          workspace: workspaceId,
+          responseAvailable: !!result.content
+        });
       }
     }
 
     logger.debug(`Extracted resources: ${JSON.stringify(resources)}`);
 
     if (!resources || resources.length === 0) {
+      // Empty results are valid, return success with empty list
       return {
         type: "success",
         resources: []
@@ -341,18 +348,32 @@ async function listWorkspaceResources(uri: string, params: Record<string, string
     };
   } catch (error) {
     logger.error(`Error listing workspace resources for ${org}/${workspace}:`, error);
-    return {
-      type: "success",
-      resources: [] // Return empty list instead of error to be more resilient
-    };
+    // If 404, the workspace or organization doesn't exist
+    if ((error as any).status === 404 || (error as any).message?.includes("not found")) {
+      return handleListError(new Error(`Workspace '${workspace}' not found in organization '${org}'`), {
+        endpoint: "workspace resources",
+        statusCode: 404,
+        uri
+      });
+    }
+    return handleListError(error, {
+      endpoint: "workspace resources",
+      organization: org,
+      workspace,
+      uri
+    });
   }
 }
 
-// Define all Terraform Cloud resource handlers
+// Resource handlers for Terraform Cloud
 export const TerraformCloudResources: ResourceHandler[] = [
   {
     uriPattern: "terraform://organizations",
     handler: listOrganizations
+  },
+  {
+    uriPattern: "terraform://organizations/{org}",
+    handler: getWorkspaceDetails
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces",
@@ -360,7 +381,7 @@ export const TerraformCloudResources: ResourceHandler[] = [
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces/{workspace}",
-    handler: showWorkspace
+    handler: getWorkspaceDetails
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces/{workspace}/resources",
