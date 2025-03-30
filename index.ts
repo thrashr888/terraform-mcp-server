@@ -16,7 +16,9 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
   ListResourceTemplatesRequestSchema,
-  SubscribeRequestSchema
+  SubscribeRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
@@ -50,6 +52,7 @@ import {
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
 
 import logger from "./src/utils/logger.js";
+// Reverted: Import Zod schemas for tool inputs (using original types)
 import {
   ProviderLookupInput,
   ResourceUsageInput,
@@ -80,17 +83,8 @@ import {
 // Infer request types from SDK schemas
 type ListResourcesRequest = z.infer<typeof ListResourcesRequestSchema>;
 type ReadResourceRequest = z.infer<typeof ReadResourceRequestSchema>;
-type ListTemplatesRequest = z.infer<typeof ListResourceTemplatesRequestSchema>;
-type SubscribeRequest = z.infer<typeof SubscribeRequestSchema>;
 
-// Add a type definition for handleRequest which isn't directly exposed in types
-declare module "@modelcontextprotocol/sdk/server/index.js" {
-  interface Server {
-    handleRequest(schema: any, request: any): Promise<any>;
-  }
-}
-
-// Define the base tools available in the server
+// Reverted: Define the base tools available in the server (original structure)
 const baseTools: Tool[] = [
   {
     name: "providerDetails",
@@ -102,8 +96,8 @@ const baseTools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
         version: { type: "string", description: "Provider version (defaults to latest)" }
       }
-    },
-    handler: handleProviderLookup
+    }
+    // Removed handler from here, it's used in the CallTool handler below
   },
   {
     name: "resourceUsage",
@@ -115,8 +109,7 @@ const baseTools: Tool[] = [
         resource: { type: "string", description: "Resource name (e.g. 'aws_instance')" },
         name: { type: "string", description: "Alternative resource name field (fallback if resource not specified)" }
       }
-    },
-    handler: handleResourceUsage
+    }
   },
   {
     name: "moduleSearch",
@@ -128,8 +121,7 @@ const baseTools: Tool[] = [
         keyword: { type: "string", description: "Alternative search keyword (fallback if query not specified)" },
         provider: { type: "string", description: "Filter modules by provider (e.g. 'aws')" }
       }
-    },
-    handler: handleModuleRecommendations
+    }
   },
   {
     name: "listDataSources",
@@ -141,8 +133,7 @@ const baseTools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" }
       },
       required: ["provider", "namespace"]
-    },
-    handler: handleDataSourceLookup
+    }
   },
   {
     name: "resourceArgumentDetails",
@@ -157,8 +148,7 @@ const baseTools: Tool[] = [
         version: { type: "string", description: "Provider version (defaults to latest)" }
       },
       required: ["provider", "namespace", "resource"]
-    },
-    handler: handleResourceArgumentDetails
+    }
   },
   {
     name: "moduleDetails",
@@ -172,8 +162,7 @@ const baseTools: Tool[] = [
         provider: { type: "string", description: "Provider name (e.g. 'aws')" }
       },
       required: ["namespace", "module", "provider"]
-    },
-    handler: handleModuleDetails
+    }
   },
   {
     name: "functionDetails",
@@ -186,8 +175,7 @@ const baseTools: Tool[] = [
         namespace: { type: "string", description: "Provider namespace (e.g. 'hashicorp')" },
         function: { type: "string", description: "Function name (e.g. 'arn_parse')" }
       }
-    },
-    handler: handleFunctionDetails
+    }
   },
   {
     name: "providerGuides",
@@ -201,8 +189,7 @@ const baseTools: Tool[] = [
         guide: { type: "string", description: "Specific guide to fetch (by slug or title)" },
         search: { type: "string", description: "Search term to filter guides" }
       }
-    },
-    handler: handleProviderGuides
+    }
   },
   {
     name: "policySearch",
@@ -213,8 +200,7 @@ const baseTools: Tool[] = [
         query: { type: "string", description: "Search query for finding policy libraries" },
         provider: { type: "string", description: "Filter policies by provider (e.g. 'aws')" }
       }
-    },
-    handler: handlePolicySearch
+    }
   },
   {
     name: "policyDetails",
@@ -226,12 +212,10 @@ const baseTools: Tool[] = [
         namespace: { type: "string", description: "Policy library namespace (e.g. 'Great-Stone')" },
         name: { type: "string", description: "Policy library name (e.g. 'vault-aws-secret-type')" }
       }
-    },
-    handler: handlePolicyDetails
+    }
   }
 ];
-
-// Define the TFC-specific tools that require authentication
+// Define the TFC-specific tools (original structure)
 const tfcTools: Tool[] = [
   {
     name: "listOrganizations",
@@ -239,8 +223,7 @@ const tfcTools: Tool[] = [
     inputSchema: {
       type: "object",
       properties: {}
-    },
-    handler: handleListOrganizations
+    }
   },
   {
     name: "privateModuleSearch",
@@ -255,8 +238,7 @@ const tfcTools: Tool[] = [
         page: { type: "number", description: "Page number (default: 1)" },
         per_page: { type: "number", description: "Results per page (default: 20)" }
       }
-    },
-    handler: handlePrivateModuleSearch
+    }
   },
   {
     name: "privateModuleDetails",
@@ -272,8 +254,7 @@ const tfcTools: Tool[] = [
         provider: { type: "string", description: "The provider name" },
         version: { type: "string", description: "Optional specific version to fetch" }
       }
-    },
-    handler: handlePrivateModuleDetails
+    }
   },
   {
     name: "explorerQuery",
@@ -322,8 +303,7 @@ const tfcTools: Tool[] = [
           description: "Optional page size"
         }
       }
-    },
-    handler: handleExplorerQuery
+    }
   },
   {
     name: "listWorkspaces",
@@ -350,8 +330,7 @@ const tfcTools: Tool[] = [
           description: "Optional related resources to include"
         }
       }
-    },
-    handler: handleListWorkspaces
+    }
   },
   {
     name: "workspaceDetails",
@@ -374,8 +353,7 @@ const tfcTools: Tool[] = [
           description: "Optional related resources to include"
         }
       }
-    },
-    handler: handleShowWorkspace
+    }
   },
   {
     name: "lockWorkspace",
@@ -393,8 +371,7 @@ const tfcTools: Tool[] = [
           description: "Optional reason for locking"
         }
       }
-    },
-    handler: handleLockWorkspace
+    }
   },
   {
     name: "unlockWorkspace",
@@ -408,8 +385,7 @@ const tfcTools: Tool[] = [
           description: "The ID of the workspace to unlock"
         }
       }
-    },
-    handler: handleUnlockWorkspace
+    }
   },
   {
     name: "listRuns",
@@ -436,8 +412,7 @@ const tfcTools: Tool[] = [
           description: "Optional related resources to include"
         }
       }
-    },
-    handler: handleListRuns
+    }
   },
   {
     name: "runDetails",
@@ -451,8 +426,7 @@ const tfcTools: Tool[] = [
           description: "The ID of the run"
         }
       }
-    },
-    handler: handleShowRun
+    }
   },
   {
     name: "createRun",
@@ -494,8 +468,7 @@ const tfcTools: Tool[] = [
           description: "Optional Terraform version"
         }
       }
-    },
-    handler: handleCreateRun
+    }
   },
   {
     name: "applyRun",
@@ -513,8 +486,7 @@ const tfcTools: Tool[] = [
           description: "Optional comment"
         }
       }
-    },
-    handler: handleApplyRun
+    }
   },
   {
     name: "cancelRun",
@@ -532,8 +504,7 @@ const tfcTools: Tool[] = [
           description: "Optional comment"
         }
       }
-    },
-    handler: handleCancelRun
+    }
   },
   {
     name: "listWorkspaceResources",
@@ -559,15 +530,14 @@ const tfcTools: Tool[] = [
           description: "Optional filter string"
         }
       }
-    },
-    handler: handleListWorkspaceResources
+    }
   }
 ];
 
 // Combine tools based on TFC_TOKEN availability
 const tools: Tool[] = TFC_TOKEN ? [...baseTools, ...tfcTools] : baseTools;
 
-// Initialize the server
+// Reverted: Initialize the low-level Server
 const server = new Server(
   {
     name: SERVER_NAME,
@@ -575,11 +545,13 @@ const server = new Server(
   },
   {
     capabilities: {
+      // Added prompts capability back
       tools: {},
       resources: {
         subscribe: true,
         listChanged: true
-      }
+      },
+      prompts: {}
     }
   }
 );
@@ -587,14 +559,21 @@ const server = new Server(
 // Log initialization
 logger.info("Server constructor created, setting up handlers...");
 
-// Initialize handler
+// Initialize handler (original)
 server.setRequestHandler(InitializeRequestSchema, async (request) => {
   logger.info("Received Initialize request!");
   logger.debug("Initialize request details:", request);
-
   return {
     protocolVersion: request.params.protocolVersion,
-    capabilities: { tools: {} },
+    capabilities: {
+      // Ensure prompts capability is included here too
+      tools: {},
+      resources: {
+        subscribe: true,
+        listChanged: true
+      },
+      prompts: {}
+    },
     serverInfo: {
       name: SERVER_NAME,
       version: VERSION
@@ -602,28 +581,173 @@ server.setRequestHandler(InitializeRequestSchema, async (request) => {
   };
 });
 
-// ListToolsRequest handler
+// ListToolsRequest handler (original)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   logger.info("Received ListToolsRequest");
   return { tools };
 });
 
-// Register resources/list handler using SDK schema
+// Define prompts metadata (original)
+const promptsMetadata = [
+  {
+    name: "migrate-clouds",
+    description: "Generate Terraform code to migrate infrastructure between cloud providers.",
+    arguments: [
+      {
+        name: "sourceCloud",
+        description: "The cloud provider to migrate from (e.g., AWS, Azure, GCP)",
+        required: true
+      },
+      { name: "targetCloud", description: "The cloud provider to migrate to (e.g., AWS, Azure, GCP)", required: true },
+      { name: "terraformCode", description: "The Terraform code for the existing infrastructure", required: true }
+    ]
+  },
+  {
+    name: "generate-resource-skeleton",
+    description: "Helps users quickly scaffold new Terraform resources with best practices.",
+    arguments: [
+      {
+        name: "resourceType",
+        description: "The type of Terraform resource to generate (e.g., aws_s3_bucket)",
+        required: true
+      }
+    ]
+  },
+  {
+    name: "optimize-terraform-module",
+    description: "Provides actionable recommendations for improving Terraform code.",
+    arguments: [{ name: "terraformCode", description: "The Terraform module code to optimize", required: true }]
+  },
+  {
+    name: "migrate-provider-version",
+    description: "Assists with provider version upgrades and breaking changes.",
+    arguments: [
+      { name: "providerName", description: "The name of the Terraform provider (e.g., aws)", required: true },
+      { name: "currentVersion", description: "The current version of the provider", required: true },
+      { name: "targetVersion", description: "The target version of the provider", required: true },
+      { name: "terraformCode", description: "Optional: Relevant Terraform code using the provider", required: false }
+    ]
+  },
+  {
+    name: "analyze-workspace-runs",
+    description: "Analyzes recent run failures and provides troubleshooting guidance for Terraform Cloud workspaces.",
+    arguments: [
+      { name: "workspaceId", description: "The Terraform Cloud workspace ID to analyze", required: true },
+      { name: "runsToAnalyze", description: "Number of recent runs to analyze (default: 5)", required: false }
+    ]
+  }
+];
+
+// ListPrompts handler (original)
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  logger.info("Received ListPrompts request!");
+  return { prompts: promptsMetadata };
+});
+
+// GetPrompt handler with proper error handling
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name: promptName, arguments: args } = request.params;
+  logger.info(`Received GetPrompt request for: ${promptName}`);
+  logger.debug("GetPrompt arguments:", args);
+
+  try {
+    // Find metadata for the requested prompt
+    const metadata = promptsMetadata.find((p) => p.name === promptName);
+    if (!metadata) {
+      logger.error(`Prompt metadata not found for: ${promptName}`);
+      logger.info(`Returning error for unknown prompt: ${promptName}`);
+      return {
+        messages: [],
+        error: {
+          code: -32000,
+          message: `Unknown prompt: ${promptName}`
+        }
+      };
+    }
+    logger.debug(`Found metadata for ${promptName}:`, metadata);
+
+    // Validate required arguments
+    for (const argDef of metadata.arguments) {
+      if (argDef.required && !(args && argDef.name in args)) {
+        logger.error(`Missing required argument '${argDef.name}' for prompt '${promptName}'`);
+        logger.info(`Returning error for missing required argument: ${argDef.name}`);
+        return {
+          messages: [],
+          error: {
+            code: -32000,
+            message: `Missing required argument '${argDef.name}' for prompt '${promptName}'`
+          }
+        };
+      }
+    }
+    logger.debug(`Arguments validated successfully for ${promptName}`);
+
+    let text = "";
+    switch (promptName) {
+      case "migrate-clouds":
+        text = `Please help migrate the following Terraform code from ${args?.sourceCloud} to ${args?.targetCloud}:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\``;
+        break;
+      case "generate-resource-skeleton":
+        text = `Please generate a skeleton for the Terraform resource type: ${args?.resourceType}`;
+        break;
+      case "optimize-terraform-module":
+        text = `Please optimize the following Terraform module code:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\``;
+        break;
+      case "migrate-provider-version":
+        text = `Please help migrate provider ${args?.providerName} from version ${args?.currentVersion} to ${args?.targetVersion}.\n${args?.terraformCode ? `\nHere is the current Terraform code:\n\n\`\`\`terraform\n${args?.terraformCode}\n\`\`\`` : ""}`;
+        break;
+      case "analyze-workspace-runs":
+        text = `Please analyze the last ${args?.runsToAnalyze || 5} run(s) for Terraform Cloud workspace ${args?.workspaceId}. Identify any common failure patterns, suggest troubleshooting steps, and recommend configuration improvements to prevent future issues.`;
+        break;
+      default:
+        logger.error(`Unhandled prompt name in switch statement: ${promptName}`);
+        return {
+          messages: [],
+          error: {
+            code: -32000,
+            message: `Logic not implemented for prompt: ${promptName}`
+          }
+        };
+    }
+    logger.debug(`Constructed text for ${promptName}:`, text);
+
+    const responsePayload = {
+      description: metadata.description,
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: text
+          }
+        }
+      ]
+    };
+    logger.info(`Returning GetPrompt response for ${promptName}`);
+    logger.debug(`GetPrompt response payload for ${promptName}:`, responsePayload);
+    return responsePayload;
+  } catch (error) {
+    // Catch any unexpected errors
+    logger.error(`Unexpected error in GetPrompt handler for ${promptName}:`, error);
+    return {
+      messages: [],
+      error: {
+        code: -32000,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+});
+
+// Resource Handlers (original)
 server.setRequestHandler(ListResourcesRequestSchema, async (request: ListResourcesRequest) => {
   logger.info("Received resources/list request!");
-
   const uri = request.params?.uri;
-
-  // Explicitly check if uri is a string
   if (typeof uri !== "string") {
     throw new Error("Missing or invalid 'uri' parameter in resources/list request");
   }
-
-  // Now uri is definitely a string
   return await handleResourcesList(uri);
 });
-
-// Register resources/read handler using SDK schema
 server.setRequestHandler(ReadResourceRequestSchema, async (request: ReadResourceRequest) => {
   logger.info("Received resources/read request!");
   const uri = request.params?.uri;
@@ -632,28 +756,18 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request: ReadResource
   }
   return await handleResourcesRead(uri);
 });
-
-// Register resources/templates/list handler using SDK schema
-server.setRequestHandler(ListResourceTemplatesRequestSchema, async (request: ListTemplatesRequest) => {
+server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
   logger.info("Received resources/templates/list request!");
-  const uri = request.params?.uri;
-  if (!uri) {
-    throw new Error("Missing 'uri' parameter in resources/templates/list request");
-  }
+  // Original handler didn't use uri, assuming correct
   return await handleResourcesTemplatesList();
 });
-
-// Register resources/subscribe handler using SDK schema
-server.setRequestHandler(SubscribeRequestSchema, async (request: SubscribeRequest) => {
+server.setRequestHandler(SubscribeRequestSchema, async () => {
   logger.info("Received resources/subscribe request!");
-  const uri = request.params?.uri;
-  if (!uri) {
-    throw new Error("Missing 'uri' parameter in resources/subscribe request");
-  }
+  // Original handler didn't use uri, assuming correct
   return await handleResourcesSubscribe();
 });
 
-// Validate and convert arguments
+// validateArgs function (original)
 function validateArgs<T>(args: Record<string, unknown> | undefined, requiredFields: string[]): T | undefined {
   if (!args) return undefined;
 
@@ -666,7 +780,7 @@ function validateArgs<T>(args: Record<string, unknown> | undefined, requiredFiel
   return args as T;
 }
 
-// Handle tool requests
+// CallTool handler (original)
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name: toolName, arguments: args } = request.params;
 
@@ -784,13 +898,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "workspaceDetails": {
         const validArgs = validateArgs<Record<string, any>>(args, ["organization", "name"]);
         if (!validArgs) throw new Error("Missing required arguments");
-
-        // Convert from the API parameter names to the internal parameter names
         const params = {
           organization_name: validArgs.organization,
           name: validArgs.name
         };
-
         response = await handleShowWorkspace(params);
         break;
       }
@@ -863,28 +974,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Start the server
+// Start the server (original)
 async function main() {
-  console.error("🚀 Starting terraform-registry MCP server...");
+  console.error(`🚀 Starting ${SERVER_NAME} MCP server v${VERSION}...`);
   const transport = new StdioServerTransport();
 
-  // Prevent unhandled promise rejections from crashing the server
   process.on("unhandledRejection", (reason) => {
     console.error("💥 Unhandled Promise Rejection:", reason);
   });
 
   try {
     await server.connect(transport);
-    console.error("✅ Server connected and ready for requests");
-
-    console.error("📝 Server running on stdio transport");
+    console.error("✅ Server connected and ready for requests via stdio");
   } catch (error) {
-    console.error("❌ Fatal error:", error);
+    console.error("❌ Fatal error during server connection:", error);
     process.exit(1);
   }
 }
 
 main().catch((error) => {
-  console.error("💀 Fatal error:", error);
+  console.error("💀 Fatal error in main function:", error);
   process.exit(1);
 });
+
+/* NOTE: Ellipses (...) indicate original code blocks that were collapsed for brevity */

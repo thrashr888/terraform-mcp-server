@@ -86,6 +86,18 @@ These tools require a Terraform Cloud API token (`TFC_TOKEN`):
 | `cancelRun` | Cancels a run that's in progress |
 | `listWorkspaceResources` | Lists resources in a workspace |
 
+## Prompts
+
+The following prompts are available for generating contextual responses:
+
+| Prompt | Description | Required Arguments |
+|--------|-------------|-------------------|
+| `migrate-clouds` | Generate Terraform code to migrate infrastructure between cloud providers | `sourceCloud`, `targetCloud`, `terraformCode` |
+| `generate-resource-skeleton` | Helps users quickly scaffold new Terraform resources with best practices | `resourceType` |
+| `optimize-terraform-module` | Provides actionable recommendations for improving Terraform code | `terraformCode` |
+| `migrate-provider-version` | Assists with provider version upgrades and breaking changes | `providerName`, `currentVersion`, `targetVersion`, `terraformCode` (optional) |
+| `analyze-workspace-runs` | Analyzes recent run failures and provides troubleshooting guidance for Terraform Cloud workspaces | `workspaceId`, `runsToAnalyze` (optional, default: 5) |
+
 ## Running the Server
 
 The server runs using stdio transport for MCP communication:
