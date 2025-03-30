@@ -369,22 +369,29 @@ async function listWorkspaceResources(uri: string, params: Record<string, string
 export const TerraformCloudResources: ResourceHandler[] = [
   {
     uriPattern: "terraform://organizations",
-    handler: listOrganizations
+    handler: listOrganizations,
+    list: async () => listOrganizations()
   },
   {
     uriPattern: "terraform://organizations/{org}",
-    handler: getWorkspaceDetails
+    handler: getWorkspaceDetails,
+    read: async (params) => getWorkspaceDetails(`terraform://organizations/${params.org}`, params)
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces",
-    handler: listWorkspaces
+    handler: listWorkspaces,
+    list: async (params) => listWorkspaces(`terraform://organizations/${params.org}/workspaces`, params)
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces/{workspace}",
-    handler: getWorkspaceDetails
+    handler: getWorkspaceDetails,
+    read: async (params) =>
+      getWorkspaceDetails(`terraform://organizations/${params.org}/workspaces/${params.workspace}`, params)
   },
   {
     uriPattern: "terraform://organizations/{org}/workspaces/{workspace}/resources",
-    handler: listWorkspaceResources
+    handler: listWorkspaceResources,
+    list: async (params) =>
+      listWorkspaceResources(`terraform://organizations/${params.org}/workspaces/${params.workspace}/resources`, params)
   }
 ];

@@ -8,13 +8,13 @@ import { handleDataSourceLookup } from "../tools/dataSourceLookup.js";
 import { handleResourceArgumentDetails } from "../tools/resourceArgumentDetails.js";
 import { handleModuleRecommendations } from "../tools/moduleRecommendations.js";
 import { handleModuleDetails } from "../tools/moduleDetails.js";
-import { ResourceHandler } from "./index.js";
+import { ResourceHandler, ResourcesListResponse, ResourceReadResponse } from "./index.js";
 import logger from "../utils/logger.js";
 
 /**
  * Root handler to list available resource types
  */
-async function listResourceTypes() {
+async function listResourceTypes(): Promise<ResourcesListResponse> {
   return {
     type: "success",
     resources: [
@@ -35,7 +35,7 @@ async function listResourceTypes() {
 /**
  * List providers handler
  */
-async function listProviders() {
+async function listProviders(): Promise<ResourcesListResponse> {
   // For now, return a simple list of common providers
   // In a full implementation, this would query the Terraform Registry API
   const commonProviders = [
@@ -66,7 +66,7 @@ async function listProviders() {
 /**
  * Get provider details handler
  */
-async function getProviderDetails(uri: string, params: Record<string, string>) {
+async function getProviderDetails(uri: string, params: Record<string, string>): Promise<ResourceReadResponse> {
   const { namespace, provider, version } = params;
 
   try {
@@ -113,7 +113,7 @@ async function getProviderDetails(uri: string, params: Record<string, string>) {
 /**
  * List data sources handler
  */
-async function listDataSources(uri: string, params: Record<string, string>) {
+async function listDataSources(uri: string, params: Record<string, string>): Promise<ResourcesListResponse> {
   const { namespace, provider } = params;
 
   try {
@@ -150,7 +150,7 @@ async function listDataSources(uri: string, params: Record<string, string>) {
 /**
  * Get resource details handler
  */
-async function getResourceDetails(uri: string, params: Record<string, string>) {
+async function getResourceDetails(uri: string, params: Record<string, string>): Promise<ResourceReadResponse> {
   const { namespace, provider, resource } = params;
 
   try {
@@ -199,7 +199,7 @@ async function getResourceDetails(uri: string, params: Record<string, string>) {
 /**
  * List modules handler
  */
-async function listModules(uri: string, params: Record<string, string>) {
+async function listModules(uri: string, params: Record<string, string>): Promise<ResourcesListResponse> {
   const { query = "vpc" } = params; // Default to searching for VPC modules
 
   try {
@@ -236,7 +236,7 @@ async function listModules(uri: string, params: Record<string, string>) {
 /**
  * Get module details handler
  */
-async function getModuleDetails(uri: string, params: Record<string, string>) {
+async function getModuleDetails(uri: string, params: Record<string, string>): Promise<ResourceReadResponse> {
   const { namespace, name, provider } = params;
 
   try {
@@ -283,38 +283,56 @@ async function getModuleDetails(uri: string, params: Record<string, string>) {
   }
 }
 
-// Define all Registry resource handlers
+// Resource handlers for Terraform Registry
 export const RegistryResources: ResourceHandler[] = [
   {
-    uriPattern: "registry://",
-    handler: listResourceTypes
+    uriPattern: "^registry://$",
+    handler: listResourceTypes,
+    list: async () => listResourceTypes()
   },
   {
-    uriPattern: "registry://providers",
-    handler: listProviders
+    uriPattern: "^registry://providers$",
+    handler: listProviders,
+    list: async () => listProviders()
   },
   {
-    uriPattern: "registry://providers/{namespace}/{provider}",
-    handler: getProviderDetails
+    uriPattern: "^registry://providers/(?<namespace>[^/]+)/(?<provider>[^/]+)$",
+    handler: getProviderDetails,
+    read: async (params) => getProviderDetails(`registry://providers/${params.namespace}/${params.provider}`, params)
   },
   {
-    uriPattern: "registry://providers/{namespace}/{provider}/versions/{version}",
-    handler: getProviderDetails
+    uriPattern: "^registry://providers/(?<namespace>[^/]+)/(?<provider>[^/]+)/versions/(?<version>[^/]+)$",
+    handler: getProviderDetails,
+    read: async (params) =>
+      getProviderDetails(
+        `registry://providers/${params.namespace}/${params.provider}/versions/${params.version}`,
+        params
+      )
   },
   {
-    uriPattern: "registry://providers/{namespace}/{provider}/data-sources",
-    handler: listDataSources
+    uriPattern: "^registry://providers/(?<namespace>[^/]+)/(?<provider>[^/]+)/data-sources$",
+    handler: listDataSources,
+    list: async (params) =>
+      listDataSources(`registry://providers/${params.namespace}/${params.provider}/data-sources`, params)
   },
   {
-    uriPattern: "registry://providers/{namespace}/{provider}/resources/{resource}",
-    handler: getResourceDetails
+    uriPattern: "^registry://providers/(?<namespace>[^/]+)/(?<provider>[^/]+)/resources/(?<resource>[^/]+)$",
+    handler: getResourceDetails,
+    read: async (params) =>
+      getResourceDetails(
+        `registry://providers/${params.namespace}/${params.provider}/resources/${params.resource}`,
+        params
+      )
   },
   {
-    uriPattern: "registry://modules",
-    handler: listModules
+    uriPattern: "^registry://modules$",
+    handler: listModules,
+    list: async (params) => listModules(`registry://modules`, params)
   },
   {
-    uriPattern: "registry://modules/{namespace}/{name}/{provider}",
-    handler: getModuleDetails
+    uriPattern: "^registry://modules/(?<namespace>[^/]+)/(?<name>[^/]+)/(?<provider>[^/]+)$",
+    handler: getModuleDetails,
+    read: async (params) =>
+      getModuleDetails(`registry://modules/${params.namespace}/${params.name}/${params.provider}`, params)
   }
 ];

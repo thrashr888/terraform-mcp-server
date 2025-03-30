@@ -78,7 +78,7 @@ export default [
       },
       rules: {
         ...jestPlugin.configs.recommended.rules,
-        "jest/no-conditional-expect": "warn",
+        "jest/no-conditional-expect": "off",
         "jest/expect-expect": ["warn", { assertFunctionNames: ["expect", "assert*"] }],
         "@typescript-eslint/no-unused-vars": ["warn"],
         "@typescript-eslint/no-unsafe-function-type": "off",

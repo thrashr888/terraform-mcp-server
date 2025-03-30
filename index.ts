@@ -6,7 +6,7 @@ if (!globalThis.fetch) {
   globalThis.fetch = fetch as unknown as typeof globalThis.fetch;
 }
 
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 import { z } from "zod";
@@ -38,13 +38,11 @@ import {
   handleListWorkspaceResources
 } from "./src/tools/index.js";
 
+// Import resource handlers
+import { handleResourcesList, handleResourcesRead } from "./src/resources/index.js";
+
 import { VERSION, SERVER_NAME, TFC_TOKEN } from "./config.js";
 import logger from "./src/utils/logger.js";
-
-import {
-  handleResourcesRead
-  // handleResourcesSubscribe is likely handled by McpServer or needs specific implementation
-} from "./src/resources/index.js";
 
 // Import prompt handlers
 import { addMigrateCloudsPrompt } from "./src/prompts/migrate-clouds.js";
@@ -531,36 +529,145 @@ function registerPrompts(server: McpServer) {
 }
 
 // --- Register Resources ---
-// McpServer automatically handles ListResourceTemplates if templates are defined.
-// Need to define templates and handlers for actual resources.
+function registerResources(server: McpServer) {
+  try {
+    logger.info("Registering resources...");
 
-// Example: Registering a simple static resource (replace with actual logic)
-server.resource("static-example", "static://example/info", async (uri) => {
-  logger.info(`Handling static resource read for: ${uri.href}`);
-  const result = await handleResourcesRead(uri.href);
-  // Assuming handleResourcesRead returns { contents: [{ text: string, uri: string }] }; return matching format.
-  return { contents: result.contents.map((c: { uri: string; text: string }) => ({ uri: c.uri, text: c.text })) };
-});
+    // Register basic root resources
+    server.resource("registry", "registry://", async () => {
+      logger.debug("Read requested for registry://");
+      return {
+        contents: [
+          {
+            uri: "registry://",
+            text: JSON.stringify({
+              type: "success",
+              resources: [
+                {
+                  uri: "registry://",
+                  title: "Terraform Registry Resources"
+                }
+              ]
+            })
+          }
+        ]
+      };
+    });
 
-// Example: Registering a resource template (replace with actual logic)
-// Assuming handleResourcesRead can handle URIs matching this pattern
-server.resource(
-  "dynamic-example",
-  new ResourceTemplate("dynamic://data/{itemId}", { list: undefined }), // list: undefined means it won't appear in listResources by default
-  async (uri, params) => {
-    logger.info(`Handling dynamic resource read for: ${uri.href} with params: ${JSON.stringify(params)}`);
-    // Assuming handleResourcesRead takes the URI and uses it
-    const result = await handleResourcesRead(uri.href);
-    // Assuming handleResourcesRead returns { contents: [...] }; return matching format.
-    return { contents: result.contents.map((c: { uri: string; text: string }) => ({ uri: c.uri, text: c.text })) };
+    server.resource("registry-providers", "registry://providers", async () => {
+      logger.debug("Read requested for registry://providers");
+      const result = await handleResourcesList("registry://providers");
+      return {
+        contents: [
+          {
+            uri: "registry://providers",
+            text: JSON.stringify(result)
+          }
+        ]
+      };
+    });
+
+    server.resource("registry-modules", "registry://modules", async () => {
+      logger.debug("Read requested for registry://modules");
+      const result = await handleResourcesList("registry://modules");
+      return {
+        contents: [
+          {
+            uri: "registry://modules",
+            text: JSON.stringify(result)
+          }
+        ]
+      };
+    });
+
+    // Registry provider detail resources
+    server.resource("registry-provider-aws", "registry://providers/hashicorp/aws", async () => {
+      logger.debug("Read requested for registry://providers/hashicorp/aws");
+      const result = await handleResourcesRead("registry://providers/hashicorp/aws");
+      return {
+        contents: [
+          {
+            uri: "registry://providers/hashicorp/aws",
+            text: JSON.stringify(result)
+          }
+        ]
+      };
+    });
+
+    // AWS resources
+    server.resource(
+      "registry-provider-aws-resources-instance",
+      "registry://providers/hashicorp/aws/resources/aws_instance",
+      async () => {
+        logger.debug("Read requested for registry://providers/hashicorp/aws/resources/aws_instance");
+        const result = await handleResourcesRead("registry://providers/hashicorp/aws/resources/aws_instance");
+        return {
+          contents: [
+            {
+              uri: "registry://providers/hashicorp/aws/resources/aws_instance",
+              text: JSON.stringify(result)
+            }
+          ]
+        };
+      }
+    );
+
+    // AWS data sources
+    server.resource(
+      "registry-provider-aws-data-sources",
+      "registry://providers/hashicorp/aws/data-sources",
+      async () => {
+        logger.debug("Read requested for registry://providers/hashicorp/aws/data-sources");
+        const result = await handleResourcesList("registry://providers/hashicorp/aws/data-sources");
+        return {
+          contents: [
+            {
+              uri: "registry://providers/hashicorp/aws/data-sources",
+              text: JSON.stringify(result)
+            }
+          ]
+        };
+      }
+    );
+
+    // TFC resources (if token is available)
+    if (TFC_TOKEN) {
+      // Organizations list
+      server.resource("terraform-organizations", "terraform://organizations", async () => {
+        logger.debug("Read requested for terraform://organizations");
+        const result = await handleResourcesList("terraform://organizations");
+        return {
+          contents: [
+            {
+              uri: "terraform://organizations",
+              text: JSON.stringify(result)
+            }
+          ]
+        };
+      });
+
+      // Basic workspace list for tests
+      server.resource("terraform-org-workspaces", "terraform://organizations/test-org/workspaces", async () => {
+        logger.debug("Read requested for terraform://organizations/test-org/workspaces");
+        const result = await handleResourcesList("terraform://organizations/test-org/workspaces");
+        return {
+          contents: [
+            {
+              uri: "terraform://organizations/test-org/workspaces",
+              text: JSON.stringify(result)
+            }
+          ]
+        };
+      });
+    } else {
+      logger.warn("TFC_TOKEN not set, skipping Terraform Cloud resource registration.");
+    }
+
+    logger.info("Resources registered successfully");
+  } catch (error) {
+    logger.error("Error registering resources:", error);
   }
-);
-
-// TODO: Properly map handleResourcesList and handleResourcesRead to McpServer resources.
-// This likely involves defining ResourceTemplates for patterns handleResourcesRead can handle,
-// and potentially a "list" resource that calls handleResourcesList.
-// handleResourcesTemplatesList might be implicitly handled or need a specific resource.
-// Subscription handling might require more specific setup depending on how changes are detected.
+}
 
 // --- Start the server ---
 async function main() {
@@ -575,6 +682,9 @@ async function main() {
   try {
     // Register prompts before connecting
     registerPrompts(server);
+
+    // Register resources before connecting
+    registerResources(server);
 
     // McpServer handles connection internally
     await server.connect(transport);

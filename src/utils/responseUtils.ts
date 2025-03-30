@@ -77,7 +77,7 @@ export function addContextInfo(
  * @param metadata Metadata object to enrich
  * @returns Enriched metadata with compatibility info
  */
-export function addStandardContext(metadata: Record<string, any> = {}): void {
+export function addStandardContext(metadata: Record<string, any> = {}): Record<string, any> {
   // Ensure context exists
   if (!metadata.context) {
     metadata.context = {};
@@ -93,6 +93,8 @@ export function addStandardContext(metadata: Record<string, any> = {}): void {
 
   // Add timestamp
   metadata.context.timestamp = new Date().toISOString();
+
+  return metadata;
 }
 
 /**
@@ -100,12 +102,13 @@ export function addStandardContext(metadata: Record<string, any> = {}): void {
  * @param metadata The metadata object to enhance
  * @param errorType The type/category of error
  * @param errorDetails Additional error details
+ * @returns The enhanced metadata object
  */
 export function addErrorContext(
   metadata: Record<string, any> = {},
   errorType: string,
   errorDetails: Record<string, any> = {}
-): void {
+): Record<string, any> {
   // Ensure error context exists
   if (!metadata.error) {
     metadata.error = {};
@@ -116,6 +119,8 @@ export function addErrorContext(
 
   // Add any additional error details
   Object.assign(metadata.error, errorDetails);
+
+  return metadata;
 }
 
 /**

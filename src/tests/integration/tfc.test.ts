@@ -21,6 +21,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
 
   describe("Organization & Workspace Management", () => {
     test("listOrganizations should return organizations", async () => {
+      expect.assertions(5);
+      
       const response = await runToolCall("listOrganizations", {});
 
       assertSuccessResponse(response);
@@ -35,6 +37,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
     });
 
     test("privateModuleSearch should search for modules", async () => {
+      expect.assertions(3);
+      
       const org = getOrganization();
       const response = await runToolCall("privateModuleSearch", {
         organization: org,
@@ -52,6 +56,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
     });
 
     test("privateModuleDetails should return module details", async () => {
+      expect.assertions(1);
+      
       const org = getOrganization();
       const response = await runToolCall("privateModuleDetails", {
         organization: org,
@@ -65,6 +71,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
     });
 
     test("explorerQuery should query workspaces", async () => {
+      expect.assertions(1);
+      
       const org = getOrganization();
       const response = await runToolCall("explorerQuery", {
         organization: org,
@@ -76,6 +84,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
     });
 
     test("listWorkspaces should return workspaces", async () => {
+      expect.assertions(4);
+      
       const org = getOrganization();
       const response = await runToolCall("listWorkspaces", {
         organization: org
@@ -94,6 +104,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
     });
 
     test("workspaceDetails should return workspace details and store workspace ID", async () => {
+      expect.hasAssertions();
+      
       const org = getOrganization();
       const workspaceName = getWorkspaceId();
 
@@ -140,6 +152,8 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
 
   describe("Workspace Operations", () => {
     test("workspace lifecycle operations", async () => {
+      expect.hasAssertions();
+      
       // Skip if we couldn't get a workspace ID
       if (!workspaceId) {
         console.log(`Using workspace name as fallback: ${getWorkspaceId()}`);
@@ -208,9 +222,7 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
           assertSuccessResponse(listRunsResponse);
           // Ensure the response content isn't empty and includes run data
           const listRunsText = listRunsResponse.result.content?.[0]?.text;
-          // eslint-disable-next-line jest/no-conditional-expect
           expect(listRunsText).toBeTruthy();
-          // eslint-disable-next-line jest/no-conditional-expect
           expect(listRunsText).toMatch(/run-/);
         } catch (error) {
           console.warn(`Could not list runs: ${error}`);
