@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.0 (unreleased)
+## 0.13.0 (2025-03-29)
 
 ### Added
 - Implemented MCP Resources API support for resource-oriented access patterns
@@ -11,9 +11,15 @@
   - `terraform://organizations` - Access Terraform Cloud organizations and workspaces
 - Added support for resources/list, resources/read, resources/templates/list, and resources/subscribe endpoints
 - Created test script for resources implementation
+- Added MCP Prompts capability with initial prompts:
+  - `migrate-clouds`
+  - `generate-resource-skeleton`
+  - `optimize-terraform-module`
+  - `migrate-provider-version`
+  - `analyze-workspace-runs`
 
 ### Changed
-- Updated server initialization to include resources capability
+- Updated server initialization to include resources and prompts capabilities
 - Maintained backward compatibility with existing tool-based API
 
 ## 0.12.0 (2025-03-15)
