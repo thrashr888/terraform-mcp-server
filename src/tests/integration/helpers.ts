@@ -34,10 +34,10 @@ export async function runRequest(request: any): Promise<any> {
 
   // Listen for stdout
   stdoutRl.on("line", (line) => {
-    console.log(`Server stdout: ${line}`);
+    // console.log(`Server stdout: ${line}`);
 
     if (line.includes("Server connected and ready for requests")) {
-      console.log("Server ready detected on stdout!");
+      // console.log("Server ready detected on stdout!");
       serverReady = true;
     } else if (line.startsWith("{")) {
       responseData += line;
@@ -57,7 +57,7 @@ export async function runRequest(request: any): Promise<any> {
 
     // Also check for ready message in stderr output
     if (line.includes("Server connected and ready for requests")) {
-      console.log("Server ready detected on stderr!");
+      // console.log("Server ready detected on stderr!");
       serverReady = true;
     }
   });
@@ -90,7 +90,7 @@ export async function runRequest(request: any): Promise<any> {
       checkReady();
     });
 
-    console.log("Sending request to server");
+    // console.log("Sending request to server");
     serverProcess.stdin.write(JSON.stringify(request) + "\n");
 
     // Wait for response with timeout
@@ -122,7 +122,7 @@ export async function runRequest(request: any): Promise<any> {
     });
 
     // Parse response
-    console.log("Parsing response data:", responseData);
+    // console.log("Parsing response data:", responseData);
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(responseData);
@@ -152,7 +152,7 @@ export async function runRequest(request: any): Promise<any> {
     }
 
     // Cleanup
-    console.log("Cleaning up server process");
+    // console.log("Cleaning up server process");
     serverProcess.kill();
     stdoutRl.removeAllListeners();
     stderrRl.removeAllListeners();

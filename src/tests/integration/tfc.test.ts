@@ -26,17 +26,29 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
       assertSuccessResponse(response);
       expect(response.result.content).toBeDefined();
       expect(Array.isArray(response.result.content)).toBe(true);
+      // Ensure the response content isn't empty
+      const contentText = response.result.content?.[0]?.text;
+      expect(contentText).toBeDefined();
+      expect(contentText).not.toBe("");
+      // Check if the content text contains organization data (should include the configured org)
+      expect(contentText).toContain(getOrganization());
     });
 
     test("privateModuleSearch should search for modules", async () => {
       const org = getOrganization();
       const response = await runToolCall("privateModuleSearch", {
         organization: org,
-        query: "vpc"
+        query: "website"
       });
 
       assertSuccessResponse(response);
       expect(response.result.content).toBeDefined();
+      // Ensure the response content is defined and is a string
+      const moduleSearchText = response.result.content?.[0]?.text;
+      expect(moduleSearchText).toBeDefined();
+      // Check for module table content instead of the header text
+      // expect(moduleSearchText).toContain("Modules matching");
+      expect(moduleSearchText).toContain("| setup_complete |");
     });
 
     test("privateModuleDetails should return module details", async () => {
@@ -71,6 +83,14 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
 
       assertSuccessResponse(response);
       expect(response.result.content).toBeDefined();
+
+      // Ensure the response text is defined and is a string
+      const contentText = response.result.content?.[0]?.text;
+      expect(contentText).toBeDefined();
+      expect(typeof contentText).toBe("string");
+      // Check if the content text contains the test workspace name
+      // expect(contentText).toContain("| ws-");
+      expect(contentText).toContain(getWorkspaceId());
     });
 
     test("workspaceDetails should return workspace details and store workspace ID", async () => {
@@ -186,6 +206,10 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
             workspace_id: workspaceId
           });
           assertSuccessResponse(listRunsResponse);
+          // Ensure the response content isn't empty and includes run data
+          const listRunsText = listRunsResponse.result.content?.[0]?.text;
+          expect(listRunsText).toBeDefined();
+          expect(listRunsText).toContain("| run-");
         } catch (error) {
           console.warn(`Could not list runs: ${error}`);
         }
@@ -221,7 +245,7 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
       console.log("Unlocking workspace...");
       try {
         const unlockResponse = await runToolCall("unlockWorkspace", {
-          workspace_id: workspaceId
+          workspace_id: "ws-r9XriqiYaXk4Xrfb"
         });
         assertSuccessResponse(unlockResponse);
       } catch (error) {
@@ -230,14 +254,17 @@ describeWithToken("Terraform Cloud Tools Integration Tests", () => {
 
       // 7. List workspace resources
       console.log("Listing workspace resources...");
-      try {
-        const resourcesResponse = await runToolCall("listWorkspaceResources", {
-          workspace_id: workspaceId
-        });
-        assertSuccessResponse(resourcesResponse);
-      } catch (error) {
-        console.warn(`Could not list workspace resources: ${error}`);
-      }
-    }, 30000);
+      
+      const resourcesResponse = await runToolCall("listWorkspaceResources", {
+        // workspace "cool-website" is known to have resources
+        workspace_id: "ws-r9XriqiYaXk4Xrfb"
+      });
+      assertSuccessResponse(resourcesResponse);
+      // Ensure the response content isn't empty (it might legimitately have "No resources found")
+      const resourcesText = resourcesResponse.result.content?.[0]?.text;
+      expect(resourcesText).toBeDefined();
+      // Check for the resource table header instead of just non-empty
+      expect(resourcesText).toContain("| Name | Provider | Resource Type | Mode |");
+    });
   });
 });
