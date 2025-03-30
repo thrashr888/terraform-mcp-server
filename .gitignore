@@ -4,3 +4,4 @@ node_modules
 coverage
 .DS_Store
 /*.mdc
+repomix-output.md
