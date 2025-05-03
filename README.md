@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/thrashr888-terraform-mcp-server-badge.png)](https://mseep.ai/app/thrashr888-terraform-mcp-server)
+
 # Terraform Registry MCP Server
 
 A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, and module metadata.
