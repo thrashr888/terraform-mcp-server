@@ -2,6 +2,9 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with the Terraform Registry API. This server enables AI agents to query provider information, resource details, and module metadata.
 
+> [!IMPORTANT]
+> This project was used as a PoC for a new official [Terraform MCP server](https://github.com/hashicorp/terraform-mcp-server). This repo has been archived in favor of that one.
+
 ## Installation
 
 ### Installing in Cursor
